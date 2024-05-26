@@ -34,7 +34,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
 
     'project',
-    'admin_soft',  # Asegúrate de usar guiones bajos
+    'App',  # Asegúrate de usar guiones bajos
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
