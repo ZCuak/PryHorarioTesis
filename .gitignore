@@ -1,0 +1,5 @@
+# Archivos y directorios generados por el entorno virtual
+.venv/
+.venv/Lib
+# Directorios generados por la compilación de Python
+__pycache__/
