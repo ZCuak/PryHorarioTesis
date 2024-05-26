@@ -9,7 +9,7 @@ urlpatterns = [
     path('tables/', views.tables, name='tables'),
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
-    path('profile/', views.profile, name='profile'),
+    path('accounts/profile/', views.profile, name='profile'),
 
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
