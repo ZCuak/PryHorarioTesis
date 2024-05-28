@@ -66,3 +66,11 @@ class UserPasswordChangeForm(PasswordChangeForm):
     new_password2 = forms.CharField(max_length=50, widget=forms.PasswordInput(attrs={
         'class': 'form-control', 'placeholder': 'Confirm New Password'
     }), label="Confirm New Password")
+    
+
+from .models import Semestre_Academico_Profesores
+
+class ProfesorForm(forms.ModelForm):
+    class Meta:
+        model = Semestre_Academico_Profesores
+        fields = ['semestre', 'profesor', 'horas_asesoria_semanal']

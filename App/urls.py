@@ -1,7 +1,7 @@
 from django.urls import path
 from App import views
 from django.contrib.auth import views as auth_views
-from .views import jurados_view
+from .views import jurados_list, jurados_create, jurados_update, jurados_delete, jurados_import
 
 
 urlpatterns = [
@@ -11,8 +11,11 @@ urlpatterns = [
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
     path('accounts/profile/', views.profile, name='profile'),
-    path('jurados/listar', jurados_view, name='jurados'),
-
+    path('jurados/listar', jurados_list, name='jurados_list'),
+    path('jurados/create/', jurados_create, name='jurados_create'),
+    path('jurados/update/<int:pk>/', jurados_update, name='jurados_update'),
+    path('jurados/delete/<int:pk>/', jurados_delete, name='jurados_delete'),
+    path('jurados/import/', jurados_import, name='jurados_import'),
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),

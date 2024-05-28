@@ -29,7 +29,6 @@ class Profesor(models.Model):
     apellidos_nombres = models.CharField(max_length=100)
     dedicacion = models.CharField(max_length=2, choices=[('TC', 'Tiempo Completo'), ('TP', 'Tiempo Parcial')])
     telefono = models.CharField(max_length=20)
-    v_jurado = models.CharField(max_length=1, null=True, blank=True)
 
     def __str__(self):
         return self.apellidos_nombres

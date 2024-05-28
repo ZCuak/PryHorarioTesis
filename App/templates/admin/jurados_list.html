@@ -1,0 +1,46 @@
+{% extends "layouts/base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6>Jurados</h6>
+                    <a class="btn btn-primary" href="{% url 'jurados_create' %}">Crear Jurado</a>
+                    <a class="btn btn-primary" href="{% url 'jurados_import' %}">Importar Profesores</a>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <input type="text" name="q" class="form-control" placeholder="Buscar por nombre...">
+                    </form>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Profesor</th>
+                                <th>Semestre</th>
+                                <th>Horas de asesoría semanal</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for jurado in jurados %}
+                                <tr>
+                                    <td>{{ jurado.profesor.apellidos_nombres }}</td>
+                                    <td>{{ jurado.semestre.nombre }}</td>
+                                    <td>{{ jurado.horas_asesoria_semanal }}</td>
+                                    <td>
+                                        <a href="{% url 'jurados_update' jurado.pk %}" class="btn btn-warning">Editar</a>
+                                        <a href="{% url 'jurados_delete' jurado.pk %}" class="btn btn-danger">Eliminar</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

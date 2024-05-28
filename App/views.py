@@ -1,6 +1,7 @@
+from django.shortcuts import render, redirect, get_object_or_404
 from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordChangeView, PasswordResetConfirmView
-from App.forms import RegistrationForm, LoginForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm
+from App.forms import RegistrationForm, LoginForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm, ExcelUploadForm, ProfesorForm
 from django.contrib.auth import logout
 from .models import Profesor, SemestreAcademico, Semestre_Academico_Profesores
 from django.contrib.admin.views.decorators import staff_member_required
@@ -65,9 +66,51 @@ class UserPasswordChangeView(PasswordChangeView):
     template_name = 'accounts/password_change.html'
     form_class = UserPasswordChangeForm
 
-# Jurados view
+# Jurados views
 @staff_member_required
-def jurados_view(request):
+def jurados_list(request):
+    jurados = Semestre_Academico_Profesores.objects.all()
+    query = request.GET.get('q')
+    if query:
+        jurados = jurados.filter(profesor__apellidos_nombres__icontains=query)
+    return render(request, 'admin/jurados_list.html', {'jurados': jurados})
+
+@staff_member_required
+def jurados_create(request):
+    if request.method == 'POST':
+        form = ProfesorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Jurado creado exitosamente")
+            return redirect('jurados_list')
+    else:
+        form = ProfesorForm()
+    return render(request, 'admin/jurados_form.html', {'form': form})
+
+@staff_member_required
+def jurados_update(request, pk):
+    jurado = get_object_or_404(Semestre_Academico_Profesores, pk=pk)
+    if request.method == 'POST':
+        form = ProfesorForm(request.POST, instance=jurado)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Jurado actualizado exitosamente")
+            return redirect('jurados_list')
+    else:
+        form = ProfesorForm(instance=jurado)
+    return render(request, 'admin/jurados_form.html', {'form': form})
+
+@staff_member_required
+def jurados_delete(request, pk):
+    jurado = get_object_or_404(Semestre_Academico_Profesores, pk=pk)
+    if request.method == 'POST':
+        jurado.delete()
+        messages.success(request, "Jurado eliminado exitosamente")
+        return redirect('jurados_list')
+    return render(request, 'admin/jurados_confirm_delete.html', {'jurado': jurado})
+
+@staff_member_required
+def jurados_import(request):
     if request.method == 'POST':
         form = ExcelUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -97,7 +140,7 @@ def jurados_view(request):
                 messages.success(request, "Profesores importados exitosamente")
             except Exception as e:
                 messages.error(request, f"Error al importar el archivo: {e}")
-            return redirect('jurados')
+            return redirect('jurados_list')
     else:
         form = ExcelUploadForm()
-    return render(request, 'admin/jurados.html', {'form': form})
+    return render(request, 'admin/jurados_import.html', {'form': form})
