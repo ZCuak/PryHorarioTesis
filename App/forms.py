@@ -3,6 +3,10 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, Pass
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
+from django import forms
+
+class ExcelUploadForm(forms.Form):
+    file = forms.FileField()
 
 class RegistrationForm(UserCreationForm):
   password1 = forms.CharField(
