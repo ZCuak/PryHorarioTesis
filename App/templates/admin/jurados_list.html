@@ -18,8 +18,8 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Profesor</th>
                                 <th>Semestre</th>
+                                <th>Profesor</th>
                                 <th>Horas de asesoría semanal</th>
                                 <th>Acciones</th>
                             </tr>
@@ -27,8 +27,8 @@
                         <tbody>
                             {% for jurado in jurados %}
                                 <tr>
-                                    <td>{{ jurado.profesor.apellidos_nombres }}</td>
                                     <td>{{ jurado.semestre.nombre }}</td>
+                                    <td>{{ jurado.profesor.apellidos_nombres }}</td>
                                     <td>{{ jurado.horas_asesoria_semanal }}</td>
                                     <td>
                                         <a href="{% url 'jurados_update' jurado.pk %}" class="btn btn-warning">Editar</a>

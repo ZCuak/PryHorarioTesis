@@ -66,11 +66,11 @@ class EstudianteAdmin(admin.ModelAdmin):
     list_filter = ('apellidos_nombres',)
 
 
-# @admin.register(Profesor)
-# class ProfesorAdmin(admin.ModelAdmin):
-#     list_display = ('email', 'apellidos_nombres', 'dedicacion', 'telefono', 'v_jurado')
-#     search_fields = ('email', 'apellidos_nombres')
-#     list_filter = ('dedicacion', 'v_jurado')
+@admin.register(Profesor)
+class ProfesorAdmin(admin.ModelAdmin):
+    list_display = ('email', 'apellidos_nombres', 'dedicacion', 'telefono')
+    search_fields = ('email', 'apellidos_nombres')
+
 
 
 
