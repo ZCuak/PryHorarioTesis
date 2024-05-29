@@ -6,9 +6,12 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header pb-0">
+                <div class="card-header pb-0 d-flex justify-content-between">
                     <h6>Sustentaciones para {{ curso_grupo.curso.nombre }} - {{ curso_grupo.grupo.nombre }}</h6>
-                    <a class="btn btn-primary" href="{% url 'sustentacion_create' curso_grupo.id %}">Crear Sustentación</a>
+                    <div>
+                        <a class="btn btn-primary" href="{% url 'sustentacion_create' curso_grupo.id %}">Crear Sustentación</a>
+                        <a class="btn btn-secondary" href="{% url 'grupos_list' curso_grupo.semestre.id %}">Volver</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="get" class="d-flex justify-content-end mb-3">
