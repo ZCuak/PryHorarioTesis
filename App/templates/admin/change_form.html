@@ -4,6 +4,87 @@
 {% block extrahead %}
     {{ block.super }}
     <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectSemestre = document.getElementById('id_semestre_academico');
+            const semanaInicio = document.getElementById('id_semana_inicio');
+            const semanaFin = document.getElementById('id_semana_fin');
+            const fechaInicio = document.getElementById('id_fecha_inicio');
+            const fechaFin = document.getElementById('id_fecha_fin');
+
+            if (!selectSemestre || !semanaInicio || !semanaFin || !fechaInicio || !fechaFin) {
+                console.error('No se encontraron los elementos esperados.');
+                return;
+            }
+
+            function actualizarSemanas(semanas) {
+                console.log('Actualizando semanas:', semanas);
+
+                // Limpiar las opciones actuales
+                semanaInicio.innerHTML = '';
+                semanaFin.innerHTML = '';
+
+                // Agregar nuevas opciones basadas en las semanas recibidas
+                semanas.forEach((semana, index) => {
+                    const option = new Option(`Semana ${index + 1}`, index + 1);
+                    semanaInicio.add(option);
+                    semanaFin.add(option.cloneNode(true));
+                });
+
+                // Seleccionar la primera semana como valor predeterminado
+                if (semanas.length > 0) {
+                    semanaInicio.selectedIndex = 0;
+                    semanaFin.selectedIndex = semanas.length - 1;
+                }
+
+                // Actualizar fechas basadas en la selección inicial
+                if (semanas.length > 0) {
+                    fechaInicio.value = semanas[0][0];
+                    fechaFin.value = semanas[semanas.length - 1][1];
+                }
+            }
+
+            selectSemestre.addEventListener('change', function() {
+                const semestreId = this.value;
+                console.log('Semestre seleccionado:', semestreId);
+                if (semestreId) {
+                    console.log('Haciendo solicitud a:', `/App/get_semanas/${semestreId}/`);
+                    fetch(`/App/get_semanas/${semestreId}/`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok ' + response.statusText);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Datos recibidos:', data);
+                            actualizarSemanas(data);
+                        })
+                        .catch(error => {
+                            console.error('Hubo un problema con la solicitud fetch:', error);
+                        });
+                }
+            });
+
+            semanaInicio.addEventListener('change', function() {
+                const selectedIndex = this.selectedIndex;
+                fetch(`/App/get_semanas/${selectSemestre.value}/`)
+                    .then(response => response.json())
+                    .then(semanas => {
+                        fechaInicio.value = semanas[selectedIndex][0];
+                    });
+            });
+
+            semanaFin.addEventListener('change', function() {
+                const selectedIndex = this.selectedIndex;
+                fetch(`/App/get_semanas/${selectSemestre.value}/`)
+                    .then(response => response.json())
+                    .then(semanas => {
+                        fechaFin.value = semanas[selectedIndex][1];
+                    });
+            });
+        });
+    </script>
     {{ media }}
 {% endblock %}
 

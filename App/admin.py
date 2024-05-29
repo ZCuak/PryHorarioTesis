@@ -8,8 +8,9 @@ from .models import (
 from django.contrib import admin
 from django.shortcuts import render
 from django.urls import path
-from django.http import HttpResponseRedirect
-from .forms import ExcelUploadForm
+from django.http import HttpResponseRedirect, JsonResponse
+from .forms import ExcelUploadForm, SemanaSustentacionForm
+from App.views import get_semanas
 
 # @admin.register(SemestreAcademico)
 # class SemestreAcademicoAdmin(admin.ModelAdmin):
@@ -104,9 +105,23 @@ class ProfesorAdmin(admin.ModelAdmin):
 
 @admin.register(Semana_Sustentacion)
 class SemanaSustentacionAdmin(admin.ModelAdmin):
+    form = SemanaSustentacionForm
     list_display = ('semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas')
     search_fields = ('semestre_academico__nombre', 'curso__nombre')
     list_filter = ('semestre_academico', 'curso', 'tipo_sustentacion')
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('App/get_semanas/<int:semestre_id>/', self.admin_site.admin_view(get_semanas), name='get_semanas')
+        ]
+        return custom_urls + urls
+    
+    def get_semanas(self, request, semestre_id):
+        semestre = SemestreAcademico.objects.get(pk=semestre_id)
+        semanas = semestre.calcular_semanas()
+        semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
+        return JsonResponse(semanas_formateadas, safe=False)
 
 
 # @admin.register(Semestre_Academico_Profesores)

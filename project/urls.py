@@ -24,7 +24,8 @@ urlpatterns = [
     
     path('admin/', admin.site.urls),
     path("", include('App.urls')),
-     path('jurados/', jurados_list, name='jurados'),
+    path('jurados/', jurados_list, name='jurados'),
+    path('App/get_semanas/<int:semestre_id>/', include('App.urls')),
 
 
 ]

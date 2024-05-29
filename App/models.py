@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.db import models
 
 class Curso(models.Model):
@@ -47,7 +48,30 @@ class SemestreAcademico(models.Model):
 
     def __str__(self):
         return self.nombre
-
+    def calcular_semanas(self):
+        semanas = []
+        current_start = self.fecha_inicio
+        
+        # Calcular el primer domingo
+        first_sunday = current_start + timedelta(days=(6 - current_start.weekday()))
+        if first_sunday > self.fecha_fin:
+            first_sunday = self.fecha_fin
+        
+        # Primera semana parcial
+        semanas.append((current_start, first_sunday))
+        
+        current_start = first_sunday + timedelta(days=1)
+        
+        while current_start + timedelta(days=6) < self.fecha_fin:
+            current_end = current_start + timedelta(days=6)
+            semanas.append((current_start, current_end))
+            current_start = current_end + timedelta(days=1)
+        
+        # Última semana parcial
+        if current_start <= self.fecha_fin:
+            semanas.append((current_start, self.fecha_fin))
+        
+        return semanas
 
 class Cursos_Grupos(models.Model):
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE)
