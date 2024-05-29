@@ -1,0 +1,50 @@
+{% extends "layouts/base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6>Sustentaciones para {{ curso_grupo.curso.nombre }} - {{ curso_grupo.grupo.nombre }}</h6>
+                    <a class="btn btn-primary" href="{% url 'sustentacion_create' curso_grupo.id %}">Crear Sustentación</a>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="d-flex justify-content-end mb-3">
+                        <input type="text" name="q" class="form-control w-25" placeholder="Buscar por título...">
+                    </form>
+                    <a class="btn btn-success me-2" href="{% url 'estudiantes_import' curso_grupo.id %}">Importar Estudiantes</a>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Jurado 1</th>
+                                <th>Jurado 2</th>
+                                <th>Asesor</th>
+                                <th>Título de Tesis</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sustentacion in sustentaciones %}
+                                <tr>
+                                    <td>{{ sustentacion.estudiante.apellidos_nombres }}</td>
+                                    <td>{{ sustentacion.jurado1.apellidos_nombres }}</td>
+                                    <td>{{ sustentacion.jurado2.apellidos_nombres }}</td>
+                                    <td>{{ sustentacion.asesor.apellidos_nombres }}</td>
+                                    <td>{{ sustentacion.titulo }}</td>
+                                    <td>
+                                        <a href="{% url 'sustentacion_update' sustentacion.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                                        <a href="{% url 'sustentacion_delete' sustentacion.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

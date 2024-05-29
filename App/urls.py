@@ -1,7 +1,8 @@
 from django.urls import path
 from App import views
 from django.contrib.auth import views as auth_views
-from .views import jurados_list, jurados_create, jurados_update, jurados_delete, jurados_import
+from .views import jurados_list, jurados_create, jurados_update, jurados_delete, jurados_import, sustentacion_list, sustentacion_create, sustentacion_update, sustentacion_delete, estudiantes_import, semestre_list, semestre_create, semestre_update, semestre_delete
+from .views import grupos_list, grupo_create, grupo_update, grupo_delete
 
 
 urlpatterns = [
@@ -11,11 +12,26 @@ urlpatterns = [
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
     path('accounts/profile/', views.profile, name='profile'),
-    path('jurados/listar', jurados_list, name='jurados_list'),
+    path('jurados/', jurados_list, name='jurados_list'),
     path('jurados/create/', jurados_create, name='jurados_create'),
     path('jurados/update/<int:pk>/', jurados_update, name='jurados_update'),
     path('jurados/delete/<int:pk>/', jurados_delete, name='jurados_delete'),
     path('jurados/import/', jurados_import, name='jurados_import'),
+    # Sustentacion
+    path('sustentaciones/<int:curso_grupo_id>/', sustentacion_list, name='sustentacion_list'),
+    path('sustentaciones/crear/<int:curso_grupo_id>/', sustentacion_create, name='sustentacion_create'),
+    path('sustentaciones/<int:pk>/editar/', sustentacion_update, name='sustentacion_update'),
+    path('sustentaciones/<int:pk>/eliminar/', sustentacion_delete, name='sustentacion_delete'),
+    path('sustentaciones/importar/<int:curso_grupo_id>/', estudiantes_import, name='estudiantes_import'),
+    # Semestre academico
+    path('semestres/', semestre_list, name='semestre_list'),
+    path('semestres/crear/', semestre_create, name='semestre_create'),
+    path('semestres/<int:pk>/editar/', semestre_update, name='semestre_update'),
+    path('semestres/<int:pk>/eliminar/', semestre_delete, name='semestre_delete'),
+    path('semestres/<int:semestre_id>/grupos/', grupos_list, name='grupos_list'),
+    path('semestres/<int:semestre_id>/grupos/crear/', grupo_create, name='grupo_create'),
+    path('grupos/<int:pk>/editar/', grupo_update, name='grupo_update'),
+    path('grupos/<int:pk>/eliminar/', grupo_delete, name='grupo_delete'),
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),

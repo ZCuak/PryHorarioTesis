@@ -42,12 +42,23 @@
                                           <li class="nav-item list-unstyled">{{ model.label }}</li>
                                       {% endif %}
                                   {% endfor %}
+                                  <li class="nav-item list-unstyled">
+                                    <a class="nav-link" href="{% url 'semestre_list' %}">
+                                        <span class="nav-link-text ms-1">Semestres                                                                                                                                                                                                        </span>
+                                    </a>
+                                  </li>
                                   <!-- New item for Jurados -->
                                   <li class="nav-item list-unstyled">
                                       <a class="nav-link" href="{% url 'jurados' %}">
                                           <span class="nav-link-text ms-1">Jurados</span>
                                       </a>
                                   </li>
+                                                                    <!-- New item for Jurados -->
+                                  {% comment %} <li class="nav-item list-unstyled">
+                                    <a class="nav-link" href="{% url 'sustentacion_list' %}">
+                                        <span class="nav-link-text ms-1">Sustentacion                                                                                                                                                                                                        </span>
+                                    </a>
+                                  </li> {% endcomment %}
                               </ul>
                           </div>
                       {% endif %}

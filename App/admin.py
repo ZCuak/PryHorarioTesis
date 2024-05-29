@@ -11,41 +11,41 @@ from django.urls import path
 from django.http import HttpResponseRedirect
 from .forms import ExcelUploadForm
 
-@admin.register(SemestreAcademico)
-class SemestreAcademicoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'vigencia')
-    search_fields = ('nombre',)
-    list_filter = ('vigencia',)
+# @admin.register(SemestreAcademico)
+# class SemestreAcademicoAdmin(admin.ModelAdmin):
+#     list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'vigencia')
+#     search_fields = ('nombre',)
+#     list_filter = ('vigencia',)
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                '<int:semestre_id>/import-profesores/',
-                self.admin_site.admin_view(self.import_profesores),
-                name='import-profesores',
-            ),
-        ]
-        return custom_urls + urls
+#     def get_urls(self):
+#         urls = super().get_urls()
+#         custom_urls = [
+#             path(
+#                 '<int:semestre_id>/import-profesores/',
+#                 self.admin_site.admin_view(self.import_profesores),
+#                 name='import-profesores',
+#             ),
+#         ]
+#         return custom_urls + urls
 
-    def import_profesores(self, request, semestre_id):
-        semestre = self.get_object(request, semestre_id)
-        if request.method == 'POST':
-            form = ExcelUploadForm(request.POST, request.FILES)
-            if form.is_valid():
-                file = form.cleaned_data['file']
-                semestre.import_profesores_from_excel(file)
-                self.message_user(request, "Profesores importados exitosamente")
-                return HttpResponseRedirect(request.path_info)
-        else:
-            form = ExcelUploadForm()
-        context = {
-            'title': 'Importar Profesores',
-            'form': form,
-            'opts': self.model._meta,
-            'semestre': semestre,
-        }
-        return render(request, 'admin/import_profesores.html', context)
+#     def import_profesores(self, request, semestre_id):
+#         semestre = self.get_object(request, semestre_id)
+#         if request.method == 'POST':
+#             form = ExcelUploadForm(request.POST, request.FILES)
+#             if form.is_valid():
+#                 file = form.cleaned_data['file']
+#                 semestre.import_profesores_from_excel(file)
+#                 self.message_user(request, "Profesores importados exitosamente")
+#                 return HttpResponseRedirect(request.path_info)
+#         else:
+#             form = ExcelUploadForm()
+#         context = {
+#             'title': 'Importar Profesores',
+#             'form': form,
+#             'opts': self.model._meta,
+#             'semestre': semestre,
+#         }
+#         return render(request, 'admin/import_profesores.html', context)
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
