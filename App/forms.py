@@ -117,6 +117,10 @@ class SemanaSustentacionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SemanaSustentacionForm, self).__init__(*args, **kwargs)
-        self.fields['semana_inicio'].widget = forms.Select()
-        self.fields['semana_fin'].widget = forms.Select()
+        self.fields['semana_inicio'].widget = forms.Select(attrs={
+            'data-initial-value': self.instance.semana_inicio if self.instance.pk else 1
+        })
+        self.fields['semana_fin'].widget = forms.Select(attrs={
+            'data-initial-value': self.instance.semana_fin if self.instance.pk else 1
+        })
         self.fields['duracion_sustentacion'].label = 'Duración de Sustentación (minutos)'

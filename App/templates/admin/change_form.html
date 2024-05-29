@@ -17,7 +17,7 @@
                 return;
             }
 
-            function actualizarSemanas(semanas) {
+            function actualizarSemanas(semanas, selectedInicio, selectedFin) {
                 console.log('Actualizando semanas:', semanas);
 
                 // Limpiar las opciones actuales
@@ -26,61 +26,88 @@
 
                 // Agregar nuevas opciones basadas en las semanas recibidas
                 semanas.forEach((semana, index) => {
-                    const option = new Option(`Semana ${index + 1}`, index + 1);
+                    const optionText = `Semana ${index + 1}`;
+                    const optionValue = index + 1;
+                    const option = new Option(optionText, optionValue);
                     semanaInicio.add(option);
                     semanaFin.add(option.cloneNode(true));
                 });
 
-                // Seleccionar la primera semana como valor predeterminado
+                console.log('Semana inicio guardada:', selectedInicio);
+                console.log('Semana fin guardada:', selectedFin);
+
+                // Seleccionar la semana guardada como valor predeterminado
                 if (semanas.length > 0) {
-                    semanaInicio.selectedIndex = 0;
-                    semanaFin.selectedIndex = semanas.length - 1;
+                    semanaInicio.value = selectedInicio;
+                    semanaFin.value = selectedFin;
                 }
+
+                console.log('Semana inicio seleccionada:', semanaInicio.value);
+                console.log('Semana fin seleccionada:', semanaFin.value);
 
                 // Actualizar fechas basadas en la selección inicial
                 if (semanas.length > 0) {
-                    fechaInicio.value = semanas[0][0];
-                    fechaFin.value = semanas[semanas.length - 1][1];
+                    fechaInicio.value = semanas[selectedInicio - 1][0];
+                    fechaFin.value = semanas[selectedFin - 1][1];
                 }
+
+                console.log('Fecha inicio seleccionada:', fechaInicio.value);
+                console.log('Fecha fin seleccionada:', fechaFin.value);
+            }
+
+            function cargarSemanas(semestreId, selectedInicio, selectedFin) {
+                console.log('Haciendo solicitud a:', `/App/get_semanas/${semestreId}/`);
+                fetch(`/App/get_semanas/${semestreId}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Datos recibidos:', data);
+                        actualizarSemanas(data, selectedInicio, selectedFin);
+                    })
+                    .catch(error => {
+                        console.error('Hubo un problema con la solicitud fetch:', error);
+                    });
+            }
+
+            // Cargar semanas al inicializar si ya hay un semestre seleccionado
+            if (selectSemestre.value) {
+                const initialSemanaInicio = semanaInicio.getAttribute('data-initial-value');
+                const initialSemanaFin = semanaFin.getAttribute('data-initial-value');
+                console.log('Valores iniciales del formulario - Semana inicio:', initialSemanaInicio, 'Semana fin:', initialSemanaFin);
+                cargarSemanas(selectSemestre.value, initialSemanaInicio, initialSemanaFin);
             }
 
             selectSemestre.addEventListener('change', function() {
                 const semestreId = this.value;
                 console.log('Semestre seleccionado:', semestreId);
                 if (semestreId) {
-                    console.log('Haciendo solicitud a:', `/App/get_semanas/${semestreId}/`);
-                    fetch(`/App/get_semanas/${semestreId}/`)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok ' + response.statusText);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Datos recibidos:', data);
-                            actualizarSemanas(data);
-                        })
-                        .catch(error => {
-                            console.error('Hubo un problema con la solicitud fetch:', error);
-                        });
+                    cargarSemanas(semestreId, 1, 1);
                 }
             });
 
             semanaInicio.addEventListener('change', function() {
                 const selectedIndex = this.selectedIndex;
+                console.log('Semana inicio seleccionada:', selectedIndex + 1);
                 fetch(`/App/get_semanas/${selectSemestre.value}/`)
                     .then(response => response.json())
                     .then(semanas => {
                         fechaInicio.value = semanas[selectedIndex][0];
+                        console.log('Fecha inicio actualizada:', fechaInicio.value);
                     });
             });
 
             semanaFin.addEventListener('change', function() {
                 const selectedIndex = this.selectedIndex;
+                console.log('Semana fin seleccionada:', selectedIndex + 1);
                 fetch(`/App/get_semanas/${selectSemestre.value}/`)
                     .then(response => response.json())
                     .then(semanas => {
                         fechaFin.value = semanas[selectedIndex][1];
+                        console.log('Fecha fin actualizada:', fechaFin.value);
                     });
             });
         });

@@ -360,9 +360,7 @@ def grupo_delete(request, pk):
 
 # Semana Sustentacion
 def get_semanas(request, semestre_id):
-    print(f"Solicitud recibida para semestre_id: {semestre_id}")  # Mensaje de depuración
     semestre = get_object_or_404(SemestreAcademico, pk=semestre_id)
     semanas = semestre.calcular_semanas()
     semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
-    print(f"Semanas calculadas: {semanas_formateadas}")  # Mensaje de depuración
     return JsonResponse(semanas_formateadas, safe=False)
