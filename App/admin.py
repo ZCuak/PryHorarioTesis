@@ -102,11 +102,11 @@ class ProfesorAdmin(admin.ModelAdmin):
 #     list_filter = ('profesor', 'semestre')
 
 
-# @admin.register(Semana_Sustentacion)
-# class SemanaSustentacionAdmin(admin.ModelAdmin):
-#     list_display = ('semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas')
-#     search_fields = ('semestre_academico__nombre', 'curso__nombre')
-#     list_filter = ('semestre_academico', 'curso', 'tipo_sustentacion')
+@admin.register(Semana_Sustentacion)
+class SemanaSustentacionAdmin(admin.ModelAdmin):
+    list_display = ('semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas')
+    search_fields = ('semestre_academico__nombre', 'curso__nombre')
+    list_filter = ('semestre_academico', 'curso', 'tipo_sustentacion')
 
 
 # @admin.register(Semestre_Academico_Profesores)
