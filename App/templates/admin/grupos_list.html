@@ -6,9 +6,12 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header pb-0">
+                <div class="card-header pb-0 d-flex justify-content-between">
                     <h6>Grupos Horarios para {{ semestre.nombre }}</h6>
-                    <a class="btn btn-primary" href="{% url 'grupo_create' semestre.id %}">Crear Grupo Horario</a>
+                    <div>
+                        <a class="btn btn-primary" href="{% url 'grupo_create' semestre.id %}">Crear Grupo Horario</a>
+                        <a class="btn btn-secondary" href="{% url 'semestre_list' %}">Volver</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <table class="table">
