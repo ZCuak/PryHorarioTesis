@@ -34,6 +34,9 @@ urlpatterns = [
     path('grupos/<int:pk>/eliminar/', grupo_delete, name='grupo_delete'),
     # Semanas Sustentacion
     path('App/get_semanas/<int:semestre_id>/', views.get_semanas, name='get_semanas'),
+    # Disponibilidad profesor
+    
+
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),

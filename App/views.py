@@ -366,3 +366,4 @@ def get_semanas(request, semestre_id):
     semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
     print(f"Semanas calculadas: {semanas_formateadas}")  # Mensaje de depuración
     return JsonResponse(semanas_formateadas, safe=False)
+
