@@ -32,6 +32,11 @@ class Profesor(models.Model):
 
     def __str__(self):
         return self.apellidos_nombres
+    
+    class Meta:
+        verbose_name = "Profesor"
+        verbose_name_plural = "Profesores"
+    
 
 
 class SemestreAcademico(models.Model):
@@ -97,6 +102,10 @@ class Semana_Sustentacion(models.Model):
 
     def __str__(self):
         return f"{self.semestre_academico} {self.curso} {self.tipo_sustentacion}"
+    class Meta:
+        verbose_name = "Semana de Sustentación"
+        verbose_name_plural = "Semanas de Sustentación"
+
 
 
 class Semestre_Academico_Profesores(models.Model):
