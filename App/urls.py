@@ -32,6 +32,8 @@ urlpatterns = [
     path('semestres/<int:semestre_id>/grupos/crear/', grupo_create, name='grupo_create'),
     path('grupos/<int:pk>/editar/', grupo_update, name='grupo_update'),
     path('grupos/<int:pk>/eliminar/', grupo_delete, name='grupo_delete'),
+    # Semanas Sustentacion
+    path('App/get_semanas/<int:semestre_id>/', views.get_semanas, name='get_semanas'),
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),
