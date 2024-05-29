@@ -364,3 +364,4 @@ def get_semanas(request, semestre_id):
     semanas = semestre.calcular_semanas()
     semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
     return JsonResponse(semanas_formateadas, safe=False)
+

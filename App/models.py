@@ -112,6 +112,12 @@ class Profesores_Semestre_Academico(models.Model):
     hora_inicio = models.IntegerField()
     hora_fin = models.IntegerField()
 
+    def __str__(self):
+        return f" {self.semestre} {self.profesor}  {self.fecha} {self.hora_inicio} {self.hora_fin}"
+    class Meta:
+        verbose_name = "Disp. del profesor"
+        verbose_name_plural = "Disps. de los profesores"
+
 
 class Semana_Sustentacion(models.Model):
     semestre_academico = models.ForeignKey(SemestreAcademico, on_delete=models.CASCADE)
