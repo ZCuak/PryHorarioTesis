@@ -69,7 +69,7 @@ class UserPasswordChangeForm(PasswordChangeForm):
     
 
 from django import forms
-from .models import Semestre_Academico_Profesores, Sustentacion, SemestreAcademico, Cursos_Grupos,Semana_Sustentacion
+from .models import Semestre_Academico_Profesores, Sustentacion, SemestreAcademico, Cursos_Grupos,Semana_Sustentacion,Profesores_Semestre_Academico
 
 class ProfesorForm(forms.ModelForm):
     class Meta:
@@ -120,3 +120,9 @@ class SemanaSustentacionForm(forms.ModelForm):
         self.fields['semana_inicio'].widget = forms.Select()
         self.fields['semana_fin'].widget = forms.Select()
         self.fields['duracion_sustentacion'].label = 'Duración de Sustentación (minutos)'
+
+class DisponibilidadProfesorForm(forms.ModelForm):
+    class Meta:
+        model = Profesores_Semestre_Academico
+        fields = ['profesor', 'semestre', 'fecha', 'hora_inicio', 'hora_fin']
+
