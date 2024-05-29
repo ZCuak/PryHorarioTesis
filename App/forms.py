@@ -68,9 +68,44 @@ class UserPasswordChangeForm(PasswordChangeForm):
     }), label="Confirm New Password")
     
 
-from .models import Semestre_Academico_Profesores
+from django import forms
+from .models import Semestre_Academico_Profesores, Sustentacion, SemestreAcademico, Cursos_Grupos
 
 class ProfesorForm(forms.ModelForm):
     class Meta:
         model = Semestre_Academico_Profesores
         fields = ['semestre', 'profesor', 'horas_asesoria_semanal']
+
+    def clean_horas_asesoria_semanal(self):
+        horas = self.cleaned_data.get('horas_asesoria_semanal')
+        if horas < 0:
+            raise forms.ValidationError("Las horas de asesoría semanal no pueden ser negativas.")
+        return horas
+
+    def clean(self):
+        cleaned_data = super().clean()
+        semestre = cleaned_data.get('semestre')
+        profesor = cleaned_data.get('profesor')
+        
+        if self.instance.pk is None:  # Only check uniqueness for new instances
+            if Semestre_Academico_Profesores.objects.filter(semestre=semestre, profesor=profesor).exists():
+                raise forms.ValidationError("Este profesor ya está asignado a este semestre.")
+        
+        return cleaned_data
+
+class SustentacionForm(forms.ModelForm):
+    class Meta:
+        model = Sustentacion
+        fields = ['cursos_grupos', 'estudiante', 'jurado1', 'jurado2', 'asesor', 'titulo']
+        
+
+class SemestreAcademicoForm(forms.ModelForm):
+    class Meta:
+        model = SemestreAcademico
+        fields = ['nombre', 'fecha_inicio', 'fecha_fin', 'vigencia']
+
+
+class CursosGruposForm(forms.ModelForm):
+    class Meta:
+        model = Cursos_Grupos
+        fields = ['curso', 'grupo', 'profesor', 'semestre']
