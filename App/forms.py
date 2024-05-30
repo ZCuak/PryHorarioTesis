@@ -129,3 +129,13 @@ class SemanaSustentacionForm(forms.ModelForm):
             'data-initial-value': self.instance.semana_fin if self.instance.pk else 1
         })
         self.fields['duracion_sustentacion'].label = 'Duración de Sustentación (minutos)'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        semana_inicio = cleaned_data.get("semana_inicio")
+        semana_fin = cleaned_data.get("semana_fin")
+
+        if semana_inicio and semana_fin and semana_inicio > semana_fin:
+            raise forms.ValidationError("La semana de inicio no puede ser mayor que la semana de final.")
+
+        return cleaned_data

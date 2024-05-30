@@ -12,6 +12,11 @@
             const fechaInicio = document.getElementById('id_fecha_inicio');
             const fechaFin = document.getElementById('id_fecha_fin');
 
+            let lastValidInicio = semanaInicio.value;
+            let lastValidFin = semanaFin.value;
+            let lastValidFechaInicio = fechaInicio.value;
+            let lastValidFechaFin = fechaFin.value;
+
             if (!selectSemestre || !semanaInicio || !semanaFin || !fechaInicio || !fechaFin) {
                 console.error('No se encontraron los elementos esperados.');
                 return;
@@ -33,12 +38,11 @@
                     semanaFin.add(option.cloneNode(true));
                 });
 
-                console.log('Semana inicio guardada:', selectedInicio);
-                console.log('Semana fin guardada:', selectedFin);
-
                 // Seleccionar la semana guardada como valor predeterminado
-                if (semanas.length > 0) {
+                if (selectedInicio !== undefined) {
                     semanaInicio.value = selectedInicio;
+                }
+                if (selectedFin !== undefined) {
                     semanaFin.value = selectedFin;
                 }
 
@@ -47,12 +51,15 @@
 
                 // Actualizar fechas basadas en la selección inicial
                 if (semanas.length > 0) {
-                    fechaInicio.value = semanas[selectedInicio - 1][0];
-                    fechaFin.value = semanas[selectedFin - 1][1];
+                    fechaInicio.value = semanas[semanaInicio.value - 1][0];
+                    fechaFin.value = semanas[semanaFin.value - 1][1];
                 }
 
-                console.log('Fecha inicio seleccionada:', fechaInicio.value);
-                console.log('Fecha fin seleccionada:', fechaFin.value);
+                // Actualizar valores válidos anteriores
+                lastValidInicio = semanaInicio.value;
+                lastValidFin = semanaFin.value;
+                lastValidFechaInicio = fechaInicio.value;
+                lastValidFechaFin = fechaFin.value;
             }
 
             function cargarSemanas(semestreId, selectedInicio, selectedFin) {
@@ -73,6 +80,30 @@
                     });
             }
 
+            function validarSemanasYFechas() {
+                const inicio = parseInt(semanaInicio.value);
+                const fin = parseInt(semanaFin.value);
+                const fechaInicioValue = new Date(fechaInicio.value);
+                const fechaFinValue = new Date(fechaFin.value);
+
+                if (inicio > fin) {
+                    alert('La semana de inicio no puede ser mayor que la semana de final.');
+                    return false;
+                }
+
+                if (fechaInicioValue > fechaFinValue) {
+                    alert('La fecha de inicio no puede ser mayor que la fecha de final.');
+                    return false;
+                }
+
+                // Actualizar valores válidos anteriores
+                lastValidInicio = semanaInicio.value;
+                lastValidFin = semanaFin.value;
+                lastValidFechaInicio = fechaInicio.value;
+                lastValidFechaFin = fechaFin.value;
+                return true;
+            }
+
             // Cargar semanas al inicializar si ya hay un semestre seleccionado
             if (selectSemestre.value) {
                 const initialSemanaInicio = semanaInicio.getAttribute('data-initial-value');
@@ -85,7 +116,7 @@
                 const semestreId = this.value;
                 console.log('Semestre seleccionado:', semestreId);
                 if (semestreId) {
-                    cargarSemanas(semestreId, 1, 1);
+                    cargarSemanas(semestreId, semanaInicio.value, semanaFin.value);
                 }
             });
 
@@ -97,6 +128,7 @@
                     .then(semanas => {
                         fechaInicio.value = semanas[selectedIndex][0];
                         console.log('Fecha inicio actualizada:', fechaInicio.value);
+                        lastValidFechaInicio = fechaInicio.value; // Actualizar valor válido
                     });
             });
 
@@ -108,7 +140,34 @@
                     .then(semanas => {
                         fechaFin.value = semanas[selectedIndex][1];
                         console.log('Fecha fin actualizada:', fechaFin.value);
+                        lastValidFechaFin = fechaFin.value; // Actualizar valor válido
                     });
+            });
+
+            // Validación al enviar el formulario
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(event) {
+                if (!validarSemanasYFechas()) {
+                    event.preventDefault(); // Prevenir el envío del formulario
+                    semanaInicio.value = lastValidInicio;
+                    semanaFin.value = lastValidFin;
+                    fechaInicio.value = lastValidFechaInicio;
+                    fechaFin.value = lastValidFechaFin;
+                }
+            });
+
+            // Agregar validación a cada botón de guardado
+            const saveButtons = document.querySelectorAll('.submit-row button');
+            saveButtons.forEach(function(button) {
+                button.addEventListener('click', function(event) {
+                    if (!validarSemanasYFechas()) {
+                        event.preventDefault(); // Prevenir el envío del formulario
+                        semanaInicio.value = lastValidInicio;
+                        semanaFin.value = lastValidFin;
+                        fechaInicio.value = lastValidFechaInicio;
+                        fechaFin.value = lastValidFechaFin;
+                    }
+                });
             });
         });
     </script>
@@ -213,7 +272,16 @@
 
                             {% block after_related_objects %}{% endblock %}
 
-                            {% block submit_buttons_bottom %}{% submit_row %}{% endblock %}
+                            {% block submit_buttons_bottom %}
+                            <div class="submit-row">
+                                <button type="submit" class="btn btn-primary" name="_save">
+                                    {% trans 'Guardar' %}
+                                </button>
+                                <button type="submit" class="btn btn-secondary" name="_addanother">
+                                    {% trans 'Guardar y agregar otro' %}
+                                </button>
+                            </div>
+                            {% endblock %}
 
                             {% block admin_change_form_document_ready %}
                                 <script type="text/javascript"
