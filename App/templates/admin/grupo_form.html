@@ -13,8 +13,8 @@
                     <form method="post">
                         {% csrf_token %}
                         {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
-                        <a href="{% url 'grupos_list' semestre.id %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Guardar{% endif %}</button>
+                        <a href="{% url 'grupos_list' semestre.nombre %}" class="btn btn-secondary">Cancelar</a>
                     </form>
                 </div>
             </div>

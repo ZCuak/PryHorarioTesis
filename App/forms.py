@@ -103,7 +103,12 @@ class SemestreAcademicoForm(forms.ModelForm):
     class Meta:
         model = SemestreAcademico
         fields = ['nombre', 'fecha_inicio', 'fecha_fin', 'vigencia']
-
+        widgets = {
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'vigencia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
 
 class CursosGruposForm(forms.ModelForm):
     class Meta:

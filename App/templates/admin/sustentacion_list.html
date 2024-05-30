@@ -7,10 +7,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header pb-0 d-flex justify-content-between">
-                    <h6>Sustentaciones para {{ curso_grupo.curso.nombre }} - {{ curso_grupo.grupo.nombre }}</h6>
+                    <h6>Sustentaciones para {{ curso_grupo.curso.nombre }} ({{ curso_grupo.grupo.nombre }}) - {{curso_grupo.semestre.nombre }} </h6>
                     <div>
                         <a class="btn btn-primary" href="{% url 'sustentacion_create' curso_grupo.id %}">Crear Sustentación</a>
-                        <a class="btn btn-secondary" href="{% url 'grupos_list' curso_grupo.semestre.id %}">Volver</a>
+                        <a class="btn btn-secondary" href="{% url 'grupos_list' curso_grupo.semestre.nombre %}">Volver</a>
                     </div>
                 </div>
                 <div class="card-body">

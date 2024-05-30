@@ -20,7 +20,7 @@
                         </div>
                         {{ form.as_p }}
                         <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
-                        <a href="{% url 'sustentacion_list' curso_grupo_id=curso_grupo.pk %}" class="btn btn-secondary">Cancelar</a>
+                        <a class="btn btn-secondary" href="javascript:history.back()">Volver</a>
                     </form>
                 </div>
             </div>

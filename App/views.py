@@ -156,7 +156,7 @@ def jurados_import(request):
 #Sustentacion
 # Crear y listar grupos horarios
 @staff_member_required
-def sustentacion_list(request, curso_grupo_id):
+def sustentacion_list(request, semestre_nombre, curso_grupo_nombre, curso_grupo_id):
     curso_grupo = get_object_or_404(Cursos_Grupos, id=curso_grupo_id)
     sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
     query = request.GET.get('q')
@@ -316,14 +316,14 @@ def semestre_delete(request, pk):
 
 #grupohorario
 @staff_member_required
-def grupos_list(request, semestre_id):
-    semestre = get_object_or_404(SemestreAcademico, id=semestre_id)
+def grupos_list(request, semestre_nombre):
+    semestre = get_object_or_404(SemestreAcademico, nombre=semestre_nombre)
     grupos = Cursos_Grupos.objects.filter(semestre=semestre)
     return render(request, 'admin/grupos_list.html', {'grupos': grupos, 'semestre': semestre})
 
 @staff_member_required
-def grupo_create(request, semestre_id):
-    semestre = get_object_or_404(SemestreAcademico, id=semestre_id)
+def grupo_create(request, semestre_nombre):
+    semestre = get_object_or_404(SemestreAcademico, nombre=semestre_nombre)
     if request.method == 'POST':
         form = CursosGruposForm(request.POST)
         if form.is_valid():
@@ -331,7 +331,7 @@ def grupo_create(request, semestre_id):
             grupo.semestre = semestre
             grupo.save()
             messages.success(request, "Grupo horario creado exitosamente")
-            return redirect('grupos_list', semestre_id=semestre.id)
+            return redirect('grupos_list', semestre_nombre=semestre.nombre)
     else:
         form = CursosGruposForm(initial={'semestre': semestre})
     return render(request, 'admin/grupo_form.html', {'form': form, 'semestre': semestre})
@@ -344,7 +344,7 @@ def grupo_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, "Grupo horario actualizado exitosamente")
-            return redirect('grupos_list', semestre_id=grupo.semestre.id)
+            return redirect('grupos_list', semestre_nombre=grupo.semestre.nombre)
     else:
         form = CursosGruposForm(instance=grupo)
     return render(request, 'admin/grupo_form.html', {'form': form, 'semestre': grupo.semestre})
@@ -355,7 +355,7 @@ def grupo_delete(request, pk):
     if request.method == 'POST':
         grupo.delete()
         messages.success(request, "Grupo horario eliminado exitosamente")
-        return redirect('grupos_list', semestre_id=grupo.semestre.id)
+        return redirect('grupos_list', semestre_nombre=grupo.semestre.nombre)
     return render(request, 'admin/grupo_confirm_delete.html', {'grupo': grupo})
 
 # Semana Sustentacion

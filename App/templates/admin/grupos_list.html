@@ -9,7 +9,7 @@
                 <div class="card-header pb-0 d-flex justify-content-between">
                     <h6>Grupos Horarios para {{ semestre.nombre }}</h6>
                     <div>
-                        <a class="btn btn-primary" href="{% url 'grupo_create' semestre.id %}">Crear Grupo Horario</a>
+                        <a class="btn btn-primary" href="{% url 'grupo_create' semestre.nombre %}">Crear Grupo Horario</a>
                         <a class="btn btn-secondary" href="{% url 'semestre_list' %}">Volver</a>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                                     <td>
                                         <a href="{% url 'grupo_update' grupo.pk %}" class="btn btn-warning btn-sm">Editar</a>
                                         <a href="{% url 'grupo_delete' grupo.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
-                                        <a href="{% url 'sustentacion_list' curso_grupo_id=grupo.pk %}" class="btn btn-info btn-sm">Sustentación</a>
+                                        <a href="{% url 'sustentacion_list' semestre.nombre grupo.curso.nombre|add:"("|add:grupo.grupo.nombre|add:")" grupo.pk %}" class="btn btn-info btn-sm">Sustentación</a>
                                     </td>
                                 </tr>
                             {% endfor %}

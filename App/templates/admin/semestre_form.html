@@ -12,9 +12,24 @@
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        {{ form.as_p }}
+                        <div class="mb-3">
+                            <label for="id_nombre" class="form-label">Nombre</label>
+                            {{ form.nombre }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_fecha_inicio" class="form-label">Fecha inicio</label>
+                            {{ form.fecha_inicio }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_fecha_fin" class="form-label">Fecha fin</label>
+                            {{ form.fecha_fin }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            <label for="id_vigencia" class="form-check-label">Vigencia</label>
+                            {{ form.vigencia }}
+                        </div>
                         <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
-                        <a href="{% url 'semestre_list' %}" class="btn btn-secondary">Cancelar</a>
+                        <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
                     </form>
                 </div>
             </div>
@@ -22,3 +37,4 @@
     </div>
 </div>
 {% endblock %}
+    
