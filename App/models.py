@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.db import models
+from django.contrib.auth.models import User
 
 class Curso(models.Model):
     nombre = models.CharField(max_length=100)
@@ -30,6 +31,7 @@ class Profesor(models.Model):
     apellidos_nombres = models.CharField(max_length=100)
     dedicacion = models.CharField(max_length=2, choices=[('TC', 'Tiempo Completo'), ('TP', 'Tiempo Parcial')])
     telefono = models.CharField(max_length=20)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.apellidos_nombres
