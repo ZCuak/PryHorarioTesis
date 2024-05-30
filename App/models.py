@@ -108,9 +108,9 @@ class Horario_Sustentaciones(models.Model):
 class Profesores_Semestre_Academico(models.Model):
     profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE)
     semestre = models.ForeignKey(SemestreAcademico, on_delete=models.CASCADE)
-    fecha = models.IntegerField()
-    hora_inicio = models.IntegerField()
-    hora_fin = models.IntegerField()
+    fecha = models.DateField()
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
 
     def __str__(self):
         return f" {self.semestre} {self.profesor}  {self.fecha} {self.hora_inicio} {self.hora_fin}"

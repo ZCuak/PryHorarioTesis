@@ -106,6 +106,7 @@ class ProfesorAdmin(admin.ModelAdmin):
 class DisponibilidadProfesorAdmin(admin.ModelAdmin):
     list_display = ('semestre', 'profesor', 'fecha', 'hora_inicio', 'hora_fin')
     
+    
 
 @admin.register(Semana_Sustentacion)
 class SemanaSustentacionAdmin(admin.ModelAdmin):

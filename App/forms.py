@@ -69,7 +69,7 @@ class UserPasswordChangeForm(PasswordChangeForm):
     
 
 from django import forms
-from .models import Semestre_Academico_Profesores, Sustentacion, SemestreAcademico, Cursos_Grupos,Semana_Sustentacion,Profesores_Semestre_Academico
+from .models import *
 
 class ProfesorForm(forms.ModelForm):
     class Meta:
