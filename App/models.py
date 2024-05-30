@@ -144,3 +144,10 @@ class Semestre_Academico_Profesores(models.Model):
     semestre = models.ForeignKey(SemestreAcademico, on_delete=models.CASCADE)
     profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE)
     horas_asesoria_semanal = models.IntegerField()
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    rol = models.CharField(max_length=1, default='P')
+
+    def __str__(self):
+        return self.user.username

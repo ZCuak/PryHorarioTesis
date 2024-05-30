@@ -4,10 +4,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordChangeView, PasswordResetConfirmView
 from App.forms import RegistrationForm, SustentacionForm,SemestreAcademicoForm, LoginForm, CursosGruposForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm, ExcelUploadForm, ProfesorForm
 from django.contrib.auth import logout
-from .models import Profesor, SemestreAcademico, Semestre_Academico_Profesores, Sustentacion, Estudiante, Cursos_Grupos, Curso, Grupo
+from .models import Profesor, SemestreAcademico, Profile, Semestre_Academico_Profesores, Sustentacion, Estudiante, Cursos_Grupos, Curso, Grupo
 from django.contrib.admin.views.decorators import staff_member_required
 from .forms import ExcelUploadForm
 from django.contrib import messages
+from django.contrib.auth.models import User
+from django.db import transaction
 import pandas as pd
 
 # Create your views here.
@@ -110,6 +112,13 @@ def jurados_delete(request, pk):
         return redirect('jurados_list')
     return render(request, 'admin/jurados_confirm_delete.html', {'jurado': jurado})
 
+
+
+
+from django.db import transaction
+from django.contrib.auth.models import User
+from App.models import Profile, Profesor, SemestreAcademico, Semestre_Academico_Profesores
+
 @staff_member_required
 def jurados_import(request):
     if request.method == 'POST':
@@ -118,30 +127,67 @@ def jurados_import(request):
             file = form.cleaned_data['file']
             try:
                 df = pd.read_excel(file)
-                for index, row in df.iterrows():
-                    profesor, created = Profesor.objects.get_or_create(
-                        email=row['Email'],
-                        defaults={
-                            'apellidos_nombres': row['Apellidos y nombres'],
-                            'dedicacion': row['Dedicación'],
-                            'telefono': row['Teléfono'],
-                        }
-                    )
-                    try:
-                        semestre = SemestreAcademico.objects.get(nombre=row['Semestre'])
-                    except SemestreAcademico.DoesNotExist:
-                        messages.error(request, f"El semestre '{row['Semestre']}' no existe en la base de datos.")
-                        continue
+                with transaction.atomic():
+                    for index, row in df.iterrows():
+                        email = row['Email']
+                        username = email.split('@')[0]
+                        telefono = str(row['Teléfono'])  # Convertir a cadena para la contraseña
 
-                    if Semestre_Academico_Profesores.objects.filter(semestre=semestre, profesor=profesor).exists():
-                        messages.error(request, f"El profesor '{profesor}' ya está asignado al semestre '{semestre}'.")
-                        continue
+                        # Crear usuario en auth_user
+                        user, user_created = User.objects.get_or_create(
+                            username=username,
+                            defaults={
+                                'email': email,
+                                'first_name': row['Apellidos y nombres'].split(' ')[0],  # Primer nombre
+                                'last_name': ' '.join(row['Apellidos y nombres'].split(' ')[1:]),  # Apellidos
+                                'is_staff': True,
+                                'is_active': True,
+                            }
+                        )
+                        if user_created:
+                            user.set_password(telefono)
+                            user.save()
+                        else:
+                            user.email = email
+                            user.set_password(telefono)
+                            user.first_name = row['Apellidos y nombres'].split(' ')[0]
+                            user.last_name = ' '.join(row['Apellidos y nombres'].split(' ')[1:])
+                            user.save()
 
-                    Semestre_Academico_Profesores.objects.update_or_create(
-                        semestre=semestre,
-                        profesor=profesor,
-                        defaults={'horas_asesoria_semanal': row['Horas de asesoría semanal']}
-                    )
+                        # Crear o actualizar el perfil
+                        profile, profile_created = Profile.objects.get_or_create(
+                            user=user,
+                            defaults={'rol': 'P'}
+                        )
+                        if not profile_created:
+                            profile.rol = 'P'
+                            profile.save()
+
+                        # Crear profesor
+                        profesor, created = Profesor.objects.get_or_create(
+                            email=email,
+                            defaults={
+                                'apellidos_nombres': row['Apellidos y nombres'],
+                                'dedicacion': row['Dedicación'],
+                                'telefono': telefono,
+                                'user': user
+                            }
+                        )
+                        try:
+                            semestre = SemestreAcademico.objects.get(nombre=row['Semestre'])
+                        except SemestreAcademico.DoesNotExist:
+                            messages.error(request, f"El semestre '{row['Semestre']}' no existe en la base de datos.")
+                            continue
+
+                        if Semestre_Academico_Profesores.objects.filter(semestre=semestre, profesor=profesor).exists():
+                            messages.error(request, f"El profesor '{profesor}' ya está asignado al semestre '{semestre}'.")
+                            continue
+
+                        Semestre_Academico_Profesores.objects.update_or_create(
+                            semestre=semestre,
+                            profesor=profesor,
+                            defaults={'horas_asesoria_semanal': row['Horas de asesoría semanal']}
+                        )
                 messages.success(request, "Profesores importados exitosamente")
             except Exception as e:
                 messages.error(request, f"Error al importar el archivo: {e}")
@@ -149,8 +195,6 @@ def jurados_import(request):
     else:
         form = ExcelUploadForm()
     return render(request, 'admin/jurados_import.html', {'form': form})
-
-
 
 
 #Sustentacion
@@ -200,7 +244,7 @@ def sustentacion_delete(request, pk):
     if request.method == 'POST':
         sustentacion.delete()
         messages.success(request, "Sustentacion eliminada exitosamente")
-        return redirect('sustentacion_list', curso_grupo_id=curso_grupo.id)
+        return redirect('sustentacion_list', semestre_nombre=curso_grupo.semestre.nombre, curso_grupo_nombre=curso_grupo.curso.nombre +"("+ curso_grupo.grupo.nombre +")", curso_grupo_id=curso_grupo.id)
     return render(request, 'admin/sustentacion_confirm_delete.html', {'sustentacion': sustentacion})
 
 @staff_member_required
