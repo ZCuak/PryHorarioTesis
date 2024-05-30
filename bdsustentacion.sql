@@ -1,9 +1,9 @@
--- phpMyAdmin SQL Dump
+- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 28-05-2024 a las 23:43:54
+-- Tiempo de generación: 30-05-2024 a las 06:13:54
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.1.25
 
@@ -54,6 +54,15 @@ CREATE TABLE `app_cursos_grupos` (
   `semestre_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `app_cursos_grupos`
+--
+
+INSERT INTO `app_cursos_grupos` (`id`, `curso_id`, `grupo_id`, `profesor_id`, `semestre_id`) VALUES
+(1, 3, 2, 8, 1),
+(2, 3, 3, 9, 1),
+(6, 4, 2, 8, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -73,7 +82,13 @@ CREATE TABLE `app_estudiante` (
 --
 
 INSERT INTO `app_estudiante` (`id`, `codigo_universitario`, `apellidos_nombres`, `email`, `telefono`) VALUES
-(1, '201TD02196', 'Ocrospoma Ugaz Frank Anthony', 'frankocrospomaugaz@gmail.com', '920532729');
+(1, '201TD02196', 'Ocrospoma Ugaz Frank Anthony', 'frankocrospomaugaz@gmail.com', '920532729'),
+(7, '201VP00835', 'CHAVARRY CAMPOS JHOSEP RICARDO', 'JCHAVARRY@gmail.com', '921335467'),
+(8, '201EP02888', 'LOPEZ SILVA ROCIO DEL CARMEN', 'RLOPEZ@gmail.com', '970652316'),
+(9, '171CV71666', 'SANCHEZ RIVAS JOSE CARLOS', 'JSANCHEZ@gmail.com', '954690965'),
+(10, '201VP00123', 'MENDOZA CRESPO IVAN', 'IMENDOZA@gmail.com', '921331234'),
+(11, '201EP02321', 'TEJADA TORRES ERIKA', 'ETEJADA@gmail.com', '970654321'),
+(12, '171CV71444', 'VARGAS POLO PAUL', 'PVARGAS@gmail.com', '954698888');
 
 -- --------------------------------------------------------
 
@@ -120,17 +135,18 @@ CREATE TABLE `app_profesor` (
   `email` varchar(100) NOT NULL,
   `apellidos_nombres` varchar(100) NOT NULL,
   `dedicacion` enum('TC','TP') NOT NULL,
-  `telefono` varchar(20) NOT NULL
+  `telefono` varchar(20) NOT NULL,
+  `user_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `app_profesor`
 --
 
-INSERT INTO `app_profesor` (`id`, `email`, `apellidos_nombres`, `dedicacion`, `telefono`) VALUES
-(7, 'ralarcon@usat.edu.pe', 'ALARCON GARCIA ROGER ERNESTO', 'TP', '987654321'),
-(8, 'maranguri@usat.edu.pe', 'ARANGURI GARCIA MARIA YSABEL', 'TC', '912345678'),
-(9, 'hzelada@usat.edu.pe', 'ZELADA VALDIVIESO HECTOR MIGUEL', 'TC', '938359471');
+INSERT INTO `app_profesor` (`id`, `email`, `apellidos_nombres`, `dedicacion`, `telefono`, `user_id`) VALUES
+(7, 'ralarcon@usat.edu.pe', 'ALARCON GARCIA ROGER ERNESTO', 'TP', '987654321', NULL),
+(8, 'maranguri@usat.edu.pe', 'ARANGURI GARCIA MARIA YSABEL', 'TC', '912345678', NULL),
+(9, 'hzelada@usat.edu.pe', 'ZELADA VALDIVIESO HECTOR MIGUEL', 'TC', '938359471', NULL);
 
 -- --------------------------------------------------------
 
@@ -142,9 +158,9 @@ CREATE TABLE `app_profesores_semestre_academico` (
   `id` int(11) NOT NULL,
   `profesor_id` int(11) NOT NULL,
   `semestre_id` int(11) NOT NULL,
-  `fecha` int(11) NOT NULL,
-  `hora_inicio` int(11) NOT NULL,
-  `hora_fin` int(11) NOT NULL
+  `fecha` date NOT NULL,
+  `hora_inicio` time NOT NULL,
+  `hora_fin` time NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -185,7 +201,8 @@ CREATE TABLE `app_semestreacademico` (
 --
 
 INSERT INTO `app_semestreacademico` (`id`, `nombre`, `fecha_inicio`, `fecha_fin`, `vigencia`) VALUES
-(1, '2024-I', '2024-03-28', '2024-07-15', 1);
+(1, '2024-I', '2024-03-20', '2024-07-15', 1),
+(2, '2024-II', '2024-08-20', '2024-12-15', 0);
 
 -- --------------------------------------------------------
 
@@ -205,9 +222,9 @@ CREATE TABLE `app_semestre_academico_profesores` (
 --
 
 INSERT INTO `app_semestre_academico_profesores` (`id`, `semestre_id`, `profesor_id`, `horas_asesoria_semanal`) VALUES
-(4, 1, 7, 2),
-(5, 1, 8, 1),
-(6, 1, 9, 8);
+(10, 1, 7, 2),
+(14, 1, 8, 5),
+(15, 1, 9, 5);
 
 -- --------------------------------------------------------
 
@@ -224,6 +241,16 @@ CREATE TABLE `app_sustentacion` (
   `asesor_id` int(11) NOT NULL,
   `titulo` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `app_sustentacion`
+--
+
+INSERT INTO `app_sustentacion` (`id`, `cursos_grupos_id`, `estudiante_id`, `jurado1_id`, `jurado2_id`, `asesor_id`, `titulo`) VALUES
+(1, 1, 7, NULL, NULL, 7, 'Sistema web ...'),
+(2, 1, 8, NULL, NULL, 8, 'Aplicación Móvil ...'),
+(3, 1, 9, NULL, NULL, 9, 'Solución de BI ...'),
+(4, 1, 1, 7, 8, 9, 'Aplicación web y móvil basado en el Algoritmo de Optimización de Colonia de Hormigas para apoyar el proceso de ventas en la panadería Mishka');
 
 -- --------------------------------------------------------
 
@@ -352,15 +379,16 @@ CREATE TABLE `auth_user` (
   `email` varchar(254) NOT NULL,
   `is_staff` tinyint(1) NOT NULL,
   `is_active` tinyint(1) NOT NULL,
-  `date_joined` datetime(6) NOT NULL
+  `date_joined` datetime(6) NOT NULL,
+  `rol` char(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `auth_user`
 --
 
-INSERT INTO `auth_user` (`id`, `password`, `last_login`, `is_superuser`, `username`, `first_name`, `last_name`, `email`, `is_staff`, `is_active`, `date_joined`) VALUES
-(1, 'pbkdf2_sha256$600000$erSGiNKcW4hyYvrGOX6BQE$VbKU/zqg/F9sx5VqdeniI8V1VSjmF3+G6io5xJRxu1w=', '2024-05-28 08:39:08.700342', 1, 'admin', '', '', 'admin@gmail.com', 1, 1, '2024-05-28 08:28:03.890795');
+INSERT INTO `auth_user` (`id`, `password`, `last_login`, `is_superuser`, `username`, `first_name`, `last_name`, `email`, `is_staff`, `is_active`, `date_joined`, `rol`) VALUES
+(1, 'pbkdf2_sha256$600000$erSGiNKcW4hyYvrGOX6BQE$VbKU/zqg/F9sx5VqdeniI8V1VSjmF3+G6io5xJRxu1w=', '2024-05-29 03:36:08.792643', 1, 'admin', '', '', 'admin@gmail.com', 1, 1, '2024-05-28 08:28:03.890795', NULL);
 
 -- --------------------------------------------------------
 
@@ -418,7 +446,13 @@ INSERT INTO `django_admin_log` (`id`, `action_time`, `object_id`, `object_repr`,
 (8, '2024-05-28 10:41:10.398306', '1', '2024-I', 2, '[{\"changed\": {\"fields\": [\"Nombre\"]}}]', 5, 1),
 (9, '2024-05-28 20:16:08.717787', '6', 'ZELADA VALDIVIESO HECTOR MIGUEL', 3, '', 4, 1),
 (10, '2024-05-28 20:16:08.721786', '5', 'ARANGURI GARCIA MARIA YSABEL', 3, '', 4, 1),
-(11, '2024-05-28 20:16:08.729949', '4', 'ALARCON GARCIA ROGER ERNESTO', 3, '', 4, 1);
+(11, '2024-05-28 20:16:08.729949', '4', 'ALARCON GARCIA ROGER ERNESTO', 3, '', 4, 1),
+(12, '2024-05-28 23:11:53.087260', '2', '2024-II', 1, '[{\"added\": {}}]', 5, 1),
+(13, '2024-05-29 05:01:57.065289', '4', 'SANCHEZ RIVAS JOSE CARLOS', 3, '', 3, 1),
+(14, '2024-05-29 05:01:57.069276', '3', 'LOPEZ SILVA ROCIO DEL CARMEN', 3, '', 3, 1),
+(15, '2024-05-29 05:01:57.071283', '2', 'CHAVARRY CAMPOS JHOSEP RICARDO', 3, '', 3, 1),
+(16, '2024-05-29 05:05:58.836875', '5', 'CHAVARRY CAMPOS JHOSEP RICARDO', 3, '', 3, 1),
+(17, '2024-05-29 05:24:41.484673', '6', 'CHAVARRY CAMPOS JHOSEP RICARDO', 3, '', 3, 1);
 
 -- --------------------------------------------------------
 
@@ -445,7 +479,9 @@ INSERT INTO `django_content_type` (`id`, `app_label`, `model`) VALUES
 (8, 'App', 'horariosustentaciones'),
 (4, 'App', 'profesor'),
 (9, 'App', 'profesoressemestreacademico'),
+(19, 'App', 'profesores_semestre_academico'),
 (10, 'App', 'semanasustentacion'),
+(18, 'App', 'semana_sustentacion'),
 (5, 'App', 'semestreacademico'),
 (11, 'App', 'semestreacademicoprofesores'),
 (7, 'App', 'sustentacion'),
@@ -490,7 +526,8 @@ INSERT INTO `django_migrations` (`id`, `app`, `name`, `applied`) VALUES
 (15, 'auth', '0010_alter_group_name_max_length', '2024-05-28 08:26:29.487439'),
 (16, 'auth', '0011_update_proxy_permissions', '2024-05-28 08:26:29.502500'),
 (17, 'auth', '0012_alter_user_first_name_max_length', '2024-05-28 08:26:29.516040'),
-(18, 'sessions', '0001_initial', '2024-05-28 08:26:29.545152');
+(18, 'sessions', '0001_initial', '2024-05-28 08:26:29.545152'),
+(19, 'App', '0001_initial', '2024-05-30 04:03:09.091186');
 
 -- --------------------------------------------------------
 
@@ -509,7 +546,7 @@ CREATE TABLE `django_session` (
 --
 
 INSERT INTO `django_session` (`session_key`, `session_data`, `expire_date`) VALUES
-('q2pn8rru5lhv0i37l82z9v9yu448gnby', '.eJxVjMsOwiAQRf-FtSEDQ6G6dN9vIAwzSNXQpI-V8d-1SRe6veec-1IxbWuN2yJzHFldlFGn341SfkjbAd9Tu006T22dR9K7og-66GFieV4P9--gpqV-aysQini27DF7KAU7YnJiGAxCAQy-9OceklBwnbNFUjaIRC5bhM6p9wfwDTfo:1sBsMO:xdqtoqK9lpEPYM2IwnNbBpm0kKcDuS1gig2Rsja1bs8', '2024-06-11 08:39:08.706871'),
+('0zjxikla5ve35etqcuvyvj4u1cwfs1a0', '.eJxVjMsOwiAQRf-FtSEDQ6G6dN9vIAwzSNXQpI-V8d-1SRe6veec-1IxbWuN2yJzHFldlFGn341SfkjbAd9Tu006T22dR9K7og-66GFieV4P9--gpqV-aysQini27DF7KAU7YnJiGAxCAQy-9OceklBwnbNFUjaIRC5bhM6p9wfwDTfo:1sCA6i:G75EsSpP_tONc-vVbtChiAJxBUIcBuHxa-_TNL1-7p4', '2024-06-12 03:36:08.800160'),
 ('tl272e5nitbujzk5qgbixcw1uot0niad', '.eJxVjMsOwiAQRf-FtSEDQ6G6dN9vIAwzSNXQpI-V8d-1SRe6veec-1IxbWuN2yJzHFldlFGn341SfkjbAd9Tu006T22dR9K7og-66GFieV4P9--gpqV-aysQini27DF7KAU7YnJiGAxCAQy-9OceklBwnbNFUjaIRC5bhM6p9wfwDTfo:1sBsBk:YYv8KI7ucy8EsPgTyMedri9XpevV9OL5QCzL6INaxfA', '2024-06-11 08:28:08.360002');
 
 --
@@ -557,7 +594,8 @@ ALTER TABLE `app_horario_sustentaciones`
 --
 ALTER TABLE `app_profesor`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indices de la tabla `app_profesores_semestre_academico`
@@ -687,13 +725,13 @@ ALTER TABLE `app_curso`
 -- AUTO_INCREMENT de la tabla `app_cursos_grupos`
 --
 ALTER TABLE `app_cursos_grupos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `app_estudiante`
 --
 ALTER TABLE `app_estudiante`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `app_grupo`
@@ -729,19 +767,19 @@ ALTER TABLE `app_semana_sustentacion`
 -- AUTO_INCREMENT de la tabla `app_semestreacademico`
 --
 ALTER TABLE `app_semestreacademico`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `app_semestre_academico_profesores`
 --
 ALTER TABLE `app_semestre_academico_profesores`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `app_sustentacion`
 --
 ALTER TABLE `app_sustentacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `auth_group`
@@ -783,19 +821,19 @@ ALTER TABLE `auth_user_user_permissions`
 -- AUTO_INCREMENT de la tabla `django_admin_log`
 --
 ALTER TABLE `django_admin_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT de la tabla `django_content_type`
 --
 ALTER TABLE `django_content_type`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `django_migrations`
 --
 ALTER TABLE `django_migrations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- Restricciones para tablas volcadas
@@ -815,6 +853,12 @@ ALTER TABLE `app_cursos_grupos`
 --
 ALTER TABLE `app_horario_sustentaciones`
   ADD CONSTRAINT `FKhorario_su981527` FOREIGN KEY (`sustentacion_id`) REFERENCES `app_sustentacion` (`id`);
+
+--
+-- Filtros para la tabla `app_profesor`
+--
+ALTER TABLE `app_profesor`
+  ADD CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`);
 
 --
 -- Filtros para la tabla `app_profesores_semestre_academico`
