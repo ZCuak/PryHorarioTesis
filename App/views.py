@@ -174,7 +174,7 @@ def sustentacion_create(request, curso_grupo_id):
             sustentacion.cursos_grupos = curso_grupo
             sustentacion.save()
             messages.success(request, "Sustentacion creada exitosamente")
-            return redirect('sustentacion_list', curso_grupo_id=curso_grupo.id)
+            return redirect('sustentacion_list', semestre_nombre=curso_grupo.semestre.nombre, curso_grupo_nombre=curso_grupo.curso.nombre +"("+ curso_grupo.grupo.nombre +")", curso_grupo_id=curso_grupo.id)
     else:
         form = SustentacionForm(initial={'cursos_grupos': curso_grupo})
     return render(request, 'admin/sustentacion_form.html', {'form': form, 'curso_grupo': curso_grupo})
@@ -188,7 +188,7 @@ def sustentacion_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, "Sustentacion actualizada exitosamente")
-            return redirect('sustentacion_list', curso_grupo_id=curso_grupo.id)
+            return redirect('sustentacion_list', semestre_nombre=curso_grupo.semestre.nombre, curso_grupo_nombre=curso_grupo.curso.nombre +"("+ curso_grupo.grupo.nombre +")", curso_grupo_id=curso_grupo.id)
     else:
         form = SustentacionForm(instance=sustentacion)
     return render(request, 'admin/sustentacion_form.html', {'form': form, 'curso_grupo': curso_grupo})
