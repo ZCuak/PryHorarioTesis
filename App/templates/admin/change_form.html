@@ -6,16 +6,23 @@
     <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const cancelButton = document.getElementById('cancel-button');
+            cancelButton.addEventListener('click', function() {
+                window.history.back();
+            });
             const selectSemestre = document.getElementById('id_semestre_academico');
             const semanaInicio = document.getElementById('id_semana_inicio');
             const semanaFin = document.getElementById('id_semana_fin');
             const fechaInicio = document.getElementById('id_fecha_inicio');
             const fechaFin = document.getElementById('id_fecha_fin');
+            
 
             let lastValidInicio = semanaInicio.value;
             let lastValidFin = semanaFin.value;
             let lastValidFechaInicio = fechaInicio.value;
             let lastValidFechaFin = fechaFin.value;
+
+            
 
             if (!selectSemestre || !semanaInicio || !semanaFin || !fechaInicio || !fechaFin) {
                 console.error('No se encontraron los elementos esperados.');
@@ -143,6 +150,7 @@
                         lastValidFechaFin = fechaFin.value; // Actualizar valor válido
                     });
             });
+            
 
             // Validación al enviar el formulario
             const form = document.querySelector('form');
@@ -279,6 +287,9 @@
                                 </button>
                                 <button type="submit" class="btn btn-secondary" name="_addanother">
                                     {% trans 'Guardar y agregar otro' %}
+                                </button>
+                                <button type="button" class="btn btn-danger" id="cancel-button">
+                                    {% trans 'Cancelar' %}
                                 </button>
                             </div>
                             {% endblock %}
