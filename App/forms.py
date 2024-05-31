@@ -116,12 +116,9 @@ class CursosGruposForm(forms.ModelForm):
         fields = ['curso', 'grupo', 'profesor', 'semestre']
 
 class Profesores_Semestre_AcademicoForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['semestre'].queryset = SemestreAcademico.objects.filter(vigencia=True)
     class Meta:
         model = Profesores_Semestre_Academico
-        fields = ['semestre', 'fecha', 'hora_inicio', 'hora_fin']
+        fields = ['fecha', 'hora_inicio', 'hora_fin']
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'hora_inicio': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),

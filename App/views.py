@@ -336,11 +336,10 @@ def semestre_create(request):
 
 @staff_member_required
 def disponibilidad_list(request):
-    #disponibilidades = Profesores_Semestre_Academico.objects.all()
     usuario_logueado = request.user
     try:
         profesor_logueado = Profesor.objects.get(user=usuario_logueado)
-        disponibilidades = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado)
+        disponibilidades = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado).order_by('-fecha')
     except Profesor.DoesNotExist:
         disponibilidades = []
     return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
@@ -352,6 +351,7 @@ def disponibilidad_create(request):
         if form.is_valid():
             disponibilidad = form.save(commit=False)
             disponibilidad.profesor = Profesor.objects.get(user=request.user)
+            disponibilidad.semestre = SemestreAcademico.objects.get(vigencia=True)
             disponibilidad.save()
             messages.success(request, "Disponibilidad horaria creada exitosamente")
             return redirect('disponibilidad_list')
@@ -360,6 +360,8 @@ def disponibilidad_create(request):
     
     return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 
+    
+    return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 @staff_member_required
 def semestre_update(request, pk):
     semestre = get_object_or_404(SemestreAcademico, pk=pk)

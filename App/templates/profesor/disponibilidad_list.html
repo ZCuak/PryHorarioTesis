@@ -15,7 +15,7 @@
                 <div class="card-body">
                     <table class="table">
                         <thead>
-                            <tr>
+                            <tr class="text-center">
                                 <th>Semestre</th>
                                 <th>Fecha</th>
                                 <th>Hora Inicio</th>
@@ -25,7 +25,7 @@
                         </thead>
                         <tbody>
                             {% for disponibilidad in disponibilidades %}
-                                <tr>
+                                <tr class="text-center">
                                     <td>{{ disponibilidad.semestre }}</td>
                                     <td>{{ disponibilidad.fecha }}</td>
                                     <td>{{ disponibilidad.hora_inicio }}</td>
