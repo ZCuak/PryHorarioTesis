@@ -12,7 +12,19 @@ from django.contrib.auth.models import User
 from django.db import transaction
 import pandas as pd
 
-# Create your views here.
+# views.py
+from django.http import JsonResponse
+from .ga import generar_horarios
+
+@staff_member_required
+def ejecutar_algoritmo(request):
+    if request.method == 'POST':
+        try:
+            mejor_horario = generar_horarios()
+            return render(request, 'admin/resultados_algoritmo.html', {'mejor_horario': mejor_horario})
+        except ValueError as e:
+            messages.error(request, str(e))
+    return render(request, 'admin/ejecutar_algoritmo.html')
 
 # Pages
 def index(request):
@@ -104,17 +116,29 @@ def jurados_create(request):
 
 @staff_member_required
 def jurados_update(request, pk):
-    jurado = get_object_or_404(Semestre_Academico_Profesores, pk=pk)
+    semestre_academico_profesor = get_object_or_404(Semestre_Academico_Profesores, pk=pk)
+    profesor = semestre_academico_profesor.profesor
+
     if request.method == 'POST':
-        form = ProfesorForm(request.POST, instance=jurado)
+        form = ProfesorForm(request.POST, instance=profesor)
         if form.is_valid():
-            form.save()
+            profesor = form.save()
+
+            # Actualizar los datos adicionales del modelo Semestre_Academico_Profesores
+            semestre_academico_profesor.semestre = form.cleaned_data['semestre_academico']
+            semestre_academico_profesor.horas_asesoria_semanal = form.cleaned_data['horas_asesoria_semanal']
+            semestre_academico_profesor.save()
+
             messages.success(request, "Jurado actualizado exitosamente")
             return redirect('jurados_list')
     else:
-        form = ProfesorForm(instance=jurado)
-    return render(request, 'admin/jurados_form.html', {'form': form})
+        initial_data = {
+            'semestre_academico': semestre_academico_profesor.semestre,
+            'horas_asesoria_semanal': semestre_academico_profesor.horas_asesoria_semanal,
+        }
+        form = ProfesorForm(instance=profesor, initial=initial_data)
 
+    return render(request, 'admin/jurados_form.html', {'form': form})
 @staff_member_required
 def jurados_delete(request, pk):
     jurado = get_object_or_404(Semestre_Academico_Profesores, pk=pk)

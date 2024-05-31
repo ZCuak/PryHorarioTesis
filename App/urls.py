@@ -10,6 +10,10 @@ urlpatterns = [
     path('tables/', views.tables, name='tables'),
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
+    
+    path('ejecutar_algoritmo/', ejecutar_algoritmo, name='ejecutar_algoritmo'),
+
+    
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
     path('disponibilidad/crear/', disponibilidad_create, name='disponibilidad_create'),
