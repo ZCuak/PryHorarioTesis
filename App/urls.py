@@ -1,8 +1,7 @@
 from django.urls import path
 from App import views
 from django.contrib.auth import views as auth_views
-from .views import jurados_list, jurados_create, jurados_update, jurados_delete, jurados_import, sustentacion_list, sustentacion_create, sustentacion_update, sustentacion_delete, estudiantes_import, semestre_list, semestre_create, semestre_update, semestre_delete
-from .views import grupos_list, grupo_create, grupo_update, grupo_delete
+from .views import *
 
 
 urlpatterns = [
@@ -12,7 +11,8 @@ urlpatterns = [
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
     #Para profesor
-    # path('list_disp/', views.rtl, name='rtl'),
+    path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
+    path('disponibilidad/crear/', disponibilidad_create, name='disponibilidad_create'),
     path('accounts/profile/', views.profile, name='profile'),
     path('jurados/', jurados_list, name='jurados_list'),
     path('jurados/create/', jurados_create, name='jurados_create'),

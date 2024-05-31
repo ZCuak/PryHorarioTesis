@@ -120,10 +120,15 @@ class CursosGruposForm(forms.ModelForm):
         model = Cursos_Grupos
         fields = ['curso', 'grupo', 'profesor', 'semestre']
 
-class Profesores_Semestre_Academico(forms.ModelForm):
+class Profesores_Semestre_AcademicoForm(forms.ModelForm):
     class Meta:
         model = Profesores_Semestre_Academico
-        fields =  ['profesor', 'semestre', 'fecha', 'hora_inicio','hora_fin']
+        fields = ['fecha', 'hora_inicio', 'hora_fin']
+        widgets = {
+            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'hora_inicio': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'hora_fin': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+        }
         
 class SemanaSustentacionForm(forms.ModelForm):
     class Meta:

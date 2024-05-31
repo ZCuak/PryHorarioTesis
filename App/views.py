@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordChangeView, PasswordResetConfirmView
-from App.forms import RegistrationForm, SustentacionForm,SemestreAcademicoForm, LoginForm, CursosGruposForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm, ExcelUploadForm, ProfesorForm
+from App.forms import  *
 from django.contrib.auth import logout
 from .models import Profesor, SemestreAcademico, Profile, Semestre_Academico_Profesores, Sustentacion, Estudiante, Cursos_Grupos, Curso, Grupo
 from django.contrib.admin.views.decorators import staff_member_required
@@ -357,12 +357,32 @@ def semestre_create(request):
 
 @staff_member_required
 def disponibilidad_list(request):
-    usuario_logueado = request.user  
-    profesor_logueado = Profesor.objects.get(usuario=usuario_logueado) 
-    disponibilidad = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado)
-    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidad': disponibilidad})
+    usuario_logueado = request.user
+    try:
+        profesor_logueado = Profesor.objects.get(user=usuario_logueado)
+        disponibilidades = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado).order_by('-fecha')
+    except Profesor.DoesNotExist:
+        disponibilidades = []
+    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
 
+@staff_member_required
+def disponibilidad_create(request):
+    if request.method == 'POST':
+        form = Profesores_Semestre_AcademicoForm(request.POST)
+        if form.is_valid():
+            disponibilidad = form.save(commit=False)
+            disponibilidad.profesor = Profesor.objects.get(user=request.user)
+            disponibilidad.semestre = SemestreAcademico.objects.get(vigencia=True)
+            disponibilidad.save()
+            messages.success(request, "Disponibilidad horaria creada exitosamente")
+            return redirect('disponibilidad_list')
+    else:
+        form = Profesores_Semestre_AcademicoForm()
+    
+    return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 
+    
+    return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 @staff_member_required
 def semestre_update(request, pk):
     semestre = get_object_or_404(SemestreAcademico, pk=pk)
