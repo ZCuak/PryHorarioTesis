@@ -31,15 +31,31 @@ class Profesor(models.Model):
     apellidos_nombres = models.CharField(max_length=100)
     dedicacion = models.CharField(max_length=2, choices=[('TC', 'Tiempo Completo'), ('TP', 'Tiempo Parcial')])
     telefono = models.CharField(max_length=20)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.apellidos_nombres
-    
+
+    def save(self, *args, **kwargs):
+        # Crear usuario en auth_user si no existe
+        if not self.user_id:
+            username = self.email.split('@')[0]
+            user = User(
+                username=username,
+                email=self.email,
+                first_name=self.apellidos_nombres.split(' ')[0],
+                last_name=' '.join(self.apellidos_nombres.split(' ')[1:]),
+                is_active=True,
+                is_staff=True
+            )
+            user.set_password(self.telefono)
+            user.save()
+            self.user = user
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Profesor"
         verbose_name_plural = "Profesores"
-    
 
 
 class SemestreAcademico(models.Model):
@@ -144,6 +160,10 @@ class Semestre_Academico_Profesores(models.Model):
     semestre = models.ForeignKey(SemestreAcademico, on_delete=models.CASCADE)
     profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE)
     horas_asesoria_semanal = models.IntegerField()
+
+    class Meta:
+        verbose_name = "Semestre Académico - Profesor"
+        verbose_name_plural = "Semestres Académicos - Profesores"
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

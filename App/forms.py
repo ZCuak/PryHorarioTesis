@@ -104,11 +104,16 @@ class SemestreAcademicoForm(forms.ModelForm):
         model = SemestreAcademico
         fields = ['nombre', 'fecha_inicio', 'fecha_fin', 'vigencia']
         widgets = {
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'vigencia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super(SemestreAcademicoForm, self).__init__(*args, **kwargs)
+        self.fields['fecha_inicio'].input_formats = ['%Y-%m-%d']
+        self.fields['fecha_fin'].input_formats = ['%Y-%m-%d']
 
 class CursosGruposForm(forms.ModelForm):
     class Meta:
@@ -145,3 +150,15 @@ class SemanaSustentacionForm(forms.ModelForm):
             raise forms.ValidationError("La semana de inicio no puede ser mayor que la semana de final.")
 
         return cleaned_data
+
+
+from django import forms
+from .models import Profesor
+
+class ProfesorForm(forms.ModelForm):
+    semestre_academico = forms.ModelChoiceField(queryset=SemestreAcademico.objects.all(), required=True, label="Semestre Académico")
+    horas_asesoria_semanal = forms.IntegerField(required=True, label="Horas de Asesoría Semanal")
+
+    class Meta:
+        model = Profesor
+        fields = ['email', 'apellidos_nombres', 'dedicacion', 'telefono']

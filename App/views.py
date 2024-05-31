@@ -83,7 +83,19 @@ def jurados_create(request):
     if request.method == 'POST':
         form = ProfesorForm(request.POST)
         if form.is_valid():
-            form.save()
+            profesor = form.save()
+
+            # Obtener los datos adicionales del formulario
+            semestre_academico = form.cleaned_data['semestre_academico']
+            horas_asesoria_semanal = form.cleaned_data['horas_asesoria_semanal']
+
+            # Crear el registro en Semestre_Academico_Profesores
+            Semestre_Academico_Profesores.objects.create(
+                semestre=semestre_academico,
+                profesor=profesor,
+                horas_asesoria_semanal=horas_asesoria_semanal
+            )
+
             messages.success(request, "Jurado creado exitosamente")
             return redirect('jurados_list')
     else:
@@ -267,6 +279,11 @@ def estudiantes_import(request, curso_grupo_id):
                         }
                     )
                     
+                    # Verificar si el estudiante ya está registrado en el mismo curso y grupo
+                    if Sustentacion.objects.filter(cursos_grupos=curso_grupo, estudiante=estudiante).exists():
+                        messages.warning(request, f"El estudiante '{estudiante.apellidos_nombres}' ya está registrado en este curso y grupo.")
+                        continue
+                    
                     # Obtener los profesores (jurados y asesor)
                     jurado1 = None
                     jurado2 = None
@@ -304,7 +321,7 @@ def estudiantes_import(request, curso_grupo_id):
                 messages.success(request, "Estudiantes y sustentaciones importados exitosamente")
             except Exception as e:
                 messages.error(request, f"Error al importar el archivo: {e}")
-            return redirect('sustentacion_list', curso_grupo_id=curso_grupo.id)
+            return redirect('sustentacion_list', semestre_nombre=curso_grupo.semestre.nombre, curso_grupo_nombre=curso_grupo.curso.nombre + "(" + curso_grupo.grupo.nombre + ")", curso_grupo_id=curso_grupo.id)
     else:
         form = ExcelUploadForm()
     return render(request, 'admin/estudiantes_import.html', {'form': form, 'curso_grupo': curso_grupo})
@@ -327,12 +344,16 @@ def semestre_create(request):
     if request.method == 'POST':
         form = SemestreAcademicoForm(request.POST)
         if form.is_valid():
+            if form.cleaned_data['vigencia']:
+                # Si este semestre se establece como vigente, desactivar los demás
+                SemestreAcademico.objects.update(vigencia=False)
             form.save()
             messages.success(request, "Semestre académico creado exitosamente")
             return redirect('semestre_list')
     else:
         form = SemestreAcademicoForm()
     return render(request, 'admin/semestre_form.html', {'form': form})
+
 
 @staff_member_required
 def disponibilidad_list(request):
@@ -348,12 +369,18 @@ def semestre_update(request, pk):
     if request.method == 'POST':
         form = SemestreAcademicoForm(request.POST, instance=semestre)
         if form.is_valid():
+            if form.cleaned_data['vigencia']:
+                # Si este semestre se establece como vigente, desactivar los demás
+                SemestreAcademico.objects.exclude(pk=semestre.pk).update(vigencia=False)
             form.save()
             messages.success(request, "Semestre académico actualizado exitosamente")
             return redirect('semestre_list')
     else:
         form = SemestreAcademicoForm(instance=semestre)
-    return render(request, 'admin/semestre_form.html', {'form': form})
+        print(f"Fecha Inicio: {semestre.fecha_inicio}, Fecha Fin: {semestre.fecha_fin}")
+    return render(request, 'admin/semestre_form.html', {'form': form, 'semestre': semestre})
+
+
 
 @staff_member_required
 def semestre_delete(request, pk):
