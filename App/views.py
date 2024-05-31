@@ -117,7 +117,7 @@ def jurados_delete(request, pk):
 
 from django.db import transaction
 from django.contrib.auth.models import User
-from App.models import Profile, Profesor, SemestreAcademico, Semestre_Academico_Profesores
+from App.models import *
 
 @staff_member_required
 def jurados_import(request):
@@ -333,6 +333,14 @@ def semestre_create(request):
     else:
         form = SemestreAcademicoForm()
     return render(request, 'admin/semestre_form.html', {'form': form})
+
+@staff_member_required
+def disponibilidad_list(request):
+    usuario_logueado = request.user  
+    profesor_logueado = Profesor.objects.get(usuario=usuario_logueado) 
+    disponibilidad = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado)
+    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidad': disponibilidad})
+
 
 @staff_member_required
 def semestre_update(request, pk):

@@ -114,6 +114,11 @@ class CursosGruposForm(forms.ModelForm):
     class Meta:
         model = Cursos_Grupos
         fields = ['curso', 'grupo', 'profesor', 'semestre']
+
+class Profesores_Semestre_Academico(forms.ModelForm):
+    class Meta:
+        model = Profesores_Semestre_Academico
+        fields =  ['profesor', 'semestre', 'fecha', 'hora_inicio','hora_fin']
         
 class SemanaSustentacionForm(forms.ModelForm):
     class Meta:

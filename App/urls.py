@@ -11,6 +11,8 @@ urlpatterns = [
     path('tables/', views.tables, name='tables'),
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
+    #Para profesor
+    # path('list_disp/', views.rtl, name='rtl'),
     path('accounts/profile/', views.profile, name='profile'),
     path('jurados/', jurados_list, name='jurados_list'),
     path('jurados/create/', jurados_create, name='jurados_create'),
