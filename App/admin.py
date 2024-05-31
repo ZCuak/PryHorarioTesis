@@ -64,7 +64,6 @@ class GrupoAdmin(admin.ModelAdmin):
 class EstudianteAdmin(admin.ModelAdmin):
     list_display = ('codigo_universitario', 'apellidos_nombres', 'email', 'telefono')
     search_fields = ('codigo_universitario', 'apellidos_nombres', 'email')
-    list_filter = ('apellidos_nombres',)
 
 
 @admin.register(Profesor)
@@ -113,7 +112,7 @@ class SemanaSustentacionAdmin(admin.ModelAdmin):
     form = SemanaSustentacionForm
     list_display = ('semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas')
     search_fields = ('semestre_academico__nombre', 'curso__nombre')
-    list_filter = ('semestre_academico', 'curso', 'tipo_sustentacion')
+    list_filter = ('curso', 'tipo_sustentacion')
     
     def get_urls(self):
         urls = super().get_urls()
