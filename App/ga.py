@@ -21,32 +21,26 @@ class AlgoritmoGenetico:
     def crear_individuo(self):
         individuo = []
         for curso_grupo in self.cursos_grupos:
-            sustentacion = {
-                'cursos_grupos': curso_grupo,
-                'estudiante': self.seleccionar_estudiante(curso_grupo),
-                'jurado1': self.seleccionar_profesor(curso_grupo),
-                'jurado2': self.seleccionar_profesor(curso_grupo),
-                'asesor': curso_grupo.profesor,
-                'titulo': self.generar_titulo(),
-                'fecha': self.seleccionar_fecha(),
-                'hora_inicio': self.seleccionar_hora(),
-                'hora_fin': None
-            }
-            sustentacion['hora_fin'] = (datetime.combine(datetime.today(), sustentacion['hora_inicio']) + timedelta(minutes=30)).time()
-            individuo.append(sustentacion)
+            sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
+            for sustentacion in sustentaciones:
+                sust_data = {
+                    'cursos_grupos': curso_grupo,
+                    'estudiante': sustentacion.estudiante,
+                    'jurado1': sustentacion.jurado1 if sustentacion.jurado1 else self.seleccionar_profesor(curso_grupo),
+                    'jurado2': sustentacion.jurado2 if sustentacion.jurado2 else self.seleccionar_profesor(curso_grupo),
+                    'asesor': sustentacion.asesor,
+                    'titulo': sustentacion.titulo,
+                    'fecha': self.seleccionar_fecha(),
+                    'hora_inicio': self.seleccionar_hora(),
+                    'hora_fin': None
+                }
+                sust_data['hora_fin'] = (datetime.combine(datetime.today(), sust_data['hora_inicio']) + timedelta(minutes=30)).time()
+                individuo.append(sust_data)
         return individuo
 
-    def seleccionar_estudiante(self, curso_grupo):
-        estudiantes = Estudiante.objects.filter(sustentacion__cursos_grupos=curso_grupo)
-        return random.choice(estudiantes)
-
     def seleccionar_profesor(self, curso_grupo):
-        profesores = Profesor.objects.filter(semestre_academico_profesores__semestre=curso_grupo.semestre)
+        profesores = Profesor.objects.filter(id__in=Semestre_Academico_Profesores.objects.filter(semestre=curso_grupo.semestre).values_list('profesor_id', flat=True))
         return random.choice(profesores)
-
-    def generar_titulo(self):
-        titulos = ["Sistema de Gestión", "Aplicación Móvil", "Solución de BI"]
-        return random.choice(titulos)
 
     def seleccionar_fecha(self):
         return random.choice(self.fechas_sustentacion)
@@ -58,8 +52,8 @@ class AlgoritmoGenetico:
     def calcular_fitness(self, individuo):
         fitness = 0
         for sustentacion in individuo:
-            disponibilidad_jurado1 = self.disponibilidad_profesores.get((sustentacion['jurado1'].id, sustentacion['cursos_grupos'].semestre.id))
-            disponibilidad_jurado2 = self.disponibilidad_profesores.get((sustentacion['jurado2'].id, sustentacion['cursos_grupos'].semestre.id))
+            disponibilidad_jurado1 = self.disponibilidad_profesores.get((sustentacion['jurado1'].id, sustentacion['cursos_grupos'].semestre.id)) if sustentacion['jurado1'] else None
+            disponibilidad_jurado2 = self.disponibilidad_profesores.get((sustentacion['jurado2'].id, sustentacion['cursos_grupos'].semestre.id)) if sustentacion['jurado2'] else None
             disponibilidad_asesor = self.disponibilidad_profesores.get((sustentacion['asesor'].id, sustentacion['cursos_grupos'].semestre.id))
 
             if disponibilidad_jurado1 and disponibilidad_jurado2 and disponibilidad_asesor:
@@ -79,8 +73,10 @@ class AlgoritmoGenetico:
     def mutar(self, individuo):
         if random.random() < 0.1:
             sustentacion_mutada = random.choice(individuo)
-            sustentacion_mutada['jurado1'] = self.seleccionar_profesor(sustentacion_mutada['cursos_grupos'])
-            sustentacion_mutada['jurado2'] = self.seleccionar_profesor(sustentacion_mutada['cursos_grupos'])
+            if not sustentacion_mutada['jurado1']:
+                sustentacion_mutada['jurado1'] = self.seleccionar_profesor(sustentacion_mutada['cursos_grupos'])
+            if not sustentacion_mutada['jurado2']:
+                sustentacion_mutada['jurado2'] = self.seleccionar_profesor(sustentacion_mutada['cursos_grupos'])
         return individuo
 
     def evolucionar(self):
