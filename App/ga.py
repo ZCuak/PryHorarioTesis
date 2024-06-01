@@ -3,12 +3,11 @@ from datetime import datetime, timedelta
 from .models import Estudiante, Profesor, Cursos_Grupos, Sustentacion, Horario_Sustentaciones, Profesores_Semestre_Academico, Semana_Sustentacion, Semestre_Academico_Profesores
 
 class AlgoritmoGenetico:
-    def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores, fechas_sustentacion):
+    def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores):
         self.poblacion_size = poblacion_size
         self.generaciones = generaciones
         self.cursos_grupos = cursos_grupos
         self.disponibilidad_profesores = disponibilidad_profesores
-        self.fechas_sustentacion = fechas_sustentacion
         self.poblacion = self.inicializar_poblacion()
 
     def inicializar_poblacion(self):
@@ -23,6 +22,7 @@ class AlgoritmoGenetico:
         for curso_grupo in self.cursos_grupos:
             sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
             for sustentacion in sustentaciones:
+                fecha = self.seleccionar_fecha(curso_grupo.curso)
                 sust_data = {
                     'cursos_grupos': curso_grupo,
                     'estudiante': sustentacion.estudiante,
@@ -30,11 +30,11 @@ class AlgoritmoGenetico:
                     'jurado2': sustentacion.jurado2 if sustentacion.jurado2 else self.seleccionar_profesor(curso_grupo),
                     'asesor': sustentacion.asesor,
                     'titulo': sustentacion.titulo,
-                    'fecha': self.seleccionar_fecha(),
-                    'hora_inicio': self.seleccionar_hora(),
+                    'fecha': fecha,
+                    'hora_inicio': self.seleccionar_hora(fecha),
                     'hora_fin': None
                 }
-                sust_data['hora_fin'] = (datetime.combine(datetime.today(), sust_data['hora_inicio']) + timedelta(minutes=30)).time()
+                sust_data['hora_fin'] = (datetime.combine(fecha, sust_data['hora_inicio']) + timedelta(minutes=30)).time()
                 individuo.append(sust_data)
         return individuo
 
@@ -42,10 +42,17 @@ class AlgoritmoGenetico:
         profesores = Profesor.objects.filter(id__in=Semestre_Academico_Profesores.objects.filter(semestre=curso_grupo.semestre).values_list('profesor_id', flat=True))
         return random.choice(profesores)
 
-    def seleccionar_fecha(self):
-        return random.choice(self.fechas_sustentacion)
+    def seleccionar_fecha(self, curso):
+        semanas = Semana_Sustentacion.objects.filter(curso=curso)
+        if semanas.exists():
+            semana = random.choice(semanas)
+            start_date = semana.fecha_inicio
+            end_date = semana.fecha_fin
+            delta = end_date - start_date
+            return start_date + timedelta(days=random.randint(0, delta.days))
+        return datetime.today().date()
 
-    def seleccionar_hora(self):
+    def seleccionar_hora(self, fecha):
         horas = [datetime.strptime(f"{hour}:00", "%H:%M").time() for hour in range(8, 18)]
         return random.choice(horas)
 
@@ -101,24 +108,20 @@ def generar_horarios():
         (disp.profesor.id, disp.semestre.id): disp
         for disp in Profesores_Semestre_Academico.objects.all()
     }
-    fechas_sustentacion = [sem.fecha_inicio for sem in Semana_Sustentacion.objects.all()]
-    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
+    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores)
     mejor_horario = ag.ejecutar()
     return mejor_horario
 
 def guardar_horario(mejor_horario):
     for sustentacion in mejor_horario:
-        nueva_sustentacion = Sustentacion.objects.create(
-            cursos_grupos=sustentacion['cursos_grupos'],
-            estudiante=sustentacion['estudiante'],
-            jurado1=sustentacion['jurado1'],
-            jurado2=sustentacion['jurado2'],
-            asesor=sustentacion['asesor'],
-            titulo=sustentacion['titulo']
-        )
         Horario_Sustentaciones.objects.create(
             fecha=sustentacion['fecha'],
             hora_inicio=sustentacion['hora_inicio'],
             hora_fin=sustentacion['hora_fin'],
-            sustentacion=nueva_sustentacion
+            sustentacion=Sustentacion.objects.get(
+                cursos_grupos=sustentacion['cursos_grupos'],
+                estudiante=sustentacion['estudiante'],
+                asesor=sustentacion['asesor'],
+                titulo=sustentacion['titulo']
+            )
         )
