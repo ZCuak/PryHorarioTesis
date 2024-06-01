@@ -127,7 +127,11 @@ class SemanaSustentacionAdmin(admin.ModelAdmin):
         semanas = semestre.calcular_semanas()
         semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
         return JsonResponse(semanas_formateadas, safe=False)
-
+    
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['has_change_form'] = True
+        return super(SemanaSustentacionAdmin, self).change_view(request, object_id, form_url, extra_context=extra_context)
 
 # @admin.register(Semestre_Academico_Profesores)
 # class SemestreAcademicoProfesoresAdmin(admin.ModelAdmin):
