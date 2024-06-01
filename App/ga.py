@@ -41,8 +41,7 @@ class AlgoritmoGenetico:
         return random.choice(estudiantes)
 
     def seleccionar_profesor(self, curso_grupo):
-        profesores_disponibles = Profesores_Semestre_Academico.objects.filter(semestre=curso_grupo.semestre).values_list('profesor', flat=True)
-        profesores = Profesor.objects.filter(id__in=profesores_disponibles)
+        profesores = Profesor.objects.filter(semestre_academico_profesores__semestre=curso_grupo.semestre)
         return random.choice(profesores)
 
     def generar_titulo(self):

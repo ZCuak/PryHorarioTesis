@@ -75,6 +75,7 @@ def guardar_horarios(request):
             messages.error(request, "No hay horarios para guardar.")
             return redirect('resultado_algoritmo')
     return redirect('home')
+
 # Pages
 def index(request):
     return render(request, 'pages/index.html', { 'segment': 'index' })
