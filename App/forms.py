@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm, UsernameField, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from bootstrap_datepicker_plus.widgets import DatePickerInput
 
 from django import forms
 
@@ -134,6 +135,10 @@ class SemanaSustentacionForm(forms.ModelForm):
     class Meta:
         model = Semana_Sustentacion
         fields = ['semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas']
+        widgets = {
+            'fecha_inicio': DatePickerInput(format='%Y-%m-%d'),
+            'fecha_fin': DatePickerInput(format='%Y-%m-%d'),
+        }
 
     def __init__(self, *args, **kwargs):
         super(SemanaSustentacionForm, self).__init__(*args, **kwargs)
