@@ -1,7 +1,6 @@
 import random
 from datetime import datetime, timedelta
-from django.db import models
-from .models import *
+from .models import Estudiante, Profesor, Cursos_Grupos, Sustentacion, Horario_Sustentaciones, Profesores_Semestre_Academico, Semana_Sustentacion
 
 class AlgoritmoGenetico:
     def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores, fechas_sustentacion):
@@ -42,14 +41,9 @@ class AlgoritmoGenetico:
         return random.choice(estudiantes)
 
     def seleccionar_profesor(self, curso_grupo):
-        profesores = Profesor.objects.all()
-        while True:
-            profesor = random.choice(profesores)
-            if self.verificar_disponibilidad(profesor, curso_grupo.semestre):
-                return profesor
-
-    def verificar_disponibilidad(self, profesor, semestre):
-        return (profesor.id, semestre.id) in self.disponibilidad_profesores
+        profesores_disponibles = Profesores_Semestre_Academico.objects.filter(semestre=curso_grupo.semestre).values_list('profesor', flat=True)
+        profesores = Profesor.objects.filter(id__in=profesores_disponibles)
+        return random.choice(profesores)
 
     def generar_titulo(self):
         titulos = ["Sistema de Gestión", "Aplicación Móvil", "Solución de BI"]

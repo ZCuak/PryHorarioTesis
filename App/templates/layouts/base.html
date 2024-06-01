@@ -20,6 +20,8 @@
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
 
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
     <!-- Nucleo Icons -->
     <link href="{% static 'css/nucleo-icons.css' %}" rel="stylesheet" />
     <link href="{% static 'css/nucleo-svg.css' %}" rel="stylesheet" />
@@ -66,6 +68,11 @@
 <script src="{% static 'js/scripts.js' %}"></script>
 
 {% block extrascript %}{% endblock extrascript %}
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+{% block js %}{% endblock %}
 
 </body>
 </html>
