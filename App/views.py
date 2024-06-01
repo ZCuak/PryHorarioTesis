@@ -448,7 +448,7 @@ def disponibilidad_list(request):
         disponibilidades = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado).order_by('-fecha')
     except Profesor.DoesNotExist:
         disponibilidades = []
-    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
+    return render(request, 'profesor/wea.html', {'disponibilidades': disponibilidades})
 
 @staff_member_required
 def disponibilidad_create(request):

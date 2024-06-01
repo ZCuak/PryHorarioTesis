@@ -1,0 +1,106 @@
+{% extends "layouts/base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <title>Tabla de Horario Interactiva</title>
+    <style>
+        #calendar {
+            max-width: 900px;
+            margin: 20px auto;
+        }
+        .btn-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="btn-container">
+        <button class="btn" id="saveEvents">Guardar Horarios</button>
+        <button class="btn" id="loadEvents">Cargar Horarios</button>
+    </div>
+    <div id="calendar"></div>
+    <script>
+        $(document).ready(function() {
+            // Función para guardar eventos en localStorage
+            function saveEvents() {
+                var events = $('#calendar').fullCalendar('clientEvents');
+                var eventData = events.map(event => ({
+                    title: event.title,
+                    start: event.start.format(),
+                    end: event.end ? event.end.format() : null
+                }));
+                console.log(eventData);
+                localStorage.setItem('calendarEvents', JSON.stringify(eventData));
+                alert('Horarios guardados correctamente.');
+            }
+
+            // Función para cargar eventos desde localStorage
+            function loadEvents() {
+                var eventData = JSON.parse(localStorage.getItem('calendarEvents'));
+                if (eventData) {
+                    $('#calendar').fullCalendar('removeEvents');
+                    eventData.forEach(event => {
+                        $('#calendar').fullCalendar('renderEvent', event, true);
+                    });
+                    alert('Horarios cargados correctamente.');
+                } else {
+                    alert('No hay horarios guardados.');
+                }
+            }
+            
+            // Inicializar el calendario
+            $('#calendar').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                },
+                defaultView: 'agendaWeek',
+                selectable: true,
+                selectHelper: true,
+                select: function(start, end) {
+                    var title = prompt('Ingrese el nombre del evento:');
+                    if (title) {
+                        var eventData = {
+                            title: title,
+                            start: start,
+                            end: end
+                        };
+                        $('#calendar').fullCalendar('renderEvent', eventData, true);
+                    }
+                    $('#calendar').fullCalendar('unselect');
+                },
+                editable: true,
+                events: [],
+                minTime: '07:00:00',
+                maxTime: '24:00:00',
+                slotLabelFormat: 'H(:mm)' // Formato de 24 horas
+            });
+
+            // Asociar funciones a los botones
+            $('#saveEvents').click(saveEvents);
+            $('#loadEvents').click(loadEvents);
+
+            // Cargar eventos guardados al inicio
+            loadEvents();
+        });
+    </script>
+</body>
+</html>
+{% endblock %}
