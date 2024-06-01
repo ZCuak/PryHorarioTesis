@@ -3,22 +3,20 @@ from datetime import datetime, timedelta
 from django.db import models
 from .models import *
 
-# Algoritmo genético
 class AlgoritmoGenetico:
-    def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores):
+    def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores, fechas_sustentacion):
         self.poblacion_size = poblacion_size
         self.generaciones = generaciones
         self.cursos_grupos = cursos_grupos
         self.disponibilidad_profesores = disponibilidad_profesores
+        self.fechas_sustentacion = fechas_sustentacion
         self.poblacion = self.inicializar_poblacion()
 
     def inicializar_poblacion(self):
-        print("Inicializando población...")
         poblacion = []
         for _ in range(self.poblacion_size):
             individuo = self.crear_individuo()
             poblacion.append(individuo)
-        print(f"Población inicial: {poblacion}")
         return poblacion
 
     def crear_individuo(self):
@@ -30,57 +28,59 @@ class AlgoritmoGenetico:
                 'jurado1': self.seleccionar_profesor(curso_grupo),
                 'jurado2': self.seleccionar_profesor(curso_grupo),
                 'asesor': curso_grupo.profesor,
-                'titulo': self.generar_titulo()
+                'titulo': self.generar_titulo(),
+                'fecha': self.seleccionar_fecha(),
+                'hora_inicio': self.seleccionar_hora(),
+                'hora_fin': None
             }
+            sustentacion['hora_fin'] = (datetime.combine(datetime.today(), sustentacion['hora_inicio']) + timedelta(minutes=30)).time()
             individuo.append(sustentacion)
         return individuo
 
     def seleccionar_estudiante(self, curso_grupo):
-        sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
-        estudiantes = [sustentacion.estudiante for sustentacion in sustentaciones]
-        if not estudiantes:
-            raise ValueError(f"No hay estudiantes disponibles para el curso_grupo {curso_grupo}")
-        estudiante = random.choice(estudiantes)
-        print(f"Seleccionado estudiante {estudiante} para el curso {curso_grupo}")
-        return estudiante
+        estudiantes = Estudiante.objects.filter(sustentacion__cursos_grupos=curso_grupo)
+        return random.choice(estudiantes)
 
     def seleccionar_profesor(self, curso_grupo):
         profesores = Profesor.objects.all()
-        if not profesores:
-            raise ValueError(f"No hay profesores disponibles")
-        profesor = random.choice(profesores)
-        print(f"Seleccionado profesor {profesor} para el curso {curso_grupo}")
-        return profesor
+        while True:
+            profesor = random.choice(profesores)
+            if self.verificar_disponibilidad(profesor, curso_grupo.semestre):
+                return profesor
+
+    def verificar_disponibilidad(self, profesor, semestre):
+        return (profesor.id, semestre.id) in self.disponibilidad_profesores
 
     def generar_titulo(self):
         titulos = ["Sistema de Gestión", "Aplicación Móvil", "Solución de BI"]
-        titulo = random.choice(titulos)
-        print(f"Generado título: {titulo}")
-        return titulo
+        return random.choice(titulos)
+
+    def seleccionar_fecha(self):
+        return random.choice(self.fechas_sustentacion)
+
+    def seleccionar_hora(self):
+        horas = [datetime.strptime(f"{hour}:00", "%H:%M").time() for hour in range(8, 18)]
+        return random.choice(horas)
 
     def calcular_fitness(self, individuo):
         fitness = 0
         for sustentacion in individuo:
-            # Verificar disponibilidad de los profesores
             disponibilidad_jurado1 = self.disponibilidad_profesores.get((sustentacion['jurado1'].id, sustentacion['cursos_grupos'].semestre.id))
             disponibilidad_jurado2 = self.disponibilidad_profesores.get((sustentacion['jurado2'].id, sustentacion['cursos_grupos'].semestre.id))
             disponibilidad_asesor = self.disponibilidad_profesores.get((sustentacion['asesor'].id, sustentacion['cursos_grupos'].semestre.id))
 
             if disponibilidad_jurado1 and disponibilidad_jurado2 and disponibilidad_asesor:
                 fitness += 1
-        print(f"Fitness calculado para individuo: {fitness}")
         return fitness
 
     def seleccionar_padres(self):
         padres = random.sample(self.poblacion, 2)
-        print(f"Seleccionados padres: {padres}")
         return padres
 
     def cruzar(self, padre1, padre2):
         punto_cruce = random.randint(1, len(padre1) - 1)
         hijo1 = padre1[:punto_cruce] + padre2[punto_cruce:]
         hijo2 = padre2[:punto_cruce] + padre1[punto_cruce:]
-        print(f"Cruzados padres en punto {punto_cruce}: hijo1 = {hijo1}, hijo2 = {hijo2}")
         return hijo1, hijo2
 
     def mutar(self, individuo):
@@ -88,11 +88,9 @@ class AlgoritmoGenetico:
             sustentacion_mutada = random.choice(individuo)
             sustentacion_mutada['jurado1'] = self.seleccionar_profesor(sustentacion_mutada['cursos_grupos'])
             sustentacion_mutada['jurado2'] = self.seleccionar_profesor(sustentacion_mutada['cursos_grupos'])
-            print(f"Mutado individuo: {individuo}")
         return individuo
 
     def evolucionar(self):
-        print("Evolucionando población...")
         nueva_poblacion = []
         while len(nueva_poblacion) < self.poblacion_size:
             padres = self.seleccionar_padres()
@@ -100,25 +98,38 @@ class AlgoritmoGenetico:
             nueva_poblacion.append(self.mutar(hijo1))
             nueva_poblacion.append(self.mutar(hijo2))
         self.poblacion = nueva_poblacion
-        print(f"Nueva población: {nueva_poblacion}")
 
     def ejecutar(self):
-        for generacion in range(self.generaciones):
-            print(f"Generación {generacion + 1}")
+        for _ in range(self.generaciones):
             self.poblacion = sorted(self.poblacion, key=lambda ind: self.calcular_fitness(ind), reverse=True)
             self.evolucionar()
         mejor_individuo = max(self.poblacion, key=lambda ind: self.calcular_fitness(ind))
-        print(f"Mejor individuo encontrado: {mejor_individuo}")
         return mejor_individuo
 
-# Uso del algoritmo genético
 def generar_horarios():
     cursos_grupos = Cursos_Grupos.objects.all()
     disponibilidad_profesores = {
         (disp.profesor.id, disp.semestre.id): disp
         for disp in Profesores_Semestre_Academico.objects.all()
     }
-    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores)
+    fechas_sustentacion = [sem.fecha_inicio for sem in Semana_Sustentacion.objects.all()]
+    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
     mejor_horario = ag.ejecutar()
-    print(f"Mejor horario generado: {mejor_horario}")
     return mejor_horario
+
+def guardar_horario(mejor_horario):
+    for sustentacion in mejor_horario:
+        nueva_sustentacion = Sustentacion.objects.create(
+            cursos_grupos=sustentacion['cursos_grupos'],
+            estudiante=sustentacion['estudiante'],
+            jurado1=sustentacion['jurado1'],
+            jurado2=sustentacion['jurado2'],
+            asesor=sustentacion['asesor'],
+            titulo=sustentacion['titulo']
+        )
+        Horario_Sustentaciones.objects.create(
+            fecha=sustentacion['fecha'],
+            hora_inicio=sustentacion['hora_inicio'],
+            hora_fin=sustentacion['hora_fin'],
+            sustentacion=nueva_sustentacion
+        )

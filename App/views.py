@@ -14,17 +14,78 @@ import pandas as pd
 
 # views.py
 from django.http import JsonResponse
-from .ga import generar_horarios
+from .ga import generar_horarios, guardar_horario
 
 @staff_member_required
 def ejecutar_algoritmo(request):
     if request.method == 'POST':
-        try:
-            mejor_horario = generar_horarios()
-            return render(request, 'admin/resultados_algoritmo.html', {'mejor_horario': mejor_horario})
-        except ValueError as e:
-            messages.error(request, str(e))
+        mejor_horario = generar_horarios()
+        # Convertir objetos a diccionarios
+        mejor_horario_dict = [
+            {
+                'cursos_grupos': {
+                    'curso': sustentacion['cursos_grupos'].curso.nombre,
+                    'grupo': sustentacion['cursos_grupos'].grupo.nombre,
+                    'profesor': sustentacion['cursos_grupos'].profesor.apellidos_nombres,
+                    'semestre': sustentacion['cursos_grupos'].semestre.nombre,
+                },
+                'estudiante': sustentacion['estudiante'].apellidos_nombres,
+                'jurado1': sustentacion['jurado1'].apellidos_nombres,
+                'jurado2': sustentacion['jurado2'].apellidos_nombres,
+                'asesor': sustentacion['asesor'].apellidos_nombres,
+                'titulo': sustentacion['titulo'],
+                'fecha': sustentacion['fecha'].isoformat(),
+                'hora_inicio': sustentacion['hora_inicio'].isoformat(),
+                'hora_fin': sustentacion['hora_fin'].isoformat(),
+            }
+            for sustentacion in mejor_horario
+        ]
+        # Almacenar el mejor horario en la sesión para usarlo después
+        request.session['mejor_horario'] = mejor_horario_dict
+        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario_dict})
     return render(request, 'admin/ejecutar_algoritmo.html')
+
+@staff_member_required
+def guardar_horarios(request):
+    if request.method == 'POST':
+        mejor_horario = request.session.get('mejor_horario', [])
+        if mejor_horario:
+            for sustentacion_data in mejor_horario:
+                curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
+                grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
+                profesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['cursos_grupos']['profesor'])
+                semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
+
+                cursos_grupos = Cursos_Grupos.objects.get_or_create(
+                    curso=curso, grupo=grupo, profesor=profesor, semestre=semestre)[0]
+                
+                estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
+                jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
+                jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
+                asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
+
+                sustentacion = Sustentacion.objects.create(
+                    cursos_grupos=cursos_grupos,
+                    estudiante=estudiante,
+                    jurado1=jurado1,
+                    jurado2=jurado2,
+                    asesor=asesor,
+                    titulo=sustentacion_data['titulo'],
+                )
+
+                Horario_Sustentaciones.objects.create(
+                    sustentacion=sustentacion,
+                    fecha=sustentacion_data['fecha'],
+                    hora_inicio=sustentacion_data['hora_inicio'],
+                    hora_fin=sustentacion_data['hora_fin'],
+                )
+            messages.success(request, "Horarios guardados exitosamente.")
+            return redirect('resultado_algoritmo')
+        else:
+            messages.error(request, "No hay horarios para guardar.")
+            return redirect('resultado_algoritmo')
+    return redirect('home')
+
 
 # Pages
 def index(request):

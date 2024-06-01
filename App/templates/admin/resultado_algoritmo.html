@@ -1,0 +1,54 @@
+{% extends "layouts/base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6>Resultado del Algoritmo Genético</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Curso - Grupo</th>
+                                    <th>Estudiante</th>
+                                    <th>Jurado 1</th>
+                                    <th>Jurado 2</th>
+                                    <th>Asesor</th>
+                                    <th>Título</th>
+                                    <th>Fecha</th>
+                                    <th>Hora Inicio</th>
+                                    <th>Hora Fin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sustentacion in mejor_horario %}
+                                    <tr>
+                                        <td>{{ sustentacion.cursos_grupos.curso }} - {{ sustentacion.cursos_grupos.grupo }}</td>
+                                        <td>{{ sustentacion.estudiante }}</td>
+                                        <td>{{ sustentacion.jurado1 }}</td>
+                                        <td>{{ sustentacion.jurado2 }}</td>
+                                        <td>{{ sustentacion.asesor }}</td>
+                                        <td>{{ sustentacion.titulo }}</td>
+                                        <td>{{ sustentacion.fecha }}</td>
+                                        <td>{{ sustentacion.hora_inicio }}</td>
+                                        <td>{{ sustentacion.hora_fin }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <form method="post" action="{% url 'guardar_horarios' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success mt-3">Guardar Horarios</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

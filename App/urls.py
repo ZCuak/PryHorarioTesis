@@ -11,8 +11,8 @@ urlpatterns = [
     path('vr/', views.vr, name='vr'),
     path('rtl/', views.rtl, name='rtl'),
     
-    path('ejecutar_algoritmo/', ejecutar_algoritmo, name='ejecutar_algoritmo'),
-
+    path('ejecutar_algoritmo/', views.ejecutar_algoritmo, name='ejecutar_algoritmo'),
+    path('guardar_horarios/', views.guardar_horarios, name='guardar_horarios'),
     
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
