@@ -518,26 +518,46 @@ def disponibilidad_list(request):
         disponibilidades = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado).order_by('-fecha')
     except Profesor.DoesNotExist:
         disponibilidades = []
-    return render(request, 'profesor/wea.html', {'disponibilidades': disponibilidades})
+    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
+
+
+
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
 
 @staff_member_required
+@csrf_exempt
 def disponibilidad_create(request):
     if request.method == 'POST':
-        form = Profesores_Semestre_AcademicoForm(request.POST)
-        if form.is_valid():
-            disponibilidad = form.save(commit=False)
-            disponibilidad.profesor = Profesor.objects.get(user=request.user)
-            disponibilidad.semestre = SemestreAcademico.objects.get(vigencia=True)
-            disponibilidad.save()
-            messages.success(request, "Disponibilidad horaria creada exitosamente")
-            return redirect('disponibilidad_list')
+            data = json.loads(request.body)
+            print(data)
+            profesor = Profesor.objects.get(user=request.user)
+            semestre = SemestreAcademico.objects.get(vigencia=True)
+            
+            for evento in data:
+                form = Profesores_Semestre_AcademicoForm({
+                    'fecha': evento['start'].split('T')[0],
+                    'hora_inicio': evento['start'].split('T')[1],
+                    'hora_fin': evento['end'].split('T')[1] if evento['end'] else None
+                })
+                if form.is_valid():
+                    disponibilidad = form.save(commit=False)
+                    disponibilidad.profesor = profesor
+                    disponibilidad.semestre = semestre
+                    disponibilidad.save()
+                else:
+                    pass
+            return JsonResponse({"status": "success", "message": "Eventos guardados correctamente."})    
     else:
-        form = Profesores_Semestre_AcademicoForm()
+        pass
     
+    form = Profesores_Semestre_AcademicoForm()
     return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 
     
-    return render(request, 'profesor/disponibilidad_form.html', {'form': form})
+    
 @staff_member_required
 def semestre_update(request, pk):
     semestre = get_object_or_404(SemestreAcademico, pk=pk)
