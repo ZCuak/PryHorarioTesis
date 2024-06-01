@@ -55,12 +55,23 @@ def verificar_disponibilidad(mejor_horario):
         jurado1_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre)
         jurado2_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre)
         asesor_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre)
-        if not jurado1_disp.exists():
+        
+        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not jurado1_disp.exists():
             no_disponibles.append(sustentacion['jurado1'].apellidos_nombres)
-        if not jurado2_disp.exists():
+            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not jurado1_disp.exists():
+                no_disponibles.remove(sustentacion['jurado1'].apellidos_nombres)
+
+        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not jurado2_disp.exists():
             no_disponibles.append(sustentacion['jurado2'].apellidos_nombres)
-        if not asesor_disp.exists():
+            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not jurado2_disp.exists():
+                no_disponibles.remove(sustentacion['jurado2'].apellidos_nombres)
+
+        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not asesor_disp.exists():
             no_disponibles.append(sustentacion['asesor'].apellidos_nombres)
+            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not asesor_disp.exists():
+                no_disponibles.remove(sustentacion['asesor'].apellidos_nombres)
+
+    
     return list(set(no_disponibles))
 
 @staff_member_required
@@ -68,7 +79,35 @@ def guardar_horarios(request):
     if request.method == 'POST':
         mejor_horario = request.session.get('mejor_horario', [])
         if mejor_horario:
-            guardar_horario(mejor_horario)
+            for sustentacion_data in mejor_horario:
+                curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
+                grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
+                profesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['cursos_grupos']['profesor'])
+                semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
+
+                cursos_grupos = Cursos_Grupos.objects.get_or_create(
+                    curso=curso, grupo=grupo, profesor=profesor, semestre=semestre)[0]
+                
+                estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
+                jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
+                jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
+                asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
+
+                sustentacion = Sustentacion.objects.create(
+                    cursos_grupos=cursos_grupos,
+                    estudiante=estudiante,
+                    jurado1=jurado1,
+                    jurado2=jurado2,
+                    asesor=asesor,
+                    titulo=sustentacion_data['titulo'],
+                )
+
+                Horario_Sustentaciones.objects.create(
+                    sustentacion=sustentacion,
+                    fecha=sustentacion_data['fecha'],
+                    hora_inicio=sustentacion_data['hora_inicio'],
+                    hora_fin=sustentacion_data['hora_fin'],
+                )
             messages.success(request, "Horarios guardados exitosamente.")
             return redirect('resultado_algoritmo')
         else:
@@ -76,7 +115,49 @@ def guardar_horarios(request):
             return redirect('resultado_algoritmo')
     return redirect('home')
 
-# Pages
+
+@staff_member_required
+def guardar_horarios(request):
+    if request.method == 'POST':
+        mejor_horario = request.session.get('mejor_horario', [])
+        if mejor_horario:
+            for sustentacion_data in mejor_horario:
+                curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
+                grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
+                profesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['cursos_grupos']['profesor'])
+                semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
+
+                cursos_grupos = Cursos_Grupos.objects.get_or_create(
+                    curso=curso, grupo=grupo, profesor=profesor, semestre=semestre)[0]
+                
+                estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
+                jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
+                jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
+                asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
+
+                sustentacion = Sustentacion.objects.create(
+                    cursos_grupos=cursos_grupos,
+                    estudiante=estudiante,
+                    jurado1=jurado1,
+                    jurado2=jurado2,
+                    asesor=asesor,
+                    titulo=sustentacion_data['titulo'],
+                )
+
+                Horario_Sustentaciones.objects.create(
+                    sustentacion=sustentacion,
+                    fecha=sustentacion_data['fecha'],
+                    hora_inicio=sustentacion_data['hora_inicio'],
+                    hora_fin=sustentacion_data['hora_fin'],
+                )
+            messages.success(request, "Horarios guardados exitosamente.")
+            return redirect('resultado_algoritmo')
+        else:
+            messages.error(request, "No hay horarios para guardar.")
+            return redirect('resultado_algoritmo')
+    return redirect('home')
+
+
 def index(request):
     return render(request, 'pages/index.html', { 'segment': 'index' })
 

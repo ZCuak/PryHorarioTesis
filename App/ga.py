@@ -1,6 +1,6 @@
 import random
 from datetime import datetime, timedelta
-from .models import Estudiante, Profesor, Cursos_Grupos, Sustentacion, Horario_Sustentaciones, Profesores_Semestre_Academico, Semana_Sustentacion
+from .models import Estudiante, Profesor, Cursos_Grupos, Sustentacion, Horario_Sustentaciones, Profesores_Semestre_Academico, Semana_Sustentacion, Semestre_Academico_Profesores
 
 class AlgoritmoGenetico:
     def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores, fechas_sustentacion):
