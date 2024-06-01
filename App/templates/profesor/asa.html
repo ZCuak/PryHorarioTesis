@@ -39,26 +39,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
 <script>
     $(document).ready(function () {
-        // Hacer una solicitud AJAX para obtener las fechas mínima y máxima
-        $.ajax({
-            url: "{% url 'obtener_fechas_min_max' %}",
-            dataType: 'json',
-            success: function(data) {
-                var fechaInicioMin = data.fecha_inicio_min;
-                var fechaFinMax = data.fecha_fin_max;
-                
-                // Configurar el rango válido en el calendario
-                $('#calendar').fullCalendar('option', 'validRange', {
-                    start: fechaInicioMin,
-                    end: fechaFinMax
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error al obtener las fechas:', error);
-            }
-        });
-        // console.log(fechaInicioMin)
-        // console.log(fechaFinMax)
         // Función para guardar eventos en el servidor
         function saveEvents() {
             var events = $('#calendar').fullCalendar('clientEvents');
@@ -100,6 +80,10 @@
             selectHelper: true,
             hiddenDays: [0],  
             locale: 'es',  // Establece el idioma a español
+            validRange: {
+                start: '2024-06-01',  // Fecha de inicio
+                end: '2024-06-14'     // Fecha de fin
+            },
             select: function (start, end) {
                 var title = prompt('Ingrese el nombre del evento:');
                 if (title) {
@@ -121,23 +105,22 @@
 
         // Asociar funciones a los botones
         $('#saveEvents').click(saveEvents);
+    });
 
-        // Función para obtener el token CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                let cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    let cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+    // Función para obtener el token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
-    });
+        return cookieValue;
+    }
 </script>
-
 {% endblock %}
