@@ -553,15 +553,7 @@ def disponibilidad_create(request):
             print(data)
             profesor = Profesor.objects.get(user=request.user)
             semestre = SemestreAcademico.objects.get(vigencia=True)
-            # Obtener las fechas de la tabla semana_sustentación para el semestre vigente
-            fechas_semana_sustentacion = Semana_Sustentacion.objects.filter(semestre=semestre)
-            
-            # Encontrar la fecha de inicio más temprana y la fecha de fin más tardía
-            fecha_inicio_min = fechas_semana_sustentacion.aggregate(Min('fecha_inicio'))['fecha_inicio__min']
-            fecha_fin_max = fechas_semana_sustentacion.aggregate(Max('fecha_fin'))['fecha_fin__max']
-
-            print(fecha_inicio_min)
-            print(fecha_fin_max)
+  
             for evento in data:
                 form = Profesores_Semestre_AcademicoForm({
                     'fecha': evento['start'].split('T')[0],
