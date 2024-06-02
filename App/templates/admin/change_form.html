@@ -4,8 +4,8 @@
 {% block extrahead %}
 
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'bootstrap_datepicker_plus/css/datepicker-widget.css' %}">
-    <link rel="stylesheet" href="{% static 'bootstrap_datepicker_plus/css/datepicker3.css' %}">
+    <link rel="stylesheet" href="{% static 'css/flatpickr.min.css' %}">
+    <script src="{% static 'js/flatpickr.js' %}"></script>
     <style>
         .input-group.date {
             display: flex;
@@ -38,186 +38,246 @@
         }
     </style>
     
-    
-    
-    
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="{% static 'bootstrap_datepicker_plus/js/datepicker-widget.js' %}"></script>
     <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const cancelButton = document.getElementById('cancel-button');
-            cancelButton.addEventListener('click', function() {
-                window.history.back();
-            });
-            const selectSemestre = document.getElementById('id_semestre_academico');
-            const semanaInicio = document.getElementById('id_semana_inicio');
-            const semanaFin = document.getElementById('id_semana_fin');
-            const fechaInicio = document.getElementById('id_fecha_inicio');
-            const fechaFin = document.getElementById('id_fecha_fin');
-            
+    const cancelButton = document.getElementById('cancel-button');
+    cancelButton.addEventListener('click', function() {
+        window.history.back();
+    });
 
-            let lastValidInicio = semanaInicio.value;
-            let lastValidFin = semanaFin.value;
-            let lastValidFechaInicio = fechaInicio.value;
-            let lastValidFechaFin = fechaFin.value;
+    // Obtener la fecha de hoy en formato YYYY-MM-DD
+    const today = new Date();
+    const todayFormatted = today.toISOString().split('T')[0];
 
-            
-
-            if (!selectSemestre || !semanaInicio || !semanaFin || !fechaInicio || !fechaFin) {
-                console.error('No se encontraron los elementos esperados.');
-                return;
+    // Configuración de flatpickr
+    const datepickers = flatpickr(".datepicker", {
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        mode: "single",
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            // Remover la clase 'today' del día de hoy
+            if (dayElem.dateObj.toISOString().split('T')[0] === todayFormatted) {
+                dayElem.classList.remove("today");
             }
+        }
+    });
 
-            function actualizarSemanas(semanas, selectedInicio, selectedFin) {
-                console.log('Actualizando semanas:', semanas);
+    const selectSemestre = document.getElementById('id_semestre_academico');
+    const semanaInicio = document.getElementById('id_semana_inicio');
+    const semanaFin = document.getElementById('id_semana_fin');
+    const fechaInicio = document.getElementById('id_fecha_inicio');
+    const fechaFin = document.getElementById('id_fecha_fin');
 
-                // Limpiar las opciones actuales
-                semanaInicio.innerHTML = '';
-                semanaFin.innerHTML = '';
+    let lastValidInicio = semanaInicio.value;
+    let lastValidFin = semanaFin.value;
+    let lastValidFechaInicio = fechaInicio.value;
+    let lastValidFechaFin = fechaFin.value;
 
-                // Agregar nuevas opciones basadas en las semanas recibidas
-                semanas.forEach((semana, index) => {
-                    const optionText = `Semana ${index + 1}`;
-                    const optionValue = index + 1;
-                    const option = new Option(optionText, optionValue);
-                    semanaInicio.add(option);
-                    semanaFin.add(option.cloneNode(true));
-                });
+    if (!selectSemestre || !semanaInicio || !semanaFin || !fechaInicio || !fechaFin) {
+        console.error('No se encontraron los elementos esperados.');
+        return;
+    }
 
-                // Seleccionar la semana guardada como valor predeterminado
-                if (selectedInicio !== undefined) {
-                    semanaInicio.value = selectedInicio;
-                }
-                if (selectedFin !== undefined) {
-                    semanaFin.value = selectedFin;
-                }
+    function formatDate(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00'); // Asegurar que se interprete correctamente en la misma zona horaria
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
-                console.log('Semana inicio seleccionada:', semanaInicio.value);
-                console.log('Semana fin seleccionada:', semanaFin.value);
+    function actualizarSemanas(semanas, selectedInicio, selectedFin) {
+        console.log('Actualizando semanas:', semanas);
 
-                // Actualizar fechas basadas en la selección inicial
-                if (semanas.length > 0) {
-                    fechaInicio.value = semanas[semanaInicio.value - 1][0];
-                    fechaFin.value = semanas[semanaFin.value - 1][1];
-                }
+        // Limpiar las opciones actuales
+        semanaInicio.innerHTML = '';
+        semanaFin.innerHTML = '';
 
-                // Actualizar valores válidos anteriores
-                lastValidInicio = semanaInicio.value;
-                lastValidFin = semanaFin.value;
-                lastValidFechaInicio = fechaInicio.value;
-                lastValidFechaFin = fechaFin.value;
-            }
-
-            function cargarSemanas(semestreId, selectedInicio, selectedFin) {
-                console.log('Haciendo solicitud a:', `/App/get_semanas/${semestreId}/`);
-                fetch(`/App/get_semanas/${semestreId}/`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Datos recibidos:', data);
-                        actualizarSemanas(data, selectedInicio, selectedFin);
-                    })
-                    .catch(error => {
-                        console.error('Hubo un problema con la solicitud fetch:', error);
-                    });
-            }
-
-            function validarSemanasYFechas() {
-                const inicio = parseInt(semanaInicio.value);
-                const fin = parseInt(semanaFin.value);
-                const fechaInicioValue = new Date(fechaInicio.value);
-                const fechaFinValue = new Date(fechaFin.value);
-
-                if (inicio > fin) {
-                    alert('La semana de inicio no puede ser mayor que la semana de final.');
-                    return false;
-                }
-
-                if (fechaInicioValue > fechaFinValue) {
-                    alert('La fecha de inicio no puede ser mayor que la fecha de final.');
-                    return false;
-                }
-
-                // Actualizar valores válidos anteriores
-                lastValidInicio = semanaInicio.value;
-                lastValidFin = semanaFin.value;
-                lastValidFechaInicio = fechaInicio.value;
-                lastValidFechaFin = fechaFin.value;
-                return true;
-            }
-
-            // Cargar semanas al inicializar si ya hay un semestre seleccionado
-            if (selectSemestre.value) {
-                const initialSemanaInicio = semanaInicio.getAttribute('data-initial-value');
-                const initialSemanaFin = semanaFin.getAttribute('data-initial-value');
-                console.log('Valores iniciales del formulario - Semana inicio:', initialSemanaInicio, 'Semana fin:', initialSemanaFin);
-                cargarSemanas(selectSemestre.value, initialSemanaInicio, initialSemanaFin);
-            }
-
-            selectSemestre.addEventListener('change', function() {
-                const semestreId = this.value;
-                console.log('Semestre seleccionado:', semestreId);
-                if (semestreId) {
-                    cargarSemanas(semestreId, semanaInicio.value, semanaFin.value);
-                }
-            });
-
-            semanaInicio.addEventListener('change', function() {
-                const selectedIndex = this.selectedIndex;
-                console.log('Semana inicio seleccionada:', selectedIndex + 1);
-                fetch(`/App/get_semanas/${selectSemestre.value}/`)
-                    .then(response => response.json())
-                    .then(semanas => {
-                        fechaInicio.value = semanas[selectedIndex][0];
-                        console.log('Fecha inicio actualizada:', fechaInicio.value);
-                        lastValidFechaInicio = fechaInicio.value; // Actualizar valor válido
-                    });
-            });
-
-            semanaFin.addEventListener('change', function() {
-                const selectedIndex = this.selectedIndex;
-                console.log('Semana fin seleccionada:', selectedIndex + 1);
-                fetch(`/App/get_semanas/${selectSemestre.value}/`)
-                    .then(response => response.json())
-                    .then(semanas => {
-                        fechaFin.value = semanas[selectedIndex][1];
-                        console.log('Fecha fin actualizada:', fechaFin.value);
-                        lastValidFechaFin = fechaFin.value; // Actualizar valor válido
-                    });
-            });
-            
-
-            // Validación al enviar el formulario
-            const form = document.querySelector('form');
-            form.addEventListener('submit', function(event) {
-                if (!validarSemanasYFechas()) {
-                    event.preventDefault(); // Prevenir el envío del formulario
-                    semanaInicio.value = lastValidInicio;
-                    semanaFin.value = lastValidFin;
-                    fechaInicio.value = lastValidFechaInicio;
-                    fechaFin.value = lastValidFechaFin;
-                }
-            });
-
-            // Agregar validación a cada botón de guardado
-            const saveButtons = document.querySelectorAll('.submit-row button');
-            saveButtons.forEach(function(button) {
-                button.addEventListener('click', function(event) {
-                    if (!validarSemanasYFechas()) {
-                        event.preventDefault(); // Prevenir el envío del formulario
-                        semanaInicio.value = lastValidInicio;
-                        semanaFin.value = lastValidFin;
-                        fechaInicio.value = lastValidFechaInicio;
-                        fechaFin.value = lastValidFechaFin;
-                    }
-                });
-            });
+        // Agregar nuevas opciones basadas en las semanas recibidas
+        semanas.forEach((semana, index) => {
+            const optionText = `Semana ${index + 1}`;
+            const optionValue = index + 1;
+            semanaInicio.add(new Option(optionText, optionValue));
+            semanaFin.add(new Option(optionText, optionValue));
         });
+
+        // Seleccionar la semana guardada como valor predeterminado
+        if (selectedInicio !== undefined) {
+            semanaInicio.value = selectedInicio;
+        }
+        if (selectedFin !== undefined) {
+            semanaFin.value = selectedFin;
+        }
+
+        console.log('Semana inicio seleccionada:', semanaInicio.value);
+        console.log('Semana fin seleccionada:', semanaFin.value);
+
+        // Validar que los índices sean correctos
+        const inicioIndex = parseInt(semanaInicio.value) - 1;
+        const finIndex = parseInt(semanaFin.value) - 1;
+
+        if (inicioIndex < 0 || inicioIndex >= semanas.length || finIndex < 0 || finIndex >= semanas.length) {
+            console.error('Índices de semanas fuera de rango');
+            return;
+        }
+
+        // Actualizar fechas basadas en la selección inicial
+        if (semanas.length > 0) {
+            let fechaInicioValue = semanas[inicioIndex][0];
+            let fechaFinValue = semanas[finIndex][1];
+
+            fechaInicio.value = formatDate(fechaInicioValue);
+            fechaFin.value = formatDate(fechaFinValue);
+
+            // Actualizar el valor de Flatpickr manualmente
+            datepickers[0].setDate(fechaInicio.value, true);
+            datepickers[1].setDate(fechaFin.value, true);
+
+            // Disparar evento change para que se reconozcan los cambios
+            fechaInicio.dispatchEvent(new Event('change'));
+            fechaFin.dispatchEvent(new Event('change'));
+        }
+
+        // Actualizar valores válidos anteriores
+        lastValidInicio = semanaInicio.value;
+        lastValidFin = semanaFin.value;
+        lastValidFechaInicio = fechaInicio.value;
+        lastValidFechaFin = fechaFin.value;
+    }
+
+    function cargarSemanas(semestreId, selectedInicio, selectedFin) {
+        console.log('Haciendo solicitud a:', `/App/get_semanas/${semestreId}/`);
+        fetch(`/App/get_semanas/${semestreId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                actualizarSemanas(data, selectedInicio, selectedFin);
+            })
+            .catch(error => {
+                console.error('Hubo un problema con la solicitud fetch:', error);
+            });
+    }
+
+    function validarSemanasYFechas() {
+        const inicio = parseInt(semanaInicio.value);
+        const fin = parseInt(semanaFin.value);
+        const fechaInicioValue = new Date(fechaInicio.value + 'T00:00:00'); // Asegurar que se interprete correctamente en la misma zona horaria
+        const fechaFinValue = new Date(fechaFin.value + 'T00:00:00'); // Asegurar que se interprete correctamente en la misma zona horaria
+
+        if (isNaN(inicio) || isNaN(fin)) {
+            alert('Por favor, selecciona las semanas.');
+            return false;
+        }
+
+        if (inicio > fin) {
+            alert('La semana de inicio no puede ser mayor que la semana de final.');
+            return false;
+        }
+
+        if (fechaInicioValue > fechaFinValue) {
+            alert('La fecha de inicio no puede ser mayor que la fecha de final.');
+            return false;
+        }
+
+        // Actualizar valores válidos anteriores
+        lastValidInicio = semanaInicio.value;
+        lastValidFin = semanaFin.value;
+        lastValidFechaInicio = fechaInicio.value;
+        lastValidFechaFin = fechaFin.value;
+        return true;
+    }
+
+    // Cargar semanas al inicializar si ya hay un semestre seleccionado
+    if (selectSemestre.value) {
+        const initialSemanaInicio = semanaInicio.getAttribute('data-initial-value');
+        const initialSemanaFin = semanaFin.getAttribute('data-initial-value');
+        console.log('Valores iniciales del formulario - Semana inicio:', initialSemanaInicio, 'Semana fin:', initialSemanaFin);
+        cargarSemanas(selectSemestre.value, initialSemanaInicio, initialSemanaFin);
+    }
+
+    selectSemestre.addEventListener('change', function() {
+        const semestreId = this.value;
+        console.log('Semestre seleccionado:', semestreId);
+        if (semestreId) {
+            cargarSemanas(semestreId, semanaInicio.value, semanaFin.value);
+        }
+    });
+
+    semanaInicio.addEventListener('change', function() {
+        const selectedIndex = parseInt(this.value) - 1;
+        console.log('Semana inicio seleccionada:', selectedIndex + 1);
+        fetch(`/App/get_semanas/${selectSemestre.value}/`)
+            .then(response => response.json())
+            .then(semanas => {
+                console.log('Semanas recibidas al cambiar semana inicio:', semanas);
+                if (selectedIndex >= 0 && selectedIndex < semanas.length) {
+                    const fechaInicioValue = semanas[selectedIndex][0];
+                    console.log(fechaInicioValue);
+                    fechaInicio.value = formatDate(fechaInicioValue);
+                    fechaInicio.dispatchEvent(new Event('change'));
+                    console.log('Fecha inicio actualizada:', fechaInicio.value);
+                    datepickers[0].setDate(fechaInicio.value, true);
+                    lastValidFechaInicio = fechaInicio.value;
+                } else {
+                    console.error('Índice de semana inicio fuera de rango');
+                }
+            });
+    });
+
+    semanaFin.addEventListener('change', function() {
+        const selectedIndex = parseInt(this.value) - 1;
+        console.log('Semana fin seleccionada:', selectedIndex + 1);
+        fetch(`/App/get_semanas/${selectSemestre.value}/`)
+            .then(response => response.json())
+            .then(semanas => {
+                console.log('Semanas recibidas al cambiar semana fin:', semanas);
+                if (selectedIndex >= 0 && selectedIndex < semanas.length) {
+                    const fechaFinValue = semanas[selectedIndex][1];
+                    fechaFin.value = formatDate(fechaFinValue);
+                    fechaFin.dispatchEvent(new Event('change'));
+                    console.log('Fecha fin actualizada:', fechaFin.value);
+                    datepickers[1].setDate(fechaFin.value, true);
+                    lastValidFechaFin = fechaFin.value;
+                } else {
+                    console.error('Índice de semana fin fuera de rango');
+                }
+            });
+    });
+
+    // Validación al enviar el formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        if (!validarSemanasYFechas()) {
+            event.preventDefault(); // Prevenir el envío del formulario
+            semanaInicio.value = lastValidInicio;
+            semanaFin.value = lastValidFin;
+            fechaInicio.value = lastValidFechaInicio;
+            fechaFin.value = lastValidFechaFin;
+        }
+    });
+
+    // Agregar validación a cada botón de guardado
+    const saveButtons = document.querySelectorAll('.submit-row button');
+    saveButtons.forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            if (!validarSemanasYFechas()) {
+                event.preventDefault(); // Prevenir el envío del formulario
+                semanaInicio.value = lastValidInicio;
+                semanaFin.value = lastValidFin;
+                fechaInicio.value = lastValidFechaInicio;
+                fechaFin.value = lastValidFechaFin;
+            }
+        });
+    });
+});
+
     </script>
     {{ media }}
 {% endblock %}
