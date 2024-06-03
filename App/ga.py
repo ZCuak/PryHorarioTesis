@@ -44,12 +44,10 @@ class AlgoritmoGenetico:
     def seleccionar_fecha_hora(self, curso_grupo, sustentacion):
         semanas = Semana_Sustentacion.objects.filter(curso=curso_grupo.curso)
         fechas_disponibles = []
-
         for semana in semanas:
             start_date = semana.fecha_inicio
             end_date = semana.fecha_fin
             delta = end_date - start_date
-
             for i in range(delta.days + 1):
                 day = start_date + timedelta(days=i)
                 horas = [datetime.strptime(f"{hour}:00", "%H:%M").time() for hour in range(8, 18)]
@@ -57,12 +55,11 @@ class AlgoritmoGenetico:
                     hora_fin = (datetime.combine(day, hora) + timedelta(minutes=30)).time()
                     if self.verificar_disponibilidad(sustentacion, day, hora, hora_fin):
                         fechas_disponibles.append((day, hora, hora_fin))
-
+        
         if fechas_disponibles:
             return random.choice(fechas_disponibles)
         else:
             return datetime.today().date(), datetime.strptime("08:00", "%H:%M").time(), datetime.strptime("08:30", "%H:%M").time()
-
 
     def verificar_disponibilidad(self, sustentacion, fecha, hora_inicio, hora_fin):
         jurado1_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion.jurado1, fecha=fecha, hora_inicio__lte=hora_inicio, hora_fin__gte=hora_fin).exists() if sustentacion.jurado1 else True
@@ -139,3 +136,4 @@ def guardar_horario(mejor_horario):
                 titulo=sustentacion['titulo']
             )
         )
+

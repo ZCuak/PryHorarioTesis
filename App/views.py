@@ -49,41 +49,30 @@ def ejecutar_algoritmo(request):
         return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario_dict})
     return render(request, 'admin/ejecutar_algoritmo.html')
 
-@staff_member_required
-
 def verificar_disponibilidad(mejor_horario):
     no_disponibles = []
     for sustentacion in mejor_horario:
-        jurado1_disp = Profesores_Semestre_Academico.objects.filter(
-            profesor__apellidos_nombres=sustentacion['jurado1'],
-            fecha=sustentacion['fecha'],
-            hora_inicio__lte=sustentacion['hora_inicio'],
-            hora_fin__gte=sustentacion['hora_fin']
-        ).exists()
+        jurado1_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre)
+        jurado2_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre)
+        asesor_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre)
+        
+        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not jurado1_disp.exists():
+            no_disponibles.append(sustentacion['jurado1'].apellidos_nombres)
+            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not jurado1_disp.exists():
+                no_disponibles.remove(sustentacion['jurado1'].apellidos_nombres)
 
-        jurado2_disp = Profesores_Semestre_Academico.objects.filter(
-            profesor__apellidos_nombres=sustentacion['jurado2'],
-            fecha=sustentacion['fecha'],
-            hora_inicio__lte=sustentacion['hora_inicio'],
-            hora_fin__gte=sustentacion['hora_fin']
-        ).exists()
+        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not jurado2_disp.exists():
+            no_disponibles.append(sustentacion['jurado2'].apellidos_nombres)
+            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not jurado2_disp.exists():
+                no_disponibles.remove(sustentacion['jurado2'].apellidos_nombres)
 
-        asesor_disp = Profesores_Semestre_Academico.objects.filter(
-            profesor__apellidos_nombres=sustentacion['asesor'],
-            fecha=sustentacion['fecha'],
-            hora_inicio__lte=sustentacion['hora_inicio'],
-            hora_fin__gte=sustentacion['hora_fin']
-        ).exists()
+        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not asesor_disp.exists():
+            no_disponibles.append(sustentacion['asesor'].apellidos_nombres)
+            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not asesor_disp.exists():
+                no_disponibles.remove(sustentacion['asesor'].apellidos_nombres)
 
-        if not jurado1_disp:
-            no_disponibles.append(sustentacion['jurado1'])
-        if not jurado2_disp:
-            no_disponibles.append(sustentacion['jurado2'])
-        if not asesor_disp:
-            no_disponibles.append(sustentacion['asesor'])
-
+    
     return list(set(no_disponibles))
-
 
 @staff_member_required
 def guardar_horarios(request):
@@ -495,19 +484,6 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
-from django.db.models import Min, Max
-
-@staff_member_required
-def obtener_fechas_min_max(request):
-    semestre = SemestreAcademico.objects.get(vigencia=True)
-    fechas_semana_sustentacion = Semana_Sustentacion.objects.filter(semestre_academico=semestre)
-    print(semestre)
-    print(fechas_semana_sustentacion)
-    fecha_inicio_min = fechas_semana_sustentacion.aggregate(Min('fecha_inicio'))['fecha_inicio__min']
-    fecha_fin_max = fechas_semana_sustentacion.aggregate(Max('fecha_fin'))['fecha_fin__max']
-    print(fecha_inicio_min)
-    print(fecha_fin_max)
-    return JsonResponse({'fecha_inicio_min': fecha_inicio_min, 'fecha_fin_max': fecha_fin_max})
 
 @staff_member_required
 @csrf_exempt
@@ -517,7 +493,7 @@ def disponibilidad_create(request):
             print(data)
             profesor = Profesor.objects.get(user=request.user)
             semestre = SemestreAcademico.objects.get(vigencia=True)
-  
+            
             for evento in data:
                 form = Profesores_Semestre_AcademicoForm({
                     'fecha': evento['start'].split('T')[0],
