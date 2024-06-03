@@ -42,7 +42,7 @@ class AlgoritmoGenetico:
                 if jurado1 == asesor or jurado2 == asesor:
                     asesor = self.seleccionar_profesor(curso_grupo, exclude=[jurado1, jurado2])
 
-                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor)
+                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, curso_grupo.curso)
 
                 if fecha and hora_inicio and hora_fin:
                     sust_data = {
@@ -74,42 +74,86 @@ class AlgoritmoGenetico:
         ).exclude(id__in=[profesor.id for profesor in exclude if profesor]).distinct()
         return random.choice(profesores) if profesores.exists() else None
 
-    def seleccionar_fecha_hora(self, jurado1, jurado2, asesor):
+    def seleccionar_fecha_hora(self, jurado1, jurado2, asesor, curso):
         fechas_horas = []
-        for fecha in self.fechas_sustentacion:
-            horarios_jurado1 = Profesores_Semestre_Academico.objects.filter(profesor=jurado1, fecha=fecha)
-            horarios_jurado2 = Profesores_Semestre_Academico.objects.filter(profesor=jurado2, fecha=fecha)
-            horarios_asesor = Profesores_Semestre_Academico.objects.filter(profesor=asesor, fecha=fecha)
+        fechas_rango = Semana_Sustentacion.objects.filter(curso=curso).values('fecha_inicio', 'fecha_fin')
 
-            for h1 in horarios_jurado1:
-                for h2 in horarios_jurado2:
-                    for ha in horarios_asesor:
-                        if h1.hora_inicio <= h2.hora_inicio <= h1.hora_fin and h1.hora_inicio <= ha.hora_inicio <= h1.hora_fin:
-                            hora_inicio = max(h1.hora_inicio, h2.hora_inicio, ha.hora_inicio)
-                            hora_fin = min(h1.hora_fin, h2.hora_fin, ha.hora_fin)
-                            if (datetime.combine(datetime.today(), hora_fin) - datetime.combine(datetime.today(), hora_inicio)).total_seconds() >= 1800:
-                                fechas_horas.append((fecha, hora_inicio, (datetime.combine(datetime.today(), hora_inicio) + timedelta(minutes=30)).time()))
+        for rango in fechas_rango:
+            fechas = [rango['fecha_inicio'] + timedelta(days=i) for i in range((rango['fecha_fin'] - rango['fecha_inicio']).days + 1)]
+            for fecha in fechas:
+                horarios_jurado1 = Profesores_Semestre_Academico.objects.filter(profesor=jurado1, fecha=fecha)
+                horarios_jurado2 = Profesores_Semestre_Academico.objects.filter(profesor=jurado2, fecha=fecha)
+                horarios_asesor = Profesores_Semestre_Academico.objects.filter(profesor=asesor, fecha=fecha)
+
+                for h1 in horarios_jurado1:
+                    for h2 in horarios_jurado2:
+                        for ha in horarios_asesor:
+                            if h1.hora_inicio <= h2.hora_inicio <= h1.hora_fin and h1.hora_inicio <= ha.hora_inicio <= h1.hora_fin:
+                                hora_inicio = max(h1.hora_inicio, h2.hora_inicio, ha.hora_inicio)
+                                hora_fin = min(h1.hora_fin, h2.hora_fin, ha.hora_fin)
+                                if (datetime.combine(datetime.today(), hora_fin) - datetime.combine(datetime.today(), hora_inicio)).total_seconds() >= 1800:
+                                    fechas_horas.append((fecha, hora_inicio, (datetime.combine(datetime.today(), hora_inicio) + timedelta(minutes=30)).time()))
 
         if fechas_horas:
             return random.choice(fechas_horas)
         else:
-            return self.buscar_nueva_disponibilidad(jurado1, jurado2, asesor)
+            return self.buscar_nueva_disponibilidad(jurado1, jurado2, asesor, curso)
 
-    def buscar_nueva_disponibilidad(self, jurado1, jurado2, asesor):
-        for fecha in self.fechas_sustentacion:
-            horarios_jurado1 = Profesores_Semestre_Academico.objects.filter(profesor=jurado1, fecha=fecha)
-            horarios_jurado2 = Profesores_Semestre_Academico.objects.filter(profesor=jurado2, fecha=fecha)
-            horarios_asesor = Profesores_Semestre_Academico.objects.filter(profesor=asesor, fecha=fecha)
+    def buscar_nueva_disponibilidad(self, jurado1, jurado2, asesor, curso):
+        fechas_rango = Semana_Sustentacion.objects.filter(curso=curso).values('fecha_inicio', 'fecha_fin')
 
-            for h1 in horarios_jurado1:
-                for h2 in horarios_jurado2:
-                    for ha in horarios_asesor:
-                        hora_inicio = max(h1.hora_inicio, h2.hora_inicio, ha.hora_inicio)
-                        hora_fin = min(h1.hora_fin, h2.hora_fin, ha.hora_fin)
-                        if (datetime.combine(datetime.today(), hora_fin) - datetime.combine(datetime.today(), hora_inicio)).total_seconds() >= 1800:
-                            return fecha, hora_inicio, (datetime.combine(datetime.today(), hora_inicio) + timedelta(minutes=30)).time()
+        for rango in fechas_rango:
+            fechas = [rango['fecha_inicio'] + timedelta(days=i) for i in range((rango['fecha_fin'] - rango['fecha_inicio']).days + 1)]
+            for fecha in fechas:
+                horarios_jurado1 = Profesores_Semestre_Academico.objects.filter(profesor=jurado1, fecha=fecha)
+                horarios_jurado2 = Profesores_Semestre_Academico.objects.filter(profesor=jurado2, fecha=fecha)
+                horarios_asesor = Profesores_Semestre_Academico.objects.filter(profesor=asesor, fecha=fecha)
+
+                for h1 in horarios_jurado1:
+                    for h2 in horarios_jurado2:
+                        for ha in horarios_asesor:
+                            hora_inicio = max(h1.hora_inicio, h2.hora_inicio, ha.hora_inicio)
+                            hora_fin = min(h1.hora_fin, h2.hora_fin, ha.hora_fin)
+                            if (datetime.combine(datetime.today(), hora_fin) - datetime.combine(datetime.today(), hora_inicio)).total_seconds() >= 1800:
+                                return fecha, hora_inicio, (datetime.combine(datetime.today(), hora_inicio) + timedelta(minutes=30)).time()
 
         return None, None, None
+
+    def verificar_conflictos_horarios(self, mejor_horario):
+        for sustentacion in mejor_horario:
+            for otra_sustentacion in mejor_horario:
+                if sustentacion == otra_sustentacion:
+                    continue
+                if sustentacion['fecha'] == otra_sustentacion['fecha'] and (
+                    sustentacion['jurado1'] in [otra_sustentacion['jurado1'], otra_sustentacion['jurado2'], otra_sustentacion['asesor']] or
+                    sustentacion['jurado2'] in [otra_sustentacion['jurado1'], otra_sustentacion['jurado2'], otra_sustentacion['asesor']] or
+                    sustentacion['asesor'] in [otra_sustentacion['jurado1'], otra_sustentacion['jurado2'], otra_sustentacion['asesor']]
+                ):
+                    if (sustentacion['hora_inicio'] <= otra_sustentacion['hora_inicio'] < sustentacion['hora_fin']) or (
+                        otra_sustentacion['hora_inicio'] <= sustentacion['hora_inicio'] < otra_sustentacion['hora_fin']
+                    ):
+                        # Si hay conflicto, mover la segunda sustentación 30 minutos adelante
+                        otra_sustentacion['hora_inicio'] = (datetime.combine(datetime.today(), otra_sustentacion['hora_inicio']) + timedelta(minutes=30)).time()
+                        otra_sustentacion['hora_fin'] = (datetime.combine(datetime.today(), otra_sustentacion['hora_fin']) + timedelta(minutes=30)).time()
+                        # Recalcular la disponibilidad para la nueva hora
+                        otra_sustentacion['hora_inicio'], otra_sustentacion['hora_fin'] = self.ajustar_hora_disponibilidad(otra_sustentacion)
+
+        return mejor_horario
+
+    def ajustar_hora_disponibilidad(self, sustentacion):
+        horarios_jurado1 = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado1'], fecha=sustentacion['fecha'])
+        horarios_jurado2 = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado2'], fecha=sustentacion['fecha'])
+        horarios_asesor = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['asesor'], fecha=sustentacion['fecha'])
+
+        for h1 in horarios_jurado1:
+            for h2 in horarios_jurado2:
+                for ha in horarios_asesor:
+                    hora_inicio = max(h1.hora_inicio, h2.hora_inicio, ha.hora_inicio)
+                    hora_fin = min(h1.hora_fin, h2.hora_fin, ha.hora_fin)
+                    if (datetime.combine(datetime.today(), hora_fin) - datetime.combine(datetime.today(), hora_inicio)).total_seconds() >= 1800:
+                        return hora_inicio, (datetime.combine(datetime.today(), hora_inicio) + timedelta(minutes=30)).time()
+
+        return sustentacion['hora_inicio'], sustentacion['hora_fin']
 
     def calcular_fitness(self, individuo):
         fitness = 0
@@ -180,6 +224,7 @@ class AlgoritmoGenetico:
             self.evolucionar()
         mejor_individuo = max(self.poblacion, key=lambda ind: self.calcular_fitness(ind))
         mejor_individuo, no_disponibles = self.verificar_disponibilidad(mejor_individuo)
+        mejor_individuo = self.verificar_conflictos_horarios(mejor_individuo)
         return mejor_individuo, no_disponibles
 
 def generar_horarios():
