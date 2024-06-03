@@ -17,6 +17,7 @@ urlpatterns = [
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
     path('disponibilidad/crear/', disponibilidad_create, name='disponibilidad_create'),
+    path('obtener-fechas-min-max/', views.obtener_fechas_min_max, name='obtener_fechas_min_max'),
     path('accounts/profile/', views.profile, name='profile'),
     path('jurados/', jurados_list, name='jurados_list'),
     path('jurados/create/', jurados_create, name='jurados_create'),

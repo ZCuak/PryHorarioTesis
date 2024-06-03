@@ -495,6 +495,19 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
+from django.db.models import Min, Max
+
+@staff_member_required
+def obtener_fechas_min_max(request):
+    semestre = SemestreAcademico.objects.get(vigencia=True)
+    fechas_semana_sustentacion = Semana_Sustentacion.objects.filter(semestre_academico=semestre)
+    print(semestre)
+    print(fechas_semana_sustentacion)
+    fecha_inicio_min = fechas_semana_sustentacion.aggregate(Min('fecha_inicio'))['fecha_inicio__min']
+    fecha_fin_max = fechas_semana_sustentacion.aggregate(Max('fecha_fin'))['fecha_fin__max']
+    print(fecha_inicio_min)
+    print(fecha_fin_max)
+    return JsonResponse({'fecha_inicio_min': fecha_inicio_min, 'fecha_fin_max': fecha_fin_max})
 
 @staff_member_required
 @csrf_exempt
@@ -504,7 +517,7 @@ def disponibilidad_create(request):
             print(data)
             profesor = Profesor.objects.get(user=request.user)
             semestre = SemestreAcademico.objects.get(vigencia=True)
-            
+  
             for evento in data:
                 form = Profesores_Semestre_AcademicoForm({
                     'fecha': evento['start'].split('T')[0],
