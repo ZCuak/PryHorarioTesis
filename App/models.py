@@ -66,28 +66,34 @@ class SemestreAcademico(models.Model):
 
     def __str__(self):
         return self.nombre
+
     def calcular_semanas(self):
         semanas = []
         current_start = self.fecha_inicio
+
+        # Ajustar el primer día al lunes si no es lunes
+        if current_start.weekday() != 0:
+            first_saturday = current_start + timedelta(days=(5 - current_start.weekday()))
+        else:
+            first_saturday = current_start + timedelta(days=5)
         
-        # Calcular el primer domingo
-        first_sunday = current_start + timedelta(days=(6 - current_start.weekday()))
-        if first_sunday > self.fecha_fin:
-            first_sunday = self.fecha_fin
+        if first_saturday > self.fecha_fin:
+            first_saturday = self.fecha_fin
         
         # Primera semana parcial
-        semanas.append((current_start, first_sunday))
+        semanas.append((current_start, first_saturday))
         
-        current_start = first_sunday + timedelta(days=1)
+        current_start = first_saturday + timedelta(days=2)  # Saltar al próximo lunes
         
-        while current_start + timedelta(days=6) < self.fecha_fin:
-            current_end = current_start + timedelta(days=6)
+        while current_start + timedelta(days=5) < self.fecha_fin:
+            current_end = current_start + timedelta(days=5)
             semanas.append((current_start, current_end))
-            current_start = current_end + timedelta(days=1)
+            current_start = current_end + timedelta(days=2)  # Saltar al próximo lunes
         
         # Última semana parcial
         if current_start <= self.fecha_fin:
-            semanas.append((current_start, self.fecha_fin))
+            current_end = min(current_start + timedelta(days=5), self.fecha_fin)
+            semanas.append((current_start, current_end))
         
         return semanas
 

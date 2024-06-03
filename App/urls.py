@@ -17,6 +17,8 @@ urlpatterns = [
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
     path('disponibilidad/crear/', disponibilidad_create, name='disponibilidad_create'),
+    path('disponibilidad/ver/<int:semana_inicio>/<int:semana_fin>/', views.ver_disponibilidad, name='ver_disponibilidad'),
+    
     path('accounts/profile/', views.profile, name='profile'),
     path('jurados/', jurados_list, name='jurados_list'),
     path('jurados/create/', jurados_create, name='jurados_create'),

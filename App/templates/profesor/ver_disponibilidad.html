@@ -13,21 +13,19 @@
                     <table class="table">
                         <thead>
                             <tr class="text-center">
-                                <th>Semana Inicio</th>
-                                <th>Semana Fin</th>
-                                <th>Acciones</th>
+                                <th>Fecha</th>
+                                <th>Hora Inicio</th>
+                                <th>Hora Fin</th>
+                                <th>Profesor</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for disponibilidad in disponibilidades %}
                                 <tr class="text-center">
-                                    <td>{{ disponibilidad.0 }}</td>
                                     <td>{{ disponibilidad.1 }}</td>
-                                    <td>
-                                        <a href="{% url 'ver_disponibilidad' disponibilidad.0 disponibilidad.1 %}" class="btn btn-primary">Ver</a>
-                                        <a href="" class="btn btn-warning">Editar</a>
-                                        <a href="{% url 'disponibilidad_create' %}" class="btn btn-success">Agregar Disponibilidad</a>
-                                    </td>
+                                    <td>{{ disponibilidad.2 }}</td>
+                                    <td>{{ disponibilidad.3 }}</td>
+                                    <td>{{ disponibilidad.4 }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

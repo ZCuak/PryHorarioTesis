@@ -9,8 +9,13 @@ from django.contrib.admin.views.decorators import staff_member_required
 from .forms import ExcelUploadForm
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import transaction, DatabaseError
 import pandas as pd
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from django.db import connection
 
 # views.py
 from django.http import JsonResponse
@@ -448,17 +453,40 @@ def disponibilidad_list(request):
     usuario_logueado = request.user
     try:
         profesor_logueado = Profesor.objects.get(user=usuario_logueado)
-        disponibilidades = Profesores_Semestre_Academico.objects.filter(profesor=profesor_logueado).order_by('-fecha')
+        print(profesor_logueado.id)
+        # Realizar la consulta SQL específica
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    ass.semana_inicio, 
+                    ass.semana_fin
+                FROM 
+                    app_profesores_semestre_academico aps
+                INNER JOIN 
+                    app_profesor ap ON aps.profesor_id = ap.id
+                INNER JOIN 
+                    app_sustentacion asus ON ap.id = asus.jurado1_id OR ap.id = asus.jurado2_id OR ap.id = asus.asesor_id
+                INNER JOIN 
+                    app_cursos_grupos acg ON acg.id = asus.cursos_grupos_id
+                INNER JOIN 
+                    app_semana_sustentacion ass ON ass.curso_id = acg.curso_id
+                INNER JOIN 
+                    app_curso apc ON apc.id = ass.curso_id 
+                WHERE 
+                    ap.id = %s
+                GROUP BY 
+                    ass.semana_inicio, 
+                    ass.semana_fin
+                ORDER BY ass.semana_inicio
+            """, [profesor_logueado.id])
+            disponibilidades = cursor.fetchall()
+        
     except Profesor.DoesNotExist:
         disponibilidades = []
+
     return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
 
 
-
-from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-import json
 
 @staff_member_required
 @csrf_exempt
@@ -489,6 +517,49 @@ def disponibilidad_create(request):
     form = Profesores_Semestre_AcademicoForm()
     return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 
+
+@staff_member_required
+def ver_disponibilidad(request, semana_inicio, semana_fin):
+    usuario_logueado = request.user
+    try:
+        profesor_logueado = Profesor.objects.get(user=usuario_logueado)
+        
+        # Obtener el semestre académico vigente
+        semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
+
+        # Calcular las semanas del semestre
+        semanas = semestre_academico.calcular_semanas()
+        
+        # Obtener las fechas de inicio y fin de las semanas seleccionadas
+        fecha_inicio_semana = semanas[semana_inicio - 1][0]
+        fecha_fin_semana = semanas[semana_fin - 1][1]
+        print(fecha_inicio_semana)
+        print(fecha_fin_semana)
+        # Realizar la consulta SQL específica
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT 
+                        aps.id, aps.fecha, aps.hora_inicio, aps.hora_fin, 
+                        ap.apellidos_nombres
+                    FROM 
+                        app_profesores_semestre_academico aps
+                    INNER JOIN 
+                        app_profesor ap ON aps.profesor_id = ap.id
+                    INNER JOIN 
+                        app_semestreacademico sem ON aps.semestre_id = sem.id
+                    WHERE 
+                        aps.fecha >= %s AND aps.fecha <= %s AND ap.id = %s AND sem.vigencia = true
+                """, [fecha_inicio_semana, fecha_fin_semana, profesor_logueado.id])
+                disponibilidades = cursor.fetchall()
+        except DatabaseError as e:
+            disponibilidades = []
+            print(f"Error en la base de datos: {e}")
+
+    except Profesor.DoesNotExist:
+        disponibilidades = []
+
+    return render(request, 'profesor/ver_disponibilidad.html', {'disponibilidades': disponibilidades})
     
     
 @staff_member_required
