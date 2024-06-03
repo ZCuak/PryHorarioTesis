@@ -60,28 +60,7 @@ def guardar_horarios(request):
         mejor_horario = request.session.get('mejor_horario', [])
         if mejor_horario:
             for sustentacion_data in mejor_horario:
-                curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
-                grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
-                profesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['cursos_grupos']['profesor'])
-                semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
-
-                cursos_grupos = Cursos_Grupos.objects.get_or_create(
-                    curso=curso, grupo=grupo, profesor=profesor, semestre=semestre)[0]
-                
-                estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
-                jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
-                jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
-                asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
-
-                sustentacion = Sustentacion.objects.create(
-                    cursos_grupos=cursos_grupos,
-                    estudiante=estudiante,
-                    jurado1=jurado1,
-                    jurado2=jurado2,
-                    asesor=asesor,
-                    titulo=sustentacion_data['titulo'],
-                )
-
+                sustentacion = Sustentacion.objects.get(pk=sustentacion_data['sustentacion_id'])
                 Horario_Sustentaciones.objects.create(
                     sustentacion=sustentacion,
                     fecha=sustentacion_data['fecha'],
@@ -94,6 +73,7 @@ def guardar_horarios(request):
             messages.error(request, "No hay horarios para guardar.")
             return redirect('ejecutar_algoritmo')
     return redirect('home')
+
 
 
 def index(request):
