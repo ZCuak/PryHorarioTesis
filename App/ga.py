@@ -22,7 +22,7 @@ class AlgoritmoGenetico:
         for curso_grupo in self.cursos_grupos:
             sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
             for sustentacion in sustentaciones:
-                fecha = self.seleccionar_fecha(curso_grupo.curso)
+                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(curso_grupo, sustentacion)
                 sust_data = {
                     'cursos_grupos': curso_grupo,
                     'estudiante': sustentacion.estudiante,
@@ -31,10 +31,9 @@ class AlgoritmoGenetico:
                     'asesor': sustentacion.asesor,
                     'titulo': sustentacion.titulo,
                     'fecha': fecha,
-                    'hora_inicio': self.seleccionar_hora(fecha),
-                    'hora_fin': None
+                    'hora_inicio': hora_inicio,
+                    'hora_fin': hora_fin
                 }
-                sust_data['hora_fin'] = (datetime.combine(fecha, sust_data['hora_inicio']) + timedelta(minutes=30)).time()
                 individuo.append(sust_data)
         return individuo
 
@@ -42,19 +41,34 @@ class AlgoritmoGenetico:
         profesores = Profesor.objects.filter(id__in=Semestre_Academico_Profesores.objects.filter(semestre=curso_grupo.semestre).values_list('profesor_id', flat=True))
         return random.choice(profesores)
 
-    def seleccionar_fecha(self, curso):
-        semanas = Semana_Sustentacion.objects.filter(curso=curso)
-        if semanas.exists():
-            semana = random.choice(semanas)
+    def seleccionar_fecha_hora(self, curso_grupo, sustentacion):
+        semanas = Semana_Sustentacion.objects.filter(curso=curso_grupo.curso)
+        fechas_disponibles = []
+
+        for semana in semanas:
             start_date = semana.fecha_inicio
             end_date = semana.fecha_fin
             delta = end_date - start_date
-            return start_date + timedelta(days=random.randint(0, delta.days))
-        return datetime.today().date()
 
-    def seleccionar_hora(self, fecha):
-        horas = [datetime.strptime(f"{hour}:00", "%H:%M").time() for hour in range(8, 18)]
-        return random.choice(horas)
+            for i in range(delta.days + 1):
+                day = start_date + timedelta(days=i)
+                horas = [datetime.strptime(f"{hour}:00", "%H:%M").time() for hour in range(8, 18)]
+                for hora in horas:
+                    hora_fin = (datetime.combine(day, hora) + timedelta(minutes=30)).time()
+                    if self.verificar_disponibilidad(sustentacion, day, hora, hora_fin):
+                        fechas_disponibles.append((day, hora, hora_fin))
+
+        if fechas_disponibles:
+            return random.choice(fechas_disponibles)
+        else:
+            return datetime.today().date(), datetime.strptime("08:00", "%H:%M").time(), datetime.strptime("08:30", "%H:%M").time()
+
+
+    def verificar_disponibilidad(self, sustentacion, fecha, hora_inicio, hora_fin):
+        jurado1_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion.jurado1, fecha=fecha, hora_inicio__lte=hora_inicio, hora_fin__gte=hora_fin).exists() if sustentacion.jurado1 else True
+        jurado2_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion.jurado2, fecha=fecha, hora_inicio__lte=hora_inicio, hora_fin__gte=hora_fin).exists() if sustentacion.jurado2 else True
+        asesor_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion.asesor, fecha=fecha, hora_inicio__lte=hora_inicio, hora_fin__gte=hora_fin).exists()
+        return jurado1_disp and jurado2_disp and asesor_disp
 
     def calcular_fitness(self, individuo):
         fitness = 0
