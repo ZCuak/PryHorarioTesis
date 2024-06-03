@@ -19,8 +19,7 @@ from .ga import generar_horarios, guardar_horario
 @staff_member_required
 def ejecutar_algoritmo(request):
     if request.method == 'POST':
-        mejor_horario = generar_horarios()
-        no_disponibles = verificar_disponibilidad(mejor_horario)
+        mejor_horario, no_disponibles = generar_horarios()
         if no_disponibles:
             messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
             return render(request, 'admin/ejecutar_algoritmo.html')
@@ -49,30 +48,6 @@ def ejecutar_algoritmo(request):
         return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario_dict})
     return render(request, 'admin/ejecutar_algoritmo.html')
 
-def verificar_disponibilidad(mejor_horario):
-    no_disponibles = []
-    for sustentacion in mejor_horario:
-        jurado1_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre)
-        jurado2_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre)
-        asesor_disp = Profesores_Semestre_Academico.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre)
-        
-        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not jurado1_disp.exists():
-            no_disponibles.append(sustentacion['jurado1'].apellidos_nombres)
-            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado1'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not jurado1_disp.exists():
-                no_disponibles.remove(sustentacion['jurado1'].apellidos_nombres)
-
-        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not jurado2_disp.exists():
-            no_disponibles.append(sustentacion['jurado2'].apellidos_nombres)
-            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['jurado2'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not jurado2_disp.exists():
-                no_disponibles.remove(sustentacion['jurado2'].apellidos_nombres)
-
-        if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre).exists() or not asesor_disp.exists():
-            no_disponibles.append(sustentacion['asesor'].apellidos_nombres)
-            if not Semestre_Academico_Profesores.objects.filter(profesor=sustentacion['asesor'], semestre=sustentacion['cursos_grupos'].semestre).exists() and not asesor_disp.exists():
-                no_disponibles.remove(sustentacion['asesor'].apellidos_nombres)
-
-    
-    return list(set(no_disponibles))
 
 @staff_member_required
 def guardar_horarios(request):
