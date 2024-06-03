@@ -89,10 +89,10 @@ def guardar_horarios(request):
                     hora_fin=sustentacion_data['hora_fin'],
                 )
             messages.success(request, "Horarios guardados exitosamente.")
-            return redirect('resultado_algoritmo')
+            return redirect('ejecutar_algoritmo')
         else:
             messages.error(request, "No hay horarios para guardar.")
-            return redirect('resultado_algoritmo')
+            return redirect('ejecutar_algoritmo')
     return redirect('home')
 
 
