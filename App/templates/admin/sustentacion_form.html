@@ -18,6 +18,7 @@
                         <div class="mb-3">
                             <label>Grupo: {{ curso_grupo.grupo.nombre }}</label>
                         </div>
+                        <input type="hidden" name="cursos_grupos" value="{{ curso_grupo.id }}">
                         {{ form.as_p }}
                         <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
                         <a class="btn btn-secondary" href="javascript:history.back()">Volver</a>

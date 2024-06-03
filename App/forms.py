@@ -94,10 +94,13 @@ class ProfesorForm(forms.ModelForm):
         return cleaned_data
 
 class SustentacionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['cursos_grupos'].widget = forms.HiddenInput()
+
     class Meta:
         model = Sustentacion
         fields = ['cursos_grupos', 'estudiante', 'jurado1', 'jurado2', 'asesor', 'titulo']
-        
 
 class SemestreAcademicoForm(forms.ModelForm):
     class Meta:
