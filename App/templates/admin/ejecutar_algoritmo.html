@@ -23,7 +23,7 @@
                             <select name="semestre" id="semestre" class="form-control">
                                 <option value="">Todos</option>
                                 {% for semestre in semestres %}
-                                    <option value="{{ semestre.id }}" {% if semestre.id == request.GET.semestre %}selected{% endif %}>{{ semestre.nombre }}</option>
+                                    <option value="{{ semestre.id }}" {% if semestre.id|stringformat:"s" == semestre_id %}selected{% endif %}>{{ semestre.nombre }}</option>
                                 {% endfor %}
                             </select>
                         </div>
