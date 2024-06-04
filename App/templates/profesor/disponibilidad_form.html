@@ -85,20 +85,18 @@
             success: function(data) {
                 var fechaInicioMin = data.fecha_inicio_min;
                 var fechaFinMax = data.fecha_fin_max;
-                console.log(fechaInicioMin)
-                console.log(fechaFinMax)
-                
+
                 // Configurar el rango válido en el calendario
                 $('#calendar').fullCalendar('option', 'validRange', {
                     start: fechaInicioMin,
-                    end: fechaFinMax
+                    end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla
                 });
             },
             error: function(xhr, status, error) {
                 console.error('Error al obtener las fechas:', error);
             }
         });
-        
+
         // Función para guardar eventos en el servidor
         function saveEvents() {
             var events = $('#calendar').fullCalendar('clientEvents');
