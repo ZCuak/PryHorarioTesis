@@ -34,30 +34,32 @@
                         <button type="submit" class="btn btn-primary">Ejecutar Algoritmo</button>
                     </form>
                     <h6>Listado de Sustentaciones</h6>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Curso - Grupo</th>
-                                <th>Estudiante</th>
-                                <th>Jurado 1</th>
-                                <th>Jurado 2</th>
-                                <th>Asesor</th>
-                                <th>Título</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sustentacion in sustentaciones %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <td>{{ sustentacion.cursos_grupos.curso.nombre }} - {{ sustentacion.cursos_grupos.grupo.nombre }}</td>
-                                    <td>{{ sustentacion.estudiante.apellidos_nombres }}</td>
-                                    <td>{{ sustentacion.jurado1.apellidos_nombres }}</td>
-                                    <td>{{ sustentacion.jurado2.apellidos_nombres }}</td>
-                                    <td>{{ sustentacion.asesor.apellidos_nombres }}</td>
-                                    <td>{{ sustentacion.titulo }}</td>
+                                    <th>Curso - Grupo</th>
+                                    <th>Estudiante</th>
+                                    <th>Jurado 1</th>
+                                    <th>Jurado 2</th>
+                                    <th>Asesor</th>
+                                    <th>Título</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for sustentacion in sustentaciones %}
+                                    <tr>
+                                        <td>{{ sustentacion.cursos_grupos.curso.nombre }} - {{ sustentacion.cursos_grupos.grupo.nombre }}</td>
+                                        <td>{{ sustentacion.estudiante.apellidos_nombres }}</td>
+                                        <td>{{ sustentacion.jurado1.apellidos_nombres }}</td>
+                                        <td>{{ sustentacion.jurado2.apellidos_nombres }}</td>
+                                        <td>{{ sustentacion.asesor.apellidos_nombres }}</td>
+                                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ sustentacion.titulo }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
