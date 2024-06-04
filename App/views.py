@@ -17,19 +17,25 @@ from django.http import JsonResponse
 import json
 from django.db import connection
 from django.utils.dateparse import parse_datetime
-
+from django.contrib.auth.decorators import login_required
 # views.py
 from django.http import JsonResponse
 from .ga import generar_horarios, guardar_horario
 
-
 @staff_member_required
 def ejecutar_algoritmo(request):
+    semestres = SemestreAcademico.objects.all()
+    semestre_id = request.GET.get('semestre')
+    sustentaciones = Sustentacion.objects.all()
+
+    if semestre_id:
+        sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
+
     if request.method == 'POST':
         mejor_horario, no_disponibles = generar_horarios()
         if no_disponibles:
             messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
-            return render(request, 'admin/ejecutar_algoritmo.html')
+            return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres, 'semestre_id': semestre_id})
         # Convertir objetos a diccionarios
         mejor_horario_dict = [
             {
@@ -52,9 +58,19 @@ def ejecutar_algoritmo(request):
         ]
         # Almacenar el mejor horario en la sesión para usarlo después
         request.session['mejor_horario'] = mejor_horario_dict
-        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario_dict})
-    return render(request, 'admin/ejecutar_algoritmo.html')
+        return redirect('mostrar_resultados')
 
+    return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres, 'semestre_id': semestre_id})
+
+
+@staff_member_required
+def mostrar_resultados(request):
+    mejor_horario = request.session.get('mejor_horario', [])
+    if mejor_horario:
+        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario})
+    else:
+        messages.error(request, "No hay resultados del algoritmo para mostrar.")
+        return redirect('ejecutar_algoritmo')
 
 
 @staff_member_required
@@ -67,26 +83,32 @@ def guardar_horarios(request):
                     for sustentacion_data in mejor_horario:
                         curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
                         grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
-                        profesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['cursos_grupos']['profesor'])
                         semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
 
                         cursos_grupos = Cursos_Grupos.objects.get_or_create(
-                            curso=curso, grupo=grupo, profesor=profesor, semestre=semestre)[0]
+                            curso=curso, grupo=grupo, semestre=semestre)[0]
 
                         estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
                         jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
                         jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
                         asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
 
-                        # Verificar si la sustentacion ya existe
+                        # Verificar si la sustentación ya existe por estudiante, curso y grupo
                         sustentacion_existente = Sustentacion.objects.filter(
                             cursos_grupos=cursos_grupos,
-                            estudiante=estudiante,
-                            asesor=asesor,
-                            titulo=sustentacion_data['titulo']
+                            estudiante=estudiante
                         ).first()
 
                         if sustentacion_existente:
+                            # Actualizar jurados si están en null
+                            if not sustentacion_existente.jurado1:
+                                sustentacion_existente.jurado1 = jurado1
+                            if not sustentacion_existente.jurado2:
+                                sustentacion_existente.jurado2 = jurado2
+                            if not sustentacion_existente.asesor:
+                                sustentacion_existente.asesor = asesor
+                            sustentacion_existente.save()
+
                             Horario_Sustentaciones.objects.create(
                                 sustentacion=sustentacion_existente,
                                 fecha=sustentacion_data['fecha'],
@@ -94,9 +116,23 @@ def guardar_horarios(request):
                                 hora_fin=sustentacion_data['hora_fin'],
                             )
                         else:
-                            messages.warning(request, f"No se encontró la sustentación para {estudiante.apellidos_nombres} en el curso {curso.nombre}.")
+                            # Crear una nueva sustentación si no existe
+                            nueva_sustentacion = Sustentacion.objects.create(
+                                cursos_grupos=cursos_grupos,
+                                estudiante=estudiante,
+                                jurado1=jurado1,
+                                jurado2=jurado2,
+                                asesor=asesor,
+                                titulo=sustentacion_data['titulo']
+                            )
+                            Horario_Sustentaciones.objects.create(
+                                sustentacion=nueva_sustentacion,
+                                fecha=sustentacion_data['fecha'],
+                                hora_inicio=sustentacion_data['hora_inicio'],
+                                hora_fin=sustentacion_data['hora_fin'],
+                            )
 
-                messages.success(request, "Horarios guardados exitosamente.")
+                    messages.success(request, "Horarios guardados exitosamente.")
             except Exception as e:
                 messages.error(request, f"Error al guardar horarios: {str(e)}")
                 return redirect('ejecutar_algoritmo')
@@ -104,6 +140,7 @@ def guardar_horarios(request):
             messages.error(request, "No hay horarios para guardar.")
         return redirect('ejecutar_algoritmo')
     return redirect('home')
+
 
 
 def index(request):

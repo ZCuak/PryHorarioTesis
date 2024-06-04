@@ -13,6 +13,8 @@ urlpatterns = [
     
     path('ejecutar_algoritmo/', views.ejecutar_algoritmo, name='ejecutar_algoritmo'),
     path('guardar_horarios/', views.guardar_horarios, name='guardar_horarios'),
+    path('mostrar_resultados/', views.mostrar_resultados, name='mostrar_resultados'),
+
     #PARA REPORTES
     path('reporte_sustentaciones/', views.reporte_sustentaciones, name='reporte_sustentaciones'),
     path('exportar_csv/', views.exportar_csv, name='exportar_csv'),

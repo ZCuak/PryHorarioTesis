@@ -50,22 +50,22 @@ class UserPasswordResetForm(PasswordResetForm):
 class UserSetPasswordForm(SetPasswordForm):
     new_password1 = forms.CharField(max_length=50, widget=forms.PasswordInput(attrs={
         'class': 'form-control', 'placeholder': 'New Password'
-    }), label="New Password")
+    }), label="Nueva contraseña")
     new_password2 = forms.CharField(max_length=50, widget=forms.PasswordInput(attrs={
         'class': 'form-control', 'placeholder': 'Confirm New Password'
-    }), label="Confirm New Password")
+    }), label="Confirmar nueva contraseña")
     
 
 class UserPasswordChangeForm(PasswordChangeForm):
     old_password = forms.CharField(max_length=50, widget=forms.PasswordInput(attrs={
         'class': 'form-control', 'placeholder': 'Old Password'
-    }), label='Old Password')
+    }), label='Contraseña anterior')
     new_password1 = forms.CharField(max_length=50, widget=forms.PasswordInput(attrs={
         'class': 'form-control', 'placeholder': 'New Password'
-    }), label="New Password")
+    }), label="Nueva contraseña")
     new_password2 = forms.CharField(max_length=50, widget=forms.PasswordInput(attrs={
         'class': 'form-control', 'placeholder': 'Confirm New Password'
-    }), label="Confirm New Password")
+    }), label="Confirmar nueva contraseña")
     
 
 from django import forms

@@ -129,7 +129,7 @@ class Horario_Sustentaciones(models.Model):
     sustentacion = models.ForeignKey(Sustentacion, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.fecha} {self.hora_inicio}-{self.hora_fin}"
+        return f"{self.fecha} {self.hora_inicio}-{self.hora_fin}"   
 
 
 class Profesores_Semestre_Academico(models.Model):
