@@ -703,7 +703,7 @@ def get_semanas(request, semestre_id):
 from django.shortcuts import render
 from django.http import HttpResponse
 import csv
-
+#Reporte 1: Sustentaciones
 def reporte_sustentaciones(request):
     semestre = request.GET.get('semestre')
     tipo_sustentacion = request.GET.get('tipo_sustentacion')
@@ -848,6 +848,121 @@ def exportar_csv(request):
     # Preparar la respuesta HTTP
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="sustentaciones.xlsx"'
+    
+    # Guardar el libro en la respuesta
+    workbook.save(response)
+    
+    return response
+
+#Reporte 2: list sustentaciones por docente
+from django.http import HttpResponse
+from django.db import connection
+import openpyxl
+from openpyxl.utils import get_column_letter
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+def listar_sustentaciones(request):
+    usuario_id = request.user.id
+    sql_profesor_id = """
+        SELECT id FROM app_profesor WHERE user_id = %s
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql_profesor_id, [usuario_id])
+        profesor_id = cursor.fetchone()[0]
+
+    sql = """
+    SELECT 
+        appc.nombre AS curso,
+        appg.nombre AS grupo,
+        appe.codigo_universitario,
+        appe.apellidos_nombres AS estudiante,
+        apphs.fecha,
+        apphs.hora_inicio,
+        apps.titulo
+    FROM app_sustentacion apps
+    INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+    LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+    LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+    LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+    INNER JOIN app_cursos_grupos appcg ON apps.cursos_grupos_id = appcg.id
+    INNER JOIN app_curso appc ON appc.id = appcg.curso_id
+    INNER JOIN app_grupo appg ON appg.id = appcg.grupo_id
+    INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+    WHERE apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [profesor_id, profesor_id, profesor_id])
+        rows = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+    data = [dict(zip(columns, row)) for row in rows]
+
+    return render(request, 'profesor/listar_sustentaciones.html', {'data': data})
+ 
+def exportar_excel_profesor(request):
+    usuario_id = request.user.id
+    sql_profesor_id = """
+        SELECT id FROM app_profesor WHERE user_id = %s
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql_profesor_id, [usuario_id])
+        profesor_id = cursor.fetchone()[0]
+    
+    sql = """
+    SELECT 
+        appc.nombre AS curso,
+        appg.nombre AS grupo,
+        appe.codigo_universitario,
+        appe.apellidos_nombres AS estudiante,
+        apphs.fecha,
+        apphs.hora_inicio,
+        apps.titulo
+    FROM app_sustentacion apps
+    INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+    LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+    LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+    LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+    INNER JOIN app_cursos_grupos appcg ON apps.cursos_grupos_id = appcg.id
+    INNER JOIN app_curso appc ON appc.id = appcg.curso_id
+    INNER JOIN app_grupo appg ON appg.id = appcg.grupo_id
+    INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+    WHERE apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [profesor_id, profesor_id, profesor_id])
+        rows = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+    # Crear el libro de Excel
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Sustentaciones"
+
+    # Escribir los encabezados de columna
+    for col_num, column_title in enumerate(columns, 1):
+        cell = worksheet.cell(row=1, column=col_num)
+        cell.value = column_title
+
+    # Escribir los datos
+    for row_num, row_data in enumerate(rows, 2):
+        for col_num, cell_value in enumerate(row_data, 1):
+            cell = worksheet.cell(row=row_num, column=col_num)
+            cell.value = cell_value
+
+    # Ajustar el ancho de las columnas
+    for col_num, column_title in enumerate(columns, 1):
+        column_letter = get_column_letter(col_num)
+        worksheet.column_dimensions[column_letter].width = 15
+
+    # Preparar la respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="sustentaciones_profesor.xlsx"'
     
     # Guardar el libro en la respuesta
     workbook.save(response)

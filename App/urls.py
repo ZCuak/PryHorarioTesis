@@ -16,6 +16,8 @@ urlpatterns = [
     #PARA REPORTES
     path('reporte_sustentaciones/', views.reporte_sustentaciones, name='reporte_sustentaciones'),
     path('exportar_csv/', views.exportar_csv, name='exportar_csv'),
+    path('listar_sustentaciones/', views.listar_sustentaciones, name='listar_sustentaciones'),
+    path('exportar_excel_profesor/', views.exportar_excel_profesor, name='exportar_excel_profesor'),
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
     path('disponibilidad/crear/', disponibilidad_create, name='disponibilidad_create'),

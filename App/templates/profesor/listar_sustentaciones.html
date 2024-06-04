@@ -1,0 +1,63 @@
+
+{% extends "layouts/base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reporte de Sustentaciones</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    
+
+        <div class="container-fluid py-4">
+            <div class="row">
+                <div class="col-12">
+                    <h1>Reporte de Sustentaciones</h1>
+
+        <form method="get" class="form-inline mb-4">
+            <div class="form-group mr-3">
+                <button type="submit" formaction="{% url 'exportar_excel_profesor' %}" class="btn btn-primary mr-2">Exportar a Excel</button>
+            </div>
+        </form>
+
+        <table class="table table-striped">
+            <thead>
+                <tr class="text-center">
+                    <th>Curso</th>
+                    <th>Grupo</th>
+                    <th>Código Universitario</th>
+                    <th>Estudiante</th>
+                    <th>Fecha</th>
+                    <th>Hora Inicio</th>
+                    <th>Título</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr>
+                        <td>{{ row.curso }}</td>
+                        <td>{{ row.grupo }}</td>
+                        <td>{{ row.codigo_universitario }}</td>
+                        <td>{{ row.estudiante }}</td>
+                        <td>{{ row.fecha }}</td>
+                        <td>{{ row.hora_inicio }}</td>
+                        <td>{{ row.titulo }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+                </div>
+            </div>
+        </div>
+        
+    
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+{% endblock %}
