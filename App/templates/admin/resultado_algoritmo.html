@@ -19,7 +19,7 @@
                                     <th>Jurado 1</th>
                                     <th>Jurado 2</th>
                                     <th>Asesor</th>
-                                    <th>Título</th>
+                                    <th style="max-width: 200px;">Título</th> <!-- Establece el ancho máximo aquí -->
                                     <th>Fecha</th>
                                     <th>Hora Inicio</th>
                                     <th>Hora Fin</th>
@@ -33,7 +33,7 @@
                                         <td>{{ sustentacion.jurado1 }}</td>
                                         <td>{{ sustentacion.jurado2 }}</td>
                                         <td>{{ sustentacion.asesor }}</td>
-                                        <td>{{ sustentacion.titulo }}</td>
+                                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ sustentacion.titulo }}</td>
                                         <td>{{ sustentacion.fecha }}</td>
                                         <td>{{ sustentacion.hora_inicio }}</td>
                                         <td>{{ sustentacion.hora_fin }}</td>

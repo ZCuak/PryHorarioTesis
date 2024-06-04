@@ -26,6 +26,9 @@ class AlgoritmoGenetico:
         individuo = []
         estudiantes_asignados = set()
         for curso_grupo in self.cursos_grupos:
+            if not curso_grupo.semestre.vigencia:
+                continue
+
             sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
             for sustentacion in sustentaciones:
                 if sustentacion.estudiante.id in estudiantes_asignados:
@@ -34,13 +37,13 @@ class AlgoritmoGenetico:
 
                 jurado1 = sustentacion.jurado1 if sustentacion.jurado1 and self.profesor_valido(sustentacion.jurado1, curso_grupo.semestre) else self.seleccionar_profesor(curso_grupo, exclude=[])
                 jurado2 = sustentacion.jurado2 if sustentacion.jurado2 and self.profesor_valido(sustentacion.jurado2, curso_grupo.semestre) else self.seleccionar_profesor(curso_grupo, exclude=[jurado1])
-                asesor = sustentacion.asesor if self.profesor_valido(sustentacion.asesor, curso_grupo.semestre) else self.seleccionar_profesor(curso_grupo, exclude=[jurado1, jurado2])
+                asesor = sustentacion.asesor  # El asesor no debe cambiar
 
                 # Asegurarse de que los tres profesores sean distintos
                 if jurado1 == jurado2:
                     jurado2 = self.seleccionar_profesor(curso_grupo, exclude=[jurado1])
                 if jurado1 == asesor or jurado2 == asesor:
-                    asesor = self.seleccionar_profesor(curso_grupo, exclude=[jurado1, jurado2])
+                    asesor = sustentacion.asesor  # El asesor no debe cambiar
 
                 fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, curso_grupo.curso)
 
@@ -259,13 +262,13 @@ class AlgoritmoGenetico:
             if key not in asignadas:
                 jurado1 = sustentacion.jurado1 if sustentacion.jurado1 and self.profesor_valido(sustentacion.jurado1, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[])
                 jurado2 = sustentacion.jurado2 if sustentacion.jurado2 and self.profesor_valido(sustentacion.jurado2, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
-                asesor = sustentacion.asesor if self.profesor_valido(sustentacion.asesor, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1, jurado2])
+                asesor = sustentacion.asesor  # El asesor no debe cambiar
 
                 # Asegurarse de que los tres profesores sean distintos
                 if jurado1 == jurado2:
                     jurado2 = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
                 if jurado1 == asesor or jurado2 == asesor:
-                    asesor = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1, jurado2])
+                    asesor = sustentacion.asesor  # El asesor no debe cambiar
 
                 fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, sustentacion.cursos_grupos.curso)
 
