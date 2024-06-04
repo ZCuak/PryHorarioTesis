@@ -13,6 +13,7 @@ urlpatterns = [
     
     path('ejecutar_algoritmo/', views.ejecutar_algoritmo, name='ejecutar_algoritmo'),
     path('guardar_horarios/', views.guardar_horarios, name='guardar_horarios'),
+    path('mostrar_resultados/', views.mostrar_resultados, name='mostrar_resultados'),
     
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
