@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 03-06-2024 a las 22:51:49
+-- Tiempo de generación: 04-06-2024 a las 03:23:45
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.1.25
 
@@ -123,6 +123,19 @@ CREATE TABLE `app_horario_sustentaciones` (
   `sustentacion_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `app_horario_sustentaciones`
+--
+
+INSERT INTO `app_horario_sustentaciones` (`id`, `fecha`, `hora_inicio`, `hora_fin`, `sustentacion_id`) VALUES
+(72, '2024-05-06', '18:30:00', '19:00:00', 15),
+(73, '2024-05-07', '19:30:00', '20:00:00', 16),
+(74, '2024-05-07', '18:30:00', '19:00:00', 74),
+(75, '2024-04-05', '18:30:00', '19:00:00', 31),
+(76, '2024-04-02', '19:30:00', '20:00:00', 32),
+(77, '2024-04-01', '19:00:00', '19:30:00', 66),
+(78, '2024-05-14', '19:30:00', '20:00:00', 14);
+
 -- --------------------------------------------------------
 
 --
@@ -205,22 +218,6 @@ INSERT INTO `app_profesores_semestre_academico` (`id`, `profesor_id`, `semestre_
 (58, 21, 1, '2024-04-03', '20:30:00', '22:00:00'),
 (59, 21, 1, '2024-04-04', '17:30:00', '19:30:00'),
 (60, 21, 1, '2024-04-05', '18:30:00', '21:00:00'),
-(61, 27, 1, '2024-05-06', '20:30:00', '22:00:00'),
-(62, 27, 1, '2024-05-07', '18:00:00', '22:00:00'),
-(63, 27, 1, '2024-05-08', '20:30:00', '22:30:00'),
-(64, 27, 1, '2024-05-09', '18:30:00', '19:30:00'),
-(65, 27, 1, '2024-05-10', '17:30:00', '21:30:00'),
-(66, 27, 1, '2024-05-06', '20:30:00', '22:00:00'),
-(67, 27, 1, '2024-05-07', '18:00:00', '22:00:00'),
-(68, 27, 1, '2024-05-08', '20:30:00', '22:30:00'),
-(69, 27, 1, '2024-05-09', '18:30:00', '19:30:00'),
-(70, 27, 1, '2024-05-10', '17:30:00', '21:30:00'),
-(71, 27, 1, '2024-05-13', '16:30:00', '22:00:00'),
-(72, 27, 1, '2024-05-14', '19:00:00', '00:00:00'),
-(73, 27, 1, '2024-05-15', '18:00:00', '21:00:00'),
-(74, 27, 1, '2024-05-16', '18:00:00', '22:00:00'),
-(75, 27, 1, '2024-05-17', '18:00:00', '21:30:00'),
-(76, 27, 1, '2024-05-18', '20:00:00', '22:30:00'),
 (77, 27, 1, '2024-05-06', '20:30:00', '22:00:00'),
 (78, 27, 1, '2024-05-07', '18:00:00', '22:00:00'),
 (79, 27, 1, '2024-05-08', '20:30:00', '22:30:00'),
@@ -455,8 +452,8 @@ INSERT INTO `app_sustentacion` (`id`, `cursos_grupos_id`, `estudiante_id`, `jura
 (16, 8, 9, NULL, NULL, 12, 'Solución de BI ...'),
 (31, 10, 10, 20, 26, 22, 'Sistema web ...'),
 (32, 10, 11, 12, 21, 23, 'Aplicación Móvil ...'),
-(33, 10, 12, 26, 27, 12, 'Solución de BI ...'),
-(60, 8, 1, NULL, NULL, 23, 'wea');
+(66, 10, 12, 26, 27, 12, 'Solución de BI ...'),
+(74, 8, 1, NULL, NULL, 22, 'Aplicación web y móvil basado en el Algoritmo de Optimización de Colonia de Hormigas para apoyar el proceso de ventas en la panadería Mishka');
 
 -- --------------------------------------------------------
 
@@ -598,7 +595,7 @@ CREATE TABLE `auth_user` (
 
 INSERT INTO `auth_user` (`id`, `password`, `last_login`, `is_superuser`, `username`, `first_name`, `last_name`, `email`, `is_staff`, `is_active`, `date_joined`) VALUES
 (1, 'pbkdf2_sha256$600000$erSGiNKcW4hyYvrGOX6BQE$VbKU/zqg/F9sx5VqdeniI8V1VSjmF3+G6io5xJRxu1w=', '2024-06-01 19:50:17.578331', 1, 'admin', '', '', 'admin@gmail.com', 1, 1, '2024-05-28 08:28:03.890795'),
-(10, 'pbkdf2_sha256$600000$0sOJLKTaKV22N5RKBwSg72$W8tSkPPdLvjhx2/LuQzPcYYeMENnagttbU0g7JXR9l4=', '2024-06-01 15:53:37.921805', 0, 'ralarcon', 'ALARCON', 'GARCIA ROGER ERNESTO', 'ralarcon@usat.edu.pe', 1, 1, '2024-05-30 05:57:56.693998'),
+(10, 'pbkdf2_sha256$600000$0sOJLKTaKV22N5RKBwSg72$W8tSkPPdLvjhx2/LuQzPcYYeMENnagttbU0g7JXR9l4=', '2024-06-04 01:16:15.720873', 0, 'ralarcon', 'ALARCON', 'GARCIA ROGER ERNESTO', 'ralarcon@usat.edu.pe', 1, 1, '2024-05-30 05:57:56.693998'),
 (11, 'pbkdf2_sha256$600000$yrJurMoLQ1X1tiynQ1EkJy$zWqRnAPZYsD7Ep0dTE4XKNtVFVPDqFofPhkKkegb4/M=', '2024-06-01 19:38:07.126514', 0, 'maranguri', 'ARANGURI', 'GARCIA MARIA YSABEL', 'maranguri@usat.edu.pe', 1, 1, '2024-05-30 05:57:57.204841'),
 (12, 'pbkdf2_sha256$600000$tQ5VuKQ7s4woa9Quy07w0K$WO8Atod5AdktQd+kjBx2WKShAQIVL/gC3Z2bGYr8k3o=', '2024-06-01 19:48:15.955462', 0, 'hzelada', 'ZELADA', 'VALDIVIESO HECTOR MIGUEL', 'hzelada@usat.edu.pe', 1, 1, '2024-05-30 05:57:57.711827'),
 (16, 'pbkdf2_sha256$600000$ER3o8oHhUtB2DbvEcwKBoh$vsMeZS7JMkYqDN0bumx3P5alYU8YZliiNm8V/vlNrl8=', NULL, 0, 'jaquino', 'AQUINO', 'TRUJILLO JURY YESENIA', 'jaquino@usat.edu.pe', 1, 1, '2024-05-31 09:21:19.776325'),
@@ -735,7 +732,23 @@ INSERT INTO `django_admin_log` (`id`, `action_time`, `object_id`, `object_repr`,
 (78, '2024-06-01 08:37:18.799856', '3', ' 2024-I ALARCON GARCIA ROGER ERNESTO  2024-05-07 08:00:00 09:00:00', 3, '', 19, 1),
 (79, '2024-06-01 08:37:18.803373', '2', ' 2024-I ALARCON GARCIA ROGER ERNESTO  2024-05-06 15:30:00 19:30:00', 3, '', 19, 1),
 (80, '2024-06-01 08:37:18.806372', '1', ' 2024-I ZELADA VALDIVIESO HECTOR MIGUEL  2024-05-06 10:00:00 12:00:00', 3, '', 19, 1),
-(81, '2024-06-01 19:16:01.306855', '17', 'mhuilder', 2, '[{\"changed\": {\"fields\": [\"password\"]}}]', 15, 1);
+(81, '2024-06-01 19:16:01.306855', '17', 'mhuilder', 2, '[{\"changed\": {\"fields\": [\"password\"]}}]', 15, 1),
+(82, '2024-06-03 23:03:55.450690', '65', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-10 17:30:00 21:30:00', 3, '', 19, 1),
+(83, '2024-06-03 23:03:55.455667', '64', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-09 18:30:00 19:30:00', 3, '', 19, 1),
+(84, '2024-06-03 23:03:55.460667', '63', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-08 20:30:00 22:30:00', 3, '', 19, 1),
+(85, '2024-06-03 23:03:55.462665', '62', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-07 18:00:00 22:00:00', 3, '', 19, 1),
+(86, '2024-06-03 23:03:55.465667', '61', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-06 20:30:00 22:00:00', 3, '', 19, 1),
+(87, '2024-06-03 23:04:41.575865', '70', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-10 17:30:00 21:30:00', 3, '', 19, 1),
+(88, '2024-06-03 23:04:41.578865', '69', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-09 18:30:00 19:30:00', 3, '', 19, 1),
+(89, '2024-06-03 23:04:41.580880', '68', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-08 20:30:00 22:30:00', 3, '', 19, 1),
+(90, '2024-06-03 23:04:41.582858', '67', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-07 18:00:00 22:00:00', 3, '', 19, 1),
+(91, '2024-06-03 23:04:41.586943', '66', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-06 20:30:00 22:00:00', 3, '', 19, 1),
+(92, '2024-06-03 23:05:19.983777', '76', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-18 20:00:00 22:30:00', 3, '', 19, 1),
+(93, '2024-06-03 23:05:19.985780', '75', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-17 18:00:00 21:30:00', 3, '', 19, 1),
+(94, '2024-06-03 23:05:19.987777', '74', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-16 18:00:00 22:00:00', 3, '', 19, 1),
+(95, '2024-06-03 23:05:19.991779', '73', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-15 18:00:00 21:00:00', 3, '', 19, 1),
+(96, '2024-06-03 23:05:19.994774', '72', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-14 19:00:00 00:00:00', 3, '', 19, 1),
+(97, '2024-06-03 23:05:19.996773', '71', ' 2024-I VILCHEZ RIVAS MARLON EUGENIO  2024-05-13 16:30:00 22:00:00', 3, '', 19, 1);
 
 -- --------------------------------------------------------
 
@@ -832,12 +845,12 @@ CREATE TABLE `django_session` (
 --
 
 INSERT INTO `django_session` (`session_key`, `session_data`, `expire_date`) VALUES
+('30ywgl88zblcqw3lyu030h0mlim1lpmf', '.eJxVjEEOwiAQRe_C2hDolEFcuvcMhGEGWzUlKe3KeHdD0oVu_3vvv1VM-zbFvckaZ1YXZY06_Y6U8lOWTviRlnvVuS7bOpPuij5o07fK8roe7t_BlNrUa8yBGUdnsjgELGEIdEYHdqRRaHAgaItHTgxDETbk0VofAHyBgqQ-XwLcN-U:1sEImd:fF5-TGEEUTdYVotb-j7vOwCyIi4yppQRJuloiIsYyZM', '2024-06-18 01:16:15.731032'),
 ('9lrfbbbrnezr4taoikrfz00lds6fglgi', '.eJxVjMsOwiAQRf-FtSEDQ6G6dN9vIAwzSNXQpI-V8d-1SRe6veec-1IxbWuN2yJzHFldlFGn341SfkjbAd9Tu006T22dR9K7og-66GFieV4P9--gpqV-aysQini27DF7KAU7YnJiGAxCAQy-9OceklBwnbNFUjaIRC5bhM6p9wfwDTfo:1sCwGo:UlcHJhousMN0j3HqE4bJuzsY_OUMMbTx7oHalS8lc9U', '2024-06-14 07:01:46.740696'),
 ('k4er0ph3bbc7v37nypk2orn6wusu2yl6', 'e30:1sCvCv:JovMIFbCL3-Q_fHAco4-XVuLuBz28jdZSCKUEQ5hqJc', '2024-06-14 05:53:41.246867'),
 ('pcw45anhcoas15mqvab76i6k3g8dtbs7', 'e30:1sDUg5:0ZbjCFLNlJhpPqXk4Gg0quZhJQ2NTtqZdmg-x7yT6TM', '2024-06-15 19:46:09.978185'),
 ('raqcm1y2pgjrh37cgze4avlugvdlgz79', 'e30:1sDUgw:yrCYx-X_Bly9kvEpD-da8mJYU8fwp_kPSXjBW_UCtZM', '2024-06-15 19:47:02.237768'),
-('tl272e5nitbujzk5qgbixcw1uot0niad', '.eJxVjMsOwiAQRf-FtSEDQ6G6dN9vIAwzSNXQpI-V8d-1SRe6veec-1IxbWuN2yJzHFldlFGn341SfkjbAd9Tu006T22dR9K7og-66GFieV4P9--gpqV-aysQini27DF7KAU7YnJiGAxCAQy-9OceklBwnbNFUjaIRC5bhM6p9wfwDTfo:1sBsBk:YYv8KI7ucy8EsPgTyMedri9XpevV9OL5QCzL6INaxfA', '2024-06-11 08:28:08.360002'),
-('uaf1wswm4ek31bm6q2v5rc6zfmkzfowa', '.eJzdVllvozAQ_isWz21EQo5u3hzwEqeAWQORkt1VxGEauilUHK1WVf_7jtMcjfZoGylSt5IFznhmGH_fHHlQFmFTLxdNJcpFlihDpa2cPZdFYfxD5PIguQ7zq6IVF3ldZlFLqrQ2p1XLLhKxGm10Dxwsw2oJ1h2hDlLRTzpJX4v7appqvSiJuqKdqG1NTVVt0E8vPl2ooYgG3V63k4owbmtaFHXjjqb2uuD0RlwX4K8owzIrlOHXByVuyqqoFldlc1tUynAjgK-5ZfFTxHWBEoFofieqOrsK4-xbo6qploOvtQkoYtjflkUqqqKUP78E1GHI58GEWhZDk4DP0Ix4xKFSsxI34KoU8j5qp3tOlcczBSRNkoV5LcX6GE8xByMd2y7z0GTMPOIiTnXMDQYurpsyTIo2qM6JhQ2Mptgy6JQSj6Ex0X3GkU3NgFg73Q7oUhs7iHguBDfHW2_IwFNqgF5YbcO3MNeZg0x4UdBjJuGIcId4vvx2ndXNSt7ay6pa3IToXkSo1WrBUSriZbi9lto7VwcglFAvsjyLJdxK-9NQU4equj1Is3xtACIpfTx7j3xYzCVz5FFrKuHQKYBGLCCH28Q5mg1OIAQ0CrgJDF9ibmGkE51a65j2ZHDsmAGnWzZszOE58_Bo7W5HBr5dZfEeDGQ_be6y1d-46X8Mbjzs6GNgh9MphkqBQpHEWMw7IOafYO85eQHtHSsv87yvkmLV7GkBdEb0gzPCdM48l9kYBSaeo8-A6SXCjj9mzuzE1aJjz18HPQ9sySXyiBk4xkHbuhfh6cH3xE2Wywkj0fdFlVWI0hNiDo3IkE1d59DfGYJaOGxMNuGQzczxiUNMDkAH1DKgrU8C7FCfHQH1UwfcwC034BWmhgfEvWlKwNL-BL36O_Q7Qt4V9D6ZyCyGvAXsYU7SS3x0lr9yQr8mzd84EGB1_usKgD9MJgwAl4GxiwNLOaL9T6n1bJbYcowAHYEJQbATt39Y7TeXwffHX7vJY2k:1sEEYE:dwY_uPHM1hpptiu7BnTfZG_0TWJr25_VKmTn0jhM1y4', '2024-06-17 20:45:06.333048');
+('tl272e5nitbujzk5qgbixcw1uot0niad', '.eJxVjMsOwiAQRf-FtSEDQ6G6dN9vIAwzSNXQpI-V8d-1SRe6veec-1IxbWuN2yJzHFldlFGn341SfkjbAd9Tu006T22dR9K7og-66GFieV4P9--gpqV-aysQini27DF7KAU7YnJiGAxCAQy-9OceklBwnbNFUjaIRC5bhM6p9wfwDTfo:1sBsBk:YYv8KI7ucy8EsPgTyMedri9XpevV9OL5QCzL6INaxfA', '2024-06-11 08:28:08.360002');
 
 --
 -- Índices para tablas volcadas
@@ -1040,7 +1053,7 @@ ALTER TABLE `app_grupo`
 -- AUTO_INCREMENT de la tabla `app_horario_sustentaciones`
 --
 ALTER TABLE `app_horario_sustentaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT de la tabla `app_profesor`
@@ -1082,7 +1095,7 @@ ALTER TABLE `app_semestre_academico_profesores`
 -- AUTO_INCREMENT de la tabla `app_sustentacion`
 --
 ALTER TABLE `app_sustentacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT de la tabla `auth_group`
@@ -1124,7 +1137,7 @@ ALTER TABLE `auth_user_user_permissions`
 -- AUTO_INCREMENT de la tabla `django_admin_log`
 --
 ALTER TABLE `django_admin_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=98;
 
 --
 -- AUTO_INCREMENT de la tabla `django_content_type`
