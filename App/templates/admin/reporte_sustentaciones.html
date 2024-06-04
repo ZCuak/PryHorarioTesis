@@ -1,0 +1,84 @@
+<!-- reporte_sustentaciones.html -->
+
+{% extends "layouts/base.html" %}
+{% load i18n static %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reporte de Sustentaciones</title>
+    <style>
+        .custom-select-lg {
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Sustentaciones</h1>
+
+    <form method="get" class="form-inline mb-4">
+        <div class="form-group mr-3">
+            <label for="semestre" class="mr-2">Semestre:</label>
+            <input type="text" id="semestre" name="semestre" class="form-control" value="{{ semestre }}">
+        </div>
+        <div class="form-group mr-3">
+            <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label>
+            <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg">
+                <option value="">Todos</option>
+                <option value="parcial" {% if tipo_sustentacion == 'parcial' %}selected{% endif %}>Parcial</option>
+                <option value="final" {% if tipo_sustentacion == 'final' %}selected{% endif %}>Final</option>
+            </select>
+        </div>
+        <div class="form-group mt-2">
+            <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+            <a href="{% url 'exportar_csv' %}?semestre={{ semestre }}&tipo_sustentacion={{ tipo_sustentacion }}" class="btn btn-secondary">Exportar a CSV</a>
+        </div>
+    </form>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Semestre</th>
+                <th>Curso</th>
+                <th>Grupo</th>
+                <th>Código Universitario</th>
+                <th>Estudiante</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Tipo de Sustentación</th>
+                <th>Jurado 1</th>
+                <th>Jurado 2</th>
+                <th>Asesor</th>
+                <th>Fecha</th>
+                <th>Hora Inicio</th>
+                <th>Hora Fin</th>
+                <th>Título</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+                <tr>
+                    <td>{{ row.semestre }}</td>
+                    <td>{{ row.curso }}</td>
+                    <td>{{ row.grupo }}</td>
+                    <td>{{ row.codigo_universitario }}</td>
+                    <td>{{ row.estudiante }}</td>
+                    <td>{{ row.email_estudiante }}</td>
+                    <td>{{ row.telefono_estudiante }}</td>
+                    <td>{{ row.tipo_sustentacion }}</td>
+                    <td>{{ row.jurado1 }}</td>
+                    <td>{{ row.jurado2 }}</td>
+                    <td>{{ row.asesor }}</td>
+                    <td>{{ row.fecha }}</td>
+                    <td>{{ row.hora_inicio }}</td>
+                    <td>{{ row.hora_fin }}</td>
+                    <td>{{ row.titulo }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+{% endblock %}

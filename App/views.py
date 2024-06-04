@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 from django.db import connection
+from django.utils.dateparse import parse_datetime
 
 # views.py
 from django.http import JsonResponse
@@ -538,32 +539,56 @@ def disponibilidad_list(request):
 @staff_member_required
 @csrf_exempt
 def disponibilidad_create(request):
-    if request.method == 'POST':
-            data = json.loads(request.body)
-            print(data)
-            profesor = Profesor.objects.get(user=request.user)
-            semestre = SemestreAcademico.objects.get(vigencia=True)
-            
-            for evento in data:
-                form = Profesores_Semestre_AcademicoForm({
-                    'fecha': evento['start'].split('T')[0],
-                    'hora_inicio': evento['start'].split('T')[1],
-                    'hora_fin': evento['end'].split('T')[1] if evento['end'] else None
-                })
-                if form.is_valid():
-                    disponibilidad = form.save(commit=False)
-                    disponibilidad.profesor = profesor
-                    disponibilidad.semestre = semestre
-                    disponibilidad.save()
-                else:
-                    pass
-            return JsonResponse({"status": "success", "message": "Eventos guardados correctamente."})    
-    else:
-        pass
-    
-    form = Profesores_Semestre_AcademicoForm()
-    return render(request, 'profesor/disponibilidad_form.html', {'form': form})
+    usuario_logueado = request.user
+    profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
+    semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
 
+    if request.method == 'POST':
+        # Obtener semanas de la URL
+        semana_inicio = int(request.GET.get('semana_inicio'))
+        semana_fin = int(request.GET.get('semana_fin'))
+
+        # Calcular las fechas de inicio y fin de las semanas seleccionadas
+        semanas = semestre_academico.calcular_semanas()
+        fecha_inicio_semana = semanas[semana_inicio - 1][0]
+        fecha_fin_semana = semanas[semana_fin - 1][1]
+
+        # Borrar todas las disponibilidades existentes del profesor para esas semanas
+        Profesores_Semestre_Academico.objects.filter(
+            profesor=profesor_logueado,
+            semestre=semestre_academico,
+            fecha__range=[fecha_inicio_semana, fecha_fin_semana]
+        ).delete()
+
+        # Procesar la solicitud POST para guardar nuevas disponibilidades
+        try:
+            event_data = json.loads(request.body)
+            for event in event_data:
+                start = parse_datetime(event['start'])
+                end = parse_datetime(event['end'])
+                Profesores_Semestre_Academico.objects.create(
+                    profesor=profesor_logueado,
+                    semestre=semestre_academico,
+                    fecha=start.date(),
+                    hora_inicio=start.time(),
+                    hora_fin=end.time()
+                )
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            print(f"Error al guardar las disponibilidades: {e}")
+            return JsonResponse({'status': 'error'})
+
+    # Obtener las disponibilidades existentes
+    disponibilidades = Profesores_Semestre_Academico.objects.filter(
+        profesor=profesor_logueado,
+        semestre=semestre_academico
+    ).values_list('fecha', 'hora_inicio', 'hora_fin', 'profesor__apellidos_nombres')
+
+    return render(request, 'profesor/disponibilidad_form.html', {
+        'disponibilidades': disponibilidades
+    })
+
+@staff_member_required
 def obtener_fechas_min_max(request):
     semana_inicio = request.GET.get('semana_inicio')
     semana_fin = request.GET.get('semana_fin')
@@ -711,4 +736,159 @@ def get_semanas(request, semestre_id):
     semanas = semestre.calcular_semanas()
     semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
     return JsonResponse(semanas_formateadas, safe=False)
+#PARA REPORTES
+
+from django.shortcuts import render
+from django.http import HttpResponse
+import csv
+
+def reporte_sustentaciones(request):
+    semestre = request.GET.get('semestre')
+    tipo_sustentacion = request.GET.get('tipo_sustentacion')
+    
+    sql = """
+    SELECT 
+    appsa.nombre as semestre,
+    appc.nombre as curso,
+    appg.nombre as grupo,
+    appe.codigo_universitario, 
+    appe.apellidos_nombres as estudiante,
+    appe.email as email_estudiante,
+    appe.telefono as telefono_estudiante,
+    appc.nombre as curso,
+    appss.tipo_sustentacion,
+    app1.apellidos_nombres as jurado1,
+    app2.apellidos_nombres as jurado2,
+    app3.apellidos_nombres as asesor,
+    apphs.fecha,
+    apphs.hora_inicio,
+    apphs.hora_fin,
+    apps.titulo
+    FROM app_sustentacion apps
+    INNER JOIN app_cursos_grupos appcg on apps.cursos_grupos_id=appcg.id
+    INNER JOIN app_curso appc on appc.id=appcg.curso_id
+    INNER JOIN app_grupo appg on appg.id=appcg.grupo_id
+    INNER JOIN app_estudiante appe on appe.id=apps.estudiante_id
+    INNER JOIN app_profesor app1 on app1.id=apps.jurado1_id
+    INNER JOIN app_profesor app2 on app2.id=apps.jurado2_id
+    INNER JOIN app_profesor app3 on app3.id=apps.asesor_id
+    INNER JOIN app_horario_sustentaciones apphs on apphs.sustentacion_id=apps.id
+    INNER JOIN app_semana_sustentacion appss on appss.curso_id=appc.id
+    INNER JOIN app_semestreacademico appsa ON appsa.id=appss.semestre_academico_id
+    WHERE 1=1
+    """
+
+    params = []
+    
+    if semestre:
+        sql += " AND appsa.nombre = %s"
+        params.append(semestre)
+    
+    if tipo_sustentacion:
+        sql += " AND appss.tipo_sustentacion = %s"
+        params.append(tipo_sustentacion)
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+    data = [
+        dict(zip(columns, row))
+        for row in rows
+    ]
+
+    context = {
+        'data': data,
+        'semestre': semestre,
+        'tipo_sustentacion': tipo_sustentacion
+    }
+
+    return render(request, 'admin/reporte_sustentaciones.html', context)
+
+from django.http import HttpResponse
+from django.db import connection
+import openpyxl
+from openpyxl.utils import get_column_letter
+
+def exportar_csv(request):
+    semestre = request.GET.get('semestre')
+    tipo_sustentacion = request.GET.get('tipo_sustentacion')
+    
+    sql = """
+    SELECT 
+    appsa.nombre as semestre,
+    appc.nombre as curso,
+    appg.nombre as grupo,
+    appe.codigo_universitario, 
+    appe.apellidos_nombres as estudiante,
+    appe.email as email_estudiante,
+    appe.telefono as telefono_estudiante,
+    appc.nombre as curso,
+    appss.tipo_sustentacion,
+    app1.apellidos_nombres as jurado1,
+    app2.apellidos_nombres as jurado2,
+    app3.apellidos_nombres as asesor,
+    apphs.fecha,
+    apphs.hora_inicio,
+    apphs.hora_fin,
+    apps.titulo
+    FROM app_sustentacion apps
+    INNER JOIN app_cursos_grupos appcg on apps.cursos_grupos_id=appcg.id
+    INNER JOIN app_curso appc on appc.id=appcg.curso_id
+    INNER JOIN app_grupo appg on appg.id=appcg.grupo_id
+    INNER JOIN app_estudiante appe on appe.id=apps.estudiante_id
+    INNER JOIN app_profesor app1 on app1.id=apps.jurado1_id
+    INNER JOIN app_profesor app2 on app2.id=apps.jurado2_id
+    INNER JOIN app_profesor app3 on app3.id=apps.asesor_id
+    INNER JOIN app_horario_sustentaciones apphs on apphs.sustentacion_id=apps.id
+    INNER JOIN app_semana_sustentacion appss on appss.curso_id=appc.id
+    INNER JOIN app_semestreacademico appsa ON appsa.id=appss.semestre_academico_id
+    WHERE 1=1
+    """
+
+    params = []
+    
+    if semestre:
+        sql += " AND appsa.nombre = %s"
+        params.append(semestre)
+    
+    if tipo_sustentacion:
+        sql += " AND appss.tipo_sustentacion = %s"
+        params.append(tipo_sustentacion)
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+    # Crear el libro de Excel
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Sustentaciones"
+
+    # Escribir los encabezados de columna
+    for col_num, column_title in enumerate(columns, 1):
+        cell = worksheet.cell(row=1, column=col_num)
+        cell.value = column_title
+
+    # Escribir los datos
+    for row_num, row_data in enumerate(rows, 2):
+        for col_num, cell_value in enumerate(row_data, 1):
+            cell = worksheet.cell(row=row_num, column=col_num)
+            cell.value = cell_value
+
+    # Ajustar el ancho de las columnas
+    for col_num, column_title in enumerate(columns, 1):
+        column_letter = get_column_letter(col_num)
+        worksheet.column_dimensions[column_letter].width = 15
+
+    # Preparar la respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="sustentaciones.xlsx"'
+    
+    # Guardar el libro en la respuesta
+    workbook.save(response)
+    
+    return response
 
