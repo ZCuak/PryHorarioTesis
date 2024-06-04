@@ -577,8 +577,7 @@ def ver_disponibilidad(request, semana_inicio, semana_fin):
         # Obtener las fechas de inicio y fin de las semanas seleccionadas
         fecha_inicio_semana = semanas[semana_inicio - 1][0]
         fecha_fin_semana = semanas[semana_fin - 1][1]
-        print(fecha_inicio_semana)
-        print(fecha_fin_semana)
+        
         # Realizar la consulta SQL específica
         try:
             with connection.cursor() as cursor:
@@ -603,7 +602,11 @@ def ver_disponibilidad(request, semana_inicio, semana_fin):
     except Profesor.DoesNotExist:
         disponibilidades = []
 
-    return render(request, 'profesor/ver_disponibilidad.html', {'disponibilidades': disponibilidades})
+    return render(request, 'profesor/ver_disponibilidad.html', {
+        'disponibilidades': disponibilidades,
+        'semana_inicio': semana_inicio,
+        'semana_fin': semana_fin
+    })
     
     
 @staff_member_required
