@@ -241,6 +241,7 @@ class AlgoritmoGenetico:
         mejor_individuo = self.garantizar_todas_sustentaciones(mejor_individuo)
         mejor_individuo = self.ordenar_por_curso_grupo(mejor_individuo)
         mejor_individuo = self.garantizar_7_sustentaciones(mejor_individuo)
+        mejor_individuo = self.maximizar_sustentaciones_por_jurado(mejor_individuo)
         return mejor_individuo, no_disponibles
 
     def eliminar_duplicados(self, mejor_horario):
@@ -322,6 +323,21 @@ class AlgoritmoGenetico:
                         'hora_fin': hora_fin
                     }
                     mejor_horario.append(sust_data)
+
+        return mejor_horario
+
+    def maximizar_sustentaciones_por_jurado(self, mejor_horario):
+        # Crear un diccionario para contar la cantidad de sustentaciones por profesor
+        contador_sustentaciones = {}
+
+        for sustentacion in mejor_horario:
+            if sustentacion['jurado1']:
+                contador_sustentaciones[sustentacion['jurado1'].id] = contador_sustentaciones.get(sustentacion['jurado1'].id, 0) + 1
+            if sustentacion['jurado2']:
+                contador_sustentaciones[sustentacion['jurado2'].id] = contador_sustentaciones.get(sustentacion['jurado2'].id, 0) + 1
+
+        # Ordenar el horario por la cantidad de sustentaciones por profesor
+        mejor_horario.sort(key=lambda x: max(contador_sustentaciones.get(x['jurado1'].id, 0), contador_sustentaciones.get(x['jurado2'].id, 0)), reverse=True)
 
         return mejor_horario
 

@@ -65,4 +65,51 @@
         location.reload();
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Obtener la tabla
+        var table = document.querySelector('.table');
+
+        // Obtener el índice de la columna "Curso - Grupo"
+        var columnIndex = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso - Grupo');
+
+        // Crear un objeto para almacenar las filas agrupadas por curso y grupo
+        var groupedRows = {};
+
+        // Iterar sobre las filas de la tabla
+        Array.from(table.querySelectorAll('tbody tr')).forEach(function(row) {
+            // Obtener el texto de la columna "Curso - Grupo" de la fila actual
+            var courseGroup = row.querySelectorAll('td')[columnIndex].textContent.trim();
+
+            // Verificar si ya existe una entrada para este curso y grupo en el objeto groupedRows
+            if (!groupedRows[courseGroup]) {
+                // Si no existe, crear una nueva entrada con un array vacío
+                groupedRows[courseGroup] = [];
+            }
+
+            // Agregar la fila actual al array correspondiente en groupedRows
+            groupedRows[courseGroup].push(row);
+        });
+
+        // Limpiar el cuerpo de la tabla
+        table.querySelector('tbody').innerHTML = '';
+
+        // Iterar sobre las entradas en groupedRows y agregarlas de nuevo a la tabla
+        Object.keys(groupedRows).forEach(function(courseGroup) {
+            // Agregar una fila para el curso y grupo actual
+            var headerRow = document.createElement('tr');
+            var headerCell = document.createElement('th');
+            headerCell.textContent = courseGroup;
+            headerCell.setAttribute('colspan', table.querySelectorAll('thead th').length);
+            headerRow.appendChild(headerCell);
+            table.querySelector('tbody').appendChild(headerRow);
+
+            // Agregar todas las filas correspondientes a este curso y grupo
+            groupedRows[courseGroup].forEach(function(row) {
+                table.querySelector('tbody').appendChild(row);
+            });
+        });
+    });
+</script>
+
 {% endblock %}
