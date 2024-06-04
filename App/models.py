@@ -63,7 +63,9 @@ class SemestreAcademico(models.Model):
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     vigencia = models.BooleanField()
-
+    class Meta:
+            verbose_name = "Semestre"
+            verbose_name_plural = "Semestres"
     def __str__(self):
         return self.nombre
 
@@ -96,6 +98,7 @@ class SemestreAcademico(models.Model):
             semanas.append((current_start, current_end))
         
         return semanas
+    
 
 class Cursos_Grupos(models.Model):
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE)

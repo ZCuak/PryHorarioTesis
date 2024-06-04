@@ -63,8 +63,10 @@
                           </div>
                       {% endif %}
                   </li>
+                  
               {% endif %}
           {% endfor %}
+          
       {% endif %}
       
       <li class="nav-item">
@@ -97,7 +99,6 @@
     {% if request.user.is_authenticated and not request.user.is_superuser %}
 
       
-       
        
         <li class="nav-item">
           <a class="nav-link {% if 'disponibilidad' in segment %} active {% endif %} " href="{% url 'disponibilidad_list' %}">

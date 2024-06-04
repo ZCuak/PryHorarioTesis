@@ -57,9 +57,7 @@
                 console.error('Error al obtener las fechas:', error);
             }
         });
-        // console.log(fechaInicioMin)
-        // console.log(fechaFinMax)
-        // Función para guardar eventos en el servidor
+
         function saveEvents() {
             var events = $('#calendar').fullCalendar('clientEvents');
             var eventData = events.map(event => ({
@@ -100,6 +98,7 @@
             selectHelper: true,
             hiddenDays: [0],  
             locale: 'es',  // Establece el idioma a español
+
             select: function (start, end) {
                 var title = prompt('Ingrese el nombre del evento:');
                 if (title) {
