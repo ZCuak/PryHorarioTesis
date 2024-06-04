@@ -542,7 +542,28 @@ def disponibilidad_create(request):
     form = Profesores_Semestre_AcademicoForm()
     return render(request, 'profesor/disponibilidad_form.html', {'form': form})
 
+@staff_member_required
+@csrf_exempt
+def obtener_fechas_min_max(request):
+    semana_inicio = request.GET.get('semana_inicio')
+    semana_fin = request.GET.get('semana_fin')
 
+    # Asegúrate de convertir semana_inicio y semana_fin en enteros
+    semana_inicio = int(semana_inicio)
+    semana_fin = int(semana_fin)
+
+    # Obtén las fechas de inicio y fin del semestre
+    semestre = SemestreAcademico.objects.get(vigencia=True)  # Ajusta según tus requisitos
+    semanas = semestre.calcular_semanas()
+
+    fecha_inicio_min = semanas[semana_inicio - 1][0]
+    fecha_fin_max = semanas[semana_fin - 1][1]
+
+    return JsonResponse({
+        'fecha_inicio_min': fecha_inicio_min,
+        'fecha_fin_max': fecha_fin_max,
+    })
+    
 @staff_member_required
 def ver_disponibilidad(request, semana_inicio, semana_fin):
     usuario_logueado = request.user

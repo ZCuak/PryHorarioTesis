@@ -37,28 +37,66 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
+
 <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function csrfSafeMethod(method) {
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
     $(document).ready(function () {
-        // Hacer una solicitud AJAX para obtener las fechas mínima y máxima
+        // Obtener parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const semanaInicio = urlParams.get('semana_inicio');
+        const semanaFin = urlParams.get('semana_fin');
+
+        // Hacer una solicitud AJAX para obtener las fechas mínima y máxima basadas en las semanas
         $.ajax({
             url: "{% url 'obtener_fechas_min_max' %}",
+            data: {
+                'semana_inicio': semanaInicio,
+                'semana_fin': semanaFin
+            },
             dataType: 'json',
             success: function(data) {
                 var fechaInicioMin = data.fecha_inicio_min;
                 var fechaFinMax = data.fecha_fin_max;
-                
+
                 // Configurar el rango válido en el calendario
                 $('#calendar').fullCalendar('option', 'validRange', {
                     start: fechaInicioMin,
-                    end: fechaFinMax
+                    end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla
                 });
             },
             error: function(xhr, status, error) {
                 console.error('Error al obtener las fechas:', error);
             }
         });
-        // console.log(fechaInicioMin)
-        // console.log(fechaFinMax)
+
         // Función para guardar eventos en el servidor
         function saveEvents() {
             var events = $('#calendar').fullCalendar('clientEvents');
@@ -121,23 +159,6 @@
 
         // Asociar funciones a los botones
         $('#saveEvents').click(saveEvents);
-
-        // Función para obtener el token CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                let cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    let cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
     });
 </script>
-
 {% endblock %}
