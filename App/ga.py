@@ -26,9 +26,6 @@ class AlgoritmoGenetico:
         individuo = []
         estudiantes_asignados = set()
         for curso_grupo in self.cursos_grupos:
-            if not curso_grupo.semestre.vigencia:
-                continue
-
             sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
             for sustentacion in sustentaciones:
                 if sustentacion.estudiante.id in estudiantes_asignados:
@@ -37,13 +34,13 @@ class AlgoritmoGenetico:
 
                 jurado1 = sustentacion.jurado1 if sustentacion.jurado1 and self.profesor_valido(sustentacion.jurado1, curso_grupo.semestre) else self.seleccionar_profesor(curso_grupo, exclude=[])
                 jurado2 = sustentacion.jurado2 if sustentacion.jurado2 and self.profesor_valido(sustentacion.jurado2, curso_grupo.semestre) else self.seleccionar_profesor(curso_grupo, exclude=[jurado1])
-                asesor = sustentacion.asesor  # El asesor no debe cambiar
+                asesor = sustentacion.asesor
 
                 # Asegurarse de que los tres profesores sean distintos
                 if jurado1 == jurado2:
                     jurado2 = self.seleccionar_profesor(curso_grupo, exclude=[jurado1])
                 if jurado1 == asesor or jurado2 == asesor:
-                    asesor = sustentacion.asesor  # El asesor no debe cambiar
+                    asesor = self.seleccionar_profesor(curso_grupo, exclude=[jurado1, jurado2])
 
                 fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, curso_grupo.curso)
 
@@ -242,6 +239,8 @@ class AlgoritmoGenetico:
         mejor_individuo = self.verificar_conflictos_horarios(mejor_individuo)
         mejor_individuo = self.eliminar_duplicados(mejor_individuo)
         mejor_individuo = self.garantizar_todas_sustentaciones(mejor_individuo)
+        mejor_individuo = self.ordenar_por_curso_grupo(mejor_individuo)
+        mejor_individuo = self.garantizar_7_sustentaciones(mejor_individuo)
         return mejor_individuo, no_disponibles
 
     def eliminar_duplicados(self, mejor_horario):
@@ -262,13 +261,51 @@ class AlgoritmoGenetico:
             if key not in asignadas:
                 jurado1 = sustentacion.jurado1 if sustentacion.jurado1 and self.profesor_valido(sustentacion.jurado1, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[])
                 jurado2 = sustentacion.jurado2 if sustentacion.jurado2 and self.profesor_valido(sustentacion.jurado2, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
-                asesor = sustentacion.asesor  # El asesor no debe cambiar
+                asesor = sustentacion.asesor
 
                 # Asegurarse de que los tres profesores sean distintos
                 if jurado1 == jurado2:
                     jurado2 = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
                 if jurado1 == asesor or jurado2 == asesor:
-                    asesor = sustentacion.asesor  # El asesor no debe cambiar
+                    asesor = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1, jurado2])
+
+                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, sustentacion.cursos_grupos.curso)
+
+                if fecha and hora_inicio and hora_fin:
+                    sust_data = {
+                        'cursos_grupos': sustentacion.cursos_grupos,
+                        'estudiante': sustentacion.estudiante,
+                        'jurado1': jurado1,
+                        'jurado2': jurado2,
+                        'asesor': asesor,
+                        'titulo': sustentacion.titulo,
+                        'fecha': fecha,
+                        'hora_inicio': hora_inicio,
+                        'hora_fin': hora_fin
+                    }
+                    mejor_horario.append(sust_data)
+
+        return mejor_horario
+
+    def ordenar_por_curso_grupo(self, mejor_horario):
+        return sorted(mejor_horario, key=lambda x: (x['cursos_grupos'].curso.nombre, x['cursos_grupos'].grupo))
+
+    def garantizar_7_sustentaciones(self, mejor_horario):
+        todas_sustentaciones = Sustentacion.objects.all()
+        asignadas = {(s['cursos_grupos'].id, s['estudiante'].id) for s in mejor_horario}
+
+        for sustentacion in todas_sustentaciones:
+            key = (sustentacion.cursos_grupos.id, sustentacion.estudiante.id)
+            if key not in asignadas:
+                jurado1 = sustentacion.jurado1 if sustentacion.jurado1 and self.profesor_valido(sustentacion.jurado1, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[])
+                jurado2 = sustentacion.jurado2 if sustentacion.jurado2 and self.profesor_valido(sustentacion.jurado2, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
+                asesor = sustentacion.asesor
+
+                # Asegurarse de que los tres profesores sean distintos
+                if jurado1 == jurado2:
+                    jurado2 = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
+                if jurado1 == asesor or jurado2 == asesor:
+                    asesor = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1, jurado2])
 
                 fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, sustentacion.cursos_grupos.curso)
 
