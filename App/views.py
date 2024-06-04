@@ -17,7 +17,7 @@ from django.http import JsonResponse
 import json
 from django.db import connection
 from django.utils.dateparse import parse_datetime
-
+from django.contrib.auth.decorators import login_required
 # views.py
 from django.http import JsonResponse
 from .ga import generar_horarios, guardar_horario
@@ -35,7 +35,7 @@ def ejecutar_algoritmo(request):
         mejor_horario, no_disponibles = generar_horarios()
         if no_disponibles:
             messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
-            return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres})
+            return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres, 'semestre_id': semestre_id})
         # Convertir objetos a diccionarios
         mejor_horario_dict = [
             {
@@ -60,8 +60,7 @@ def ejecutar_algoritmo(request):
         request.session['mejor_horario'] = mejor_horario_dict
         return redirect('mostrar_resultados')
 
-    return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres})
-
+    return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres, 'semestre_id': semestre_id})
 
 
 @staff_member_required
@@ -892,3 +891,7 @@ def exportar_csv(request):
     
     return response
 
+@login_required
+def user_profile(request):
+    user = request.user
+    return render(request, 'profile.html', {'user': user})
