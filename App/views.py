@@ -17,7 +17,7 @@ from django.http import JsonResponse
 import json
 from django.db import connection
 from django.utils.dateparse import parse_datetime
-
+from django.contrib.auth.decorators import login_required
 # views.py
 from django.http import JsonResponse
 from .ga import generar_horarios, guardar_horario
@@ -699,3 +699,7 @@ def get_semanas(request, semestre_id):
     semanas_formateadas = [(str(semana[0]), str(semana[1])) for semana in semanas]
     return JsonResponse(semanas_formateadas, safe=False)
 
+@login_required
+def user_profile(request):
+    user = request.user
+    return render(request, 'profile.html', {'user': user})
