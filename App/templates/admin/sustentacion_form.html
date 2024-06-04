@@ -20,9 +20,30 @@
                         </div>
                         <input type="hidden" name="cursos_grupos" value="{{ curso_grupo.id }}">
                         {{ form.as_p }}
-           
-                     
-                      
+                        <div class="mb-3">
+                            <label for="id_jurado1">Jurado 1:</label>
+                            <select id="id_jurado1" name="jurado1" class="form-control">
+                                {% for jurado in jurados %}
+                                    <option value="{{ jurado.id }}" {% if jurado.id == form.jurado1.value %}selected{% endif %}>{{ jurado.apellidos_nombres }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_jurado2">Jurado 2:</label>
+                            <select id="id_jurado2" name="jurado2" class="form-control">
+                                {% for jurado in jurados %}
+                                    <option value="{{ jurado.id }}" {% if jurado.id == form.jurado2.value %}selected{% endif %}>{{ jurado.apellidos_nombres }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_asesor">Asesor:</label>
+                            <select id="id_asesor" name="asesor" class="form-control">
+                                {% for jurado in jurados %}
+                                    <option value="{{ jurado.id }}" {% if jurado.id == form.asesor.value %}selected{% endif %}>{{ jurado.apellidos_nombres }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
                         <a class="btn btn-secondary" href="javascript:history.back()">Volver</a>
                     </form>
