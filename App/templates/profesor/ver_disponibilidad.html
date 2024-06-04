@@ -1,16 +1,6 @@
 {% extends "layouts/base.html" %}
 {% load i18n static %}
 
-{% block extrahead %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet">
-<style>
-    #calendar {
-        max-width: 900px;
-        margin: 20px auto;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row">
@@ -20,67 +10,29 @@
                     <h6>Disponibilidad del profesor</h6>
                 </div>
                 <div class="card-body">
-                    <div id="calendar"></div>
+                    <table class="table">
+                        <thead>
+                            <tr class="text-center">
+                                <th>Fecha</th>
+                                <th>Hora Inicio</th>
+                                <th>Hora Fin</th>
+                                <th>Profesor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for disponibilidad in disponibilidades %}
+                                <tr class="text-center">
+                                    <td>{{ disponibilidad.1 }}</td>
+                                    <td>{{ disponibilidad.2 }}</td>
+                                    <td>{{ disponibilidad.3 }}</td>
+                                    <td>{{ disponibilidad.4 }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extrascript %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
-
-<script>
-    $(document).ready(function () {
-        // Obtener parámetros de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const semanaInicio = urlParams.get('semana_inicio');
-        const semanaFin = urlParams.get('semana_fin');
-
-        // Hacer una solicitud AJAX para obtener las fechas mínima y máxima basadas en las semanas
-        $.ajax({
-            url: "{% url 'obtener_fechas_min_max' %}",
-            data: {
-                'semana_inicio': semanaInicio,
-                'semana_fin': semanaFin
-            },
-            dataType: 'json',
-            success: function(data) {
-                var fechaInicioMin = data.fecha_inicio_min;
-                var fechaFinMax = data.fecha_fin_max;
-
-                // Inicializar el calendario
-                $('#calendar').fullCalendar({
-                    header: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: ''
-                    },
-                    defaultView: 'agendaWeek',
-                    locale: 'es',
-                    validRange: {
-                        start: fechaInicioMin,
-                        end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla
-                    },
-                    events: [
-                        {% for disponibilidad in disponibilidades %}
-                        {
-                            title: "{{ disponibilidad.4 }}",
-                            start: "{{ disponibilidad.1 }}T{{ disponibilidad.2 }}",
-                            end: "{{ disponibilidad.1 }}T{{ disponibilidad.3 }}"
-                        },
-                        {% endfor %}
-                    ]
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error al obtener las fechas:', error);
-            }
-        });
-    });
-</script>
 {% endblock %}
