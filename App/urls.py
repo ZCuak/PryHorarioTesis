@@ -17,7 +17,7 @@ urlpatterns = [
     #Para profesor
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
     path('disponibilidad/crear/', disponibilidad_create, name='disponibilidad_create'),
-   path('disponibilidad/ver/<int:semana_inicio>/<int:semana_fin>/', views.ver_disponibilidad, name='ver_disponibilidad'),
+    path('disponibilidad/ver/<int:semana_inicio>/<int:semana_fin>/', views.ver_disponibilidad, name='ver_disponibilidad'),
     path('disponibilidad/fechas_min_max/', views.obtener_fechas_min_max, name='obtener_fechas_min_max'),
     
     path('accounts/profile/', views.profile, name='profile'),

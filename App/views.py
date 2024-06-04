@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 from django.db import connection
+from django.utils.dateparse import parse_datetime
 
 # views.py
 from django.http import JsonResponse
@@ -516,32 +517,56 @@ def disponibilidad_list(request):
 @staff_member_required
 @csrf_exempt
 def disponibilidad_create(request):
-    if request.method == 'POST':
-            data = json.loads(request.body)
-            print(data)
-            profesor = Profesor.objects.get(user=request.user)
-            semestre = SemestreAcademico.objects.get(vigencia=True)
-            
-            for evento in data:
-                form = Profesores_Semestre_AcademicoForm({
-                    'fecha': evento['start'].split('T')[0],
-                    'hora_inicio': evento['start'].split('T')[1],
-                    'hora_fin': evento['end'].split('T')[1] if evento['end'] else None
-                })
-                if form.is_valid():
-                    disponibilidad = form.save(commit=False)
-                    disponibilidad.profesor = profesor
-                    disponibilidad.semestre = semestre
-                    disponibilidad.save()
-                else:
-                    pass
-            return JsonResponse({"status": "success", "message": "Eventos guardados correctamente."})    
-    else:
-        pass
-    
-    form = Profesores_Semestre_AcademicoForm()
-    return render(request, 'profesor/disponibilidad_form.html', {'form': form})
+    usuario_logueado = request.user
+    profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
+    semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
 
+    if request.method == 'POST':
+        # Obtener semanas de la URL
+        semana_inicio = int(request.GET.get('semana_inicio'))
+        semana_fin = int(request.GET.get('semana_fin'))
+
+        # Calcular las fechas de inicio y fin de las semanas seleccionadas
+        semanas = semestre_academico.calcular_semanas()
+        fecha_inicio_semana = semanas[semana_inicio - 1][0]
+        fecha_fin_semana = semanas[semana_fin - 1][1]
+
+        # Borrar todas las disponibilidades existentes del profesor para esas semanas
+        Profesores_Semestre_Academico.objects.filter(
+            profesor=profesor_logueado,
+            semestre=semestre_academico,
+            fecha__range=[fecha_inicio_semana, fecha_fin_semana]
+        ).delete()
+
+        # Procesar la solicitud POST para guardar nuevas disponibilidades
+        try:
+            event_data = json.loads(request.body)
+            for event in event_data:
+                start = parse_datetime(event['start'])
+                end = parse_datetime(event['end'])
+                Profesores_Semestre_Academico.objects.create(
+                    profesor=profesor_logueado,
+                    semestre=semestre_academico,
+                    fecha=start.date(),
+                    hora_inicio=start.time(),
+                    hora_fin=end.time()
+                )
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            print(f"Error al guardar las disponibilidades: {e}")
+            return JsonResponse({'status': 'error'})
+
+    # Obtener las disponibilidades existentes
+    disponibilidades = Profesores_Semestre_Academico.objects.filter(
+        profesor=profesor_logueado,
+        semestre=semestre_academico
+    ).values_list('fecha', 'hora_inicio', 'hora_fin', 'profesor__apellidos_nombres')
+
+    return render(request, 'profesor/disponibilidad_form.html', {
+        'disponibilidades': disponibilidades
+    })
+
+@staff_member_required
 def obtener_fechas_min_max(request):
     semana_inicio = request.GET.get('semana_inicio')
     semana_fin = request.GET.get('semana_fin')

@@ -8,12 +8,10 @@
         max-width: 900px;
         margin: 20px auto;
     }
-
     .btn-container {
         text-align: center;
         margin-bottom: 20px;
     }
-
     .btn {
         padding: 10px 20px;
         font-size: 16px;
@@ -27,6 +25,7 @@
 <div class="container">
     <div class="btn-container">
         <button class="btn" id="saveEvents">Guardar Horarios</button>
+        <button class="btn btn-secondary" id="cancelButton">Cancelar</button>
     </div>
     <div id="calendar"></div>
 </div>
@@ -39,40 +38,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
 
 <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            let cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                let cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    const csrftoken = getCookie('csrftoken');
-
-    function csrfSafeMethod(method) {
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
-    });
-
     $(document).ready(function () {
         // Obtener parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const semanaInicio = urlParams.get('semana_inicio');
         const semanaFin = urlParams.get('semana_fin');
+
+        console.log("Semana Inicio:", semanaInicio);
+        console.log("Semana Fin:", semanaFin);
 
         // Hacer una solicitud AJAX para obtener las fechas mínima y máxima basadas en las semanas
         $.ajax({
@@ -86,10 +59,56 @@
                 var fechaInicioMin = data.fecha_inicio_min;
                 var fechaFinMax = data.fecha_fin_max;
 
-                // Configurar el rango válido en el calendario
-                $('#calendar').fullCalendar('option', 'validRange', {
-                    start: fechaInicioMin,
-                    end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla
+                console.log("Fecha Inicio Min:", fechaInicioMin);
+                console.log("Fecha Fin Max:", fechaFinMax);
+
+                // Crear los eventos a partir de las disponibilidades
+                var events = [
+                    {% for disponibilidad in disponibilidades %}
+                    {
+                        title: "{{ disponibilidad.3 }}",
+                        start: "{{ disponibilidad.0|date:'Y-m-d' }}T{{ disponibilidad.1|time:'H:i:s' }}",
+                        end: "{{ disponibilidad.0|date:'Y-m-d' }}T{{ disponibilidad.2|time:'H:i:s' }}"
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ];
+
+                console.log("Events:", events);
+
+                // Inicializar el calendario
+                $('#calendar').fullCalendar({
+                    header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: ''
+                    },
+                    defaultView: 'agendaWeek',
+                    locale: 'es',
+                    validRange: {
+                        start: fechaInicioMin,
+                        end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla
+                    },
+                    events: events,
+                    selectable: true,
+                    selectHelper: true,
+                    select: function (start, end) {
+                        var title = prompt('Ingrese el nombre del evento:');
+                        if (title) {
+                            var eventData = {
+                                title: title,
+                                start: start,
+                                end: end
+                            };
+                            $('#calendar').fullCalendar('renderEvent', eventData, true);
+                        }
+                        $('#calendar').fullCalendar('unselect');
+                    },
+                    editable: true,
+                    eventRender: function(event, element) {
+                        console.log("Event Title:", event.title);
+                        console.log("Event Start:", event.start.format());
+                        console.log("Event End:", event.end ? event.end.format() : null);
+                    }
                 });
             },
             error: function(xhr, status, error) {
@@ -106,7 +125,7 @@
                 end: event.end ? event.end.format() : null
             }));
 
-            fetch('{% url "disponibilidad_create" %}', {
+            fetch('{% url "disponibilidad_create" %}?semana_inicio=' + semanaInicio + '&semana_fin=' + semanaFin, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -114,51 +133,39 @@
                 },
                 body: JSON.stringify(eventData)
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        alert("Horarios guardados correctamente.");
-                    } else {
-                        alert("Error al guardar los horarios.");
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Horarios guardados correctamente.");
+                } else {
+                    alert("Error al guardar los horarios.");
+                }
+            })
+            .catch(error => console.error('Error:', error));
             console.log(JSON.stringify(eventData));
         }
 
-        // Inicializar el calendario
-        $('#calendar').fullCalendar({
-            header: {
-                left: 'prev,next today',
-                center: 'title',
-                right: ''
-            },
-            defaultView: 'agendaWeek',
-            selectable: true,
-            selectHelper: true,
-            hiddenDays: [0],  
-            locale: 'es',  // Establece el idioma a español
-            select: function (start, end) {
-                var title = prompt('Ingrese el nombre del evento:');
-                if (title) {
-                    var eventData = {
-                        title: title,
-                        start: start,
-                        end: end
-                    };
-                    $('#calendar').fullCalendar('renderEvent', eventData, true);
-                }
-                $('#calendar').fullCalendar('unselect');
-            },
-            editable: true,
-            events: [],
-            minTime: '07:00:00',
-            maxTime: '24:00:00',
-            slotLabelFormat: 'H(:mm)' // Formato de 24 horas
-        });
-
         // Asociar funciones a los botones
         $('#saveEvents').click(saveEvents);
+        $('#cancelButton').click(function() {
+            window.location.href = "{% url 'disponibilidad_list' %}";
+        });
+
+        // Función para obtener el token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
     });
 </script>
 {% endblock %}
