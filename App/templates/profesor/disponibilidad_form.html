@@ -25,7 +25,7 @@
 <div class="container">
     <div class="btn-container">
         <button class="btn" id="saveEvents">Guardar Horarios</button>
-        <button class="btn btn-secondary" id="cancelButton">Cancelar</button>
+        <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
     </div>
     <div id="calendar"></div>
 </div>
@@ -85,6 +85,8 @@
                     },
                     defaultView: 'agendaWeek',
                     locale: 'es',
+                    minTime: '07:00:00',  // Hora mínima para mostrar en el calendario
+                    maxTime: '24:00:00',  // Hora máxima para mostrar en el calendario
                     validRange: {
                         start: fechaInicioMin,
                         end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla

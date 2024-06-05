@@ -22,7 +22,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .ga import generar_horarios, guardar_horario
 from .utils import send_whatsapp_message
-
 @staff_member_required
 def ejecutar_algoritmo(request):
     semestres = SemestreAcademico.objects.all()
@@ -79,40 +78,21 @@ def ejecutar_algoritmo(request):
         request.session['mejor_horario'] = mejor_horario_dict
         return redirect('mostrar_resultados')
 
-    # Preparar los datos de las sustentaciones para pasarlos a la plantilla
-    sustentaciones_json = json.dumps([{
-        'estudiante': {
-            'id': sustentacion.estudiante.id,
-            'telefono': sustentacion.estudiante.telefono
-        },
-        'jurado1': {
-            'id': sustentacion.jurado1.id if sustentacion.jurado1 else None,
-            'telefono': sustentacion.jurado1.telefono if sustentacion.jurado1 else None
-        },
-        'jurado2': {
-            'id': sustentacion.jurado2.id if sustentacion.jurado2 else None,
-            'telefono': sustentacion.jurado2.telefono if sustentacion.jurado2 else None
-        },
-        'asesor': {
-            'id': sustentacion.asesor.id,
-            'telefono': sustentacion.asesor.telefono
-        },
-        'titulo': sustentacion.titulo,
-        'fecha': str(sustentacion.horario_sustentaciones_set.first().fecha) if sustentacion.horario_sustentaciones_set.exists() else None,
-        'hora_inicio': str(sustentacion.horario_sustentaciones_set.first().hora_inicio) if sustentacion.horario_sustentaciones_set.exists() else None,
-    } for sustentacion in sustentaciones])
+    # Obtener las sustentaciones con sus horarios
+    sustentaciones_con_horarios = Horario_Sustentaciones.objects.filter(sustentacion__in=sustentaciones).select_related('sustentacion')
 
     context = {
-        'sustentaciones': sustentaciones,
+        'sustentaciones_con_horarios': sustentaciones_con_horarios,
         'semestres': semestres,
         'cursos_grupos': cursos_grupos,
         'semestre_id': semestre_id,
         'tipo_sustentacion': tipo_sustentacion,
         'curso_grupo_id': curso_grupo_id,
-        'sustentaciones_json': sustentaciones_json,
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
+
+ 
 
 
 @staff_member_required
@@ -551,6 +531,14 @@ def semestre_create(request):
 
 @staff_member_required
 def disponibilidad_list(request):
+    if request.user.is_superuser:
+        profesores = Profesor.objects.all()
+        profesor_id = request.GET.get('profesor_id', profesores.first().id if profesores.exists() else None)
+    else:
+        profesor = Profesor.objects.filter(user=request.user).first()
+        profesor_id = profesor.id if profesor else None
+        profesores = [profesor] if profesor else []
+
     # Realizar la consulta SQL específica
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -558,11 +546,9 @@ def disponibilidad_list(request):
                 assu.semana_inicio, 
                 assu.semana_fin
             FROM 
-                app_profesores_semestre_academico aps
-            INNER JOIN 
-                app_semestreacademico asap ON asap.id = aps.semestre_id
-            INNER JOIN 
-                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id
+                app_semestreacademico asap 
+            JOIN 
+                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id and asap.vigencia = 1
             GROUP BY 
                 assu.semana_inicio, 
                 assu.semana_fin
@@ -571,13 +557,23 @@ def disponibilidad_list(request):
         """)
         disponibilidades = cursor.fetchall()
 
-    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
+    return render(request, 'profesor/disponibilidad_list.html', {
+        'disponibilidades': disponibilidades,
+        'profesores': profesores,
+        'profesor_id': profesor_id,
+    })
 
 @staff_member_required
 @csrf_exempt
+@transaction.atomic
 def disponibilidad_create(request):
-    usuario_logueado = request.user
-    profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
+    if request.user.is_superuser:
+        profesor_id = request.GET.get('profesor_id')
+        profesor = get_object_or_404(Profesor, id=profesor_id)
+    else:
+        usuario_logueado = request.user
+        profesor = get_object_or_404(Profesor, user=usuario_logueado)
+    
     semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
 
     if request.method == 'POST':
@@ -592,7 +588,7 @@ def disponibilidad_create(request):
 
         # Borrar todas las disponibilidades existentes del profesor para esas semanas
         Profesores_Semestre_Academico.objects.filter(
-            profesor=profesor_logueado,
+            profesor=profesor,
             semestre=semestre_academico,
             fecha__range=[fecha_inicio_semana, fecha_fin_semana]
         ).delete()
@@ -603,13 +599,25 @@ def disponibilidad_create(request):
             for event in event_data:
                 start = parse_datetime(event['start'])
                 end = parse_datetime(event['end'])
+                
+                # Eliminar cualquier disponibilidad existente para el mismo profesor en la misma fecha y hora
+                Profesores_Semestre_Academico.objects.filter(
+                    profesor=profesor,
+                    semestre=semestre_academico,
+                    fecha=start.date(),
+                    hora_inicio=start.time(),
+                    hora_fin=end.time()
+                ).delete()
+
+                # Crear la nueva disponibilidad
                 Profesores_Semestre_Academico.objects.create(
-                    profesor=profesor_logueado,
+                    profesor=profesor,
                     semestre=semestre_academico,
                     fecha=start.date(),
                     hora_inicio=start.time(),
                     hora_fin=end.time()
                 )
+
             return JsonResponse({'status': 'success'})
         except Exception as e:
             print(f"Error al guardar las disponibilidades: {e}")
@@ -617,15 +625,14 @@ def disponibilidad_create(request):
 
     # Obtener las disponibilidades existentes
     disponibilidades = Profesores_Semestre_Academico.objects.filter(
-        profesor=profesor_logueado,
+        profesor=profesor,
         semestre=semestre_academico
     ).values_list('fecha', 'hora_inicio', 'hora_fin', 'profesor__apellidos_nombres')
 
     return render(request, 'profesor/disponibilidad_form.html', {
-        'disponibilidades': disponibilidades
+        'disponibilidades': disponibilidades,
+        'profesor': profesor
     })
-
-
 
 @staff_member_required
 def obtener_fechas_min_max(request):

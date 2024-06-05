@@ -63,18 +63,24 @@
                                     <th>Jurado 1</th> 
                                     <th>Jurado 2</th> 
                                     <th>Asesor</th> 
-                                    <th>Título</th> 
+                                    <th>Título</th>
+                                    <th>Fecha</th>
+                                    <th>Hora Inicio</th>
+                                    <th>Hora Fin</th>
                                 </tr> 
                             </thead> 
                             <tbody> 
-                                {% for sustentacion in sustentaciones %} 
+                                {% for horario in sustentaciones_con_horarios %} 
                                     <tr> 
-                                        <td>{{ sustentacion.cursos_grupos.curso.nombre }} - {{ sustentacion.cursos_grupos.grupo.nombre }}</td> 
-                                        <td>{{ sustentacion.estudiante.apellidos_nombres }}</td> 
-                                        <td>{{ sustentacion.jurado1.apellidos_nombres }}</td> 
-                                        <td>{{ sustentacion.jurado2.apellidos_nombres }}</td> 
-                                        <td>{{ sustentacion.asesor.apellidos_nombres }}</td> 
-                                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ sustentacion.titulo }}</td> 
+                                        <td>{{ horario.sustentacion.cursos_grupos.curso.nombre }} - {{ horario.sustentacion.cursos_grupos.grupo.nombre }}</td> 
+                                        <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
+                                        <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td> 
+                                        <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td> 
+                                        <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td> 
+                                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ horario.sustentacion.titulo }}</td> 
+                                        <td>{{ horario.fecha }}</td>
+                                        <td>{{ horario.hora_inicio }}</td>
+                                        <td>{{ horario.hora_fin }}</td>
                                     </tr> 
                                 {% endfor %} 
                             </tbody> 
@@ -97,20 +103,15 @@
                   'csrfmiddlewaretoken': '{{ csrf_token }}'
               },
               beforeSend: function() {
-                  console.log('Enviando solicitud AJAX...');
+                  console.log('Enviando solicitud AJAX para enviar notificaciones');
               },
-              success: function(response) {
-                  console.log('Respuesta recibida:', response);
-                  if(response.status == 'success') {
-                      alert('Mensaje enviado exitosamente');
-                  } else {
-                      console.error('Error en la respuesta:', response.message);
-                      alert('Error al enviar el mensaje');
-                  }
+              success: function(data) {
+                  console.log('Notificaciones enviadas correctamente');
+                  alert('Notificaciones enviadas correctamente');
               },
               error: function(xhr, status, error) {
-                  console.error('Error en la solicitud AJAX:', status, error);
-                  alert('Error en la solicitud AJAX');
+                  console.error('Error al enviar notificaciones:', status, error);
+                  alert('Error al enviar notificaciones: ' + error);
               }
           });
       });
