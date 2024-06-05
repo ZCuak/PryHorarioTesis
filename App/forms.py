@@ -76,6 +76,8 @@ class ProfesorForm2(forms.ModelForm):
     class Meta:
         model = Profesor
         fields = ['email', 'apellidos_nombres', 'dedicacion', 'telefono']
+        
+
 
 class SustentacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -159,3 +161,8 @@ class ProfesorForm(forms.ModelForm):
     class Meta:
         model = Profesor
         fields = ['email', 'apellidos_nombres', 'dedicacion', 'telefono']
+        
+class DisponibilidadForm(forms.Form):
+    profesor = forms.ModelChoiceField(queryset=Profesor.objects.all(), required=False)
+    semana_inicio = forms.IntegerField(widget=forms.HiddenInput())
+    semana_fin = forms.IntegerField(widget=forms.HiddenInput())

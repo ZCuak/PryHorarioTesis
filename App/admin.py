@@ -102,10 +102,10 @@ class ProfesorAdmin(admin.ModelAdmin):
 #     search_fields = ('profesor__apellidos_nombres', 'semestre__nombre')
 #     list_filter = ('profesor', 'semestre')
 
-@admin.register(Profesores_Semestre_Academico)
-class DisponibilidadProfesorAdmin(admin.ModelAdmin):
-    list_display = ('semestre', 'profesor', 'fecha', 'hora_inicio', 'hora_fin')
-    list_filter = ('profesor', )
+# @admin.register(Profesores_Semestre_Academico)
+# class DisponibilidadProfesorAdmin(admin.ModelAdmin):
+#     list_display = ('semestre', 'profesor', 'fecha', 'hora_inicio', 'hora_fin')
+#     list_filter = ('profesor', )
 
     
 
