@@ -497,39 +497,25 @@ def semestre_create(request):
 
 @staff_member_required
 def disponibilidad_list(request):
-    usuario_logueado = request.user
-    try:
-        profesor_logueado = Profesor.objects.get(user=usuario_logueado)
-        print(profesor_logueado.id)
-        # Realizar la consulta SQL específica
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT 
-                    ass.semana_inicio, 
-                    ass.semana_fin
-                FROM 
-                    app_profesores_semestre_academico aps
-                INNER JOIN 
-                    app_profesor ap ON aps.profesor_id = ap.id
-                INNER JOIN 
-                    app_sustentacion asus ON ap.id = asus.jurado1_id OR ap.id = asus.jurado2_id OR ap.id = asus.asesor_id
-                INNER JOIN 
-                    app_cursos_grupos acg ON acg.id = asus.cursos_grupos_id
-                INNER JOIN 
-                    app_semana_sustentacion ass ON ass.curso_id = acg.curso_id
-                INNER JOIN 
-                    app_curso apc ON apc.id = ass.curso_id 
-                WHERE 
-                    ap.id = %s
-                GROUP BY 
-                    ass.semana_inicio, 
-                    ass.semana_fin
-                ORDER BY ass.semana_inicio
-            """, [profesor_logueado.id])
-            disponibilidades = cursor.fetchall()
-        
-    except Profesor.DoesNotExist:
-        disponibilidades = []
+    # Realizar la consulta SQL específica
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                assu.semana_inicio, 
+                assu.semana_fin
+            FROM 
+                app_profesores_semestre_academico aps
+            INNER JOIN 
+                app_semestreacademico asap ON asap.id = aps.semestre_id
+            INNER JOIN 
+                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id
+            GROUP BY 
+                assu.semana_inicio, 
+                assu.semana_fin
+            ORDER BY 
+                assu.semana_inicio
+        """)
+        disponibilidades = cursor.fetchall()
 
     return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
 

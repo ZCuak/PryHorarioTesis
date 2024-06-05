@@ -8,11 +8,11 @@
 <html lang="{{ LANGUAGE_CODE|default:"en-us" }}">
 
 <head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>
       Soft UI Dashboard - {% block title %}{% endblock %}
     </title>
-
     <!-- Favicon -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -26,11 +26,13 @@
     <link href="{% static 'css/nucleo-icons.css' %}" rel="stylesheet" />
     <link href="{% static 'css/nucleo-svg.css' %}" rel="stylesheet" />
     <!-- Font Awesome Icons -->
+
     <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
     <link href="{% static 'css/nucleo-svg.css' %}" rel="stylesheet" />
     <!-- CSS Files -->
     <link id="pagestyle" href="{% static 'css/soft-ui-dashboard.css' %}" rel="stylesheet" />
     <link id="pagestyle_dark" href="{% static 'css/dark-theme-core.css' %}" rel="stylesheet" />
+
 
     {% block extrahead %}{% endblock extrahead %}
     {% block extrastyle %}{% endblock extrastyle %}
