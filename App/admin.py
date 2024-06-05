@@ -11,7 +11,7 @@ from django.urls import path
 from django.http import HttpResponseRedirect, JsonResponse
 from .forms import ExcelUploadForm, SemanaSustentacionForm
 from App.views import get_semanas
-from .forms import ProfesorForm
+from .forms import ProfesorForm2
 
 # @admin.register(SemestreAcademico)
 # class SemestreAcademicoAdmin(admin.ModelAdmin):
@@ -70,7 +70,7 @@ class EstudianteAdmin(admin.ModelAdmin):
 
 @admin.register(Profesor)
 class ProfesorAdmin(admin.ModelAdmin):
-    form = ProfesorForm
+    form = ProfesorForm2
     list_display = ('email', 'apellidos_nombres', 'dedicacion', 'telefono')
     search_fields = ('email', 'apellidos_nombres')
 

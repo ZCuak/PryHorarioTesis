@@ -71,27 +71,11 @@ class UserPasswordChangeForm(PasswordChangeForm):
 from django import forms
 from .models import *
 
-class ProfesorForm(forms.ModelForm):
+class ProfesorForm2(forms.ModelForm):
+
     class Meta:
-        model = Semestre_Academico_Profesores
-        fields = ['semestre', 'profesor', 'horas_asesoria_semanal']
-
-    def clean_horas_asesoria_semanal(self):
-        horas = self.cleaned_data.get('horas_asesoria_semanal')
-        if horas < 0:
-            raise forms.ValidationError("Las horas de asesoría semanal no pueden ser negativas.")
-        return horas
-
-    def clean(self):
-        cleaned_data = super().clean()
-        semestre = cleaned_data.get('semestre')
-        profesor = cleaned_data.get('profesor')
-        
-        if self.instance.pk is None:  # Only check uniqueness for new instances
-            if Semestre_Academico_Profesores.objects.filter(semestre=semestre, profesor=profesor).exists():
-                raise forms.ValidationError("Este profesor ya está asignado a este semestre.")
-        
-        return cleaned_data
+        model = Profesor
+        fields = ['email', 'apellidos_nombres', 'dedicacion', 'telefono']
 
 class SustentacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
