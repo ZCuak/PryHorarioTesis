@@ -1,5 +1,3 @@
-<!-- reporte_sustentaciones.html -->
-
 {% extends "layouts/base.html" %}
 {% load i18n static %}
 
@@ -13,29 +11,58 @@
         .custom-select-lg {
             min-width: 200px;
         }
+        .filter-box {
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .input-lg {
+            width: 300px;
+        }
     </style>
 </head>
 <body>
     <h1>Reporte de Sustentaciones</h1>
 
-    <form method="get" class="form-inline mb-4">
-        <div class="form-group mr-3">
-            <label for="semestre" class="mr-2">Semestre:</label>
-            <input type="text" id="semestre" name="semestre" class="form-control" value="{{ semestre }}">
-        </div>
-        <div class="form-group mr-3">
-            <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label>
-            <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg">
-                <option value="">Todos</option>
-                <option value="parcial" {% if tipo_sustentacion == 'parcial' %}selected{% endif %}>Parcial</option>
-                <option value="final" {% if tipo_sustentacion == 'final' %}selected{% endif %}>Final</option>
-            </select>
-        </div>
-        <div class="form-group mt-2">
-            <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
-            <a href="{% url 'exportar_csv' %}?semestre={{ semestre }}&tipo_sustentacion={{ tipo_sustentacion }}" class="btn btn-secondary">Exportar a CSV</a>
-        </div>
-    </form>
+    <div class="filter-box">
+        <form method="get" class="form-inline mb-4">
+            <div class="form-group mr-3">
+                <label for="semestre" class="mr-2">Semestre:</label>
+                <select id="semestre" name="semestre" class="form-control custom-select-lg">
+                    <option value="">Todos</option>
+                    {% for semestre_obj in semestres %}
+                        <option value="{{ semestre_obj.nombre }}" {% if semestre == semestre_obj.nombre %}selected{% endif %}>{{ semestre_obj.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label>
+                <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg">
+                    <option value="">Todos</option>
+                    <option value="parcial" {% if tipo_sustentacion == 'parcial' %}selected{% endif %}>Parcial</option>
+                    <option value="final" {% if tipo_sustentacion == 'final' %}selected{% endif %}>Final</option>
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="nombre_estudiante" class="mr-2">Nombre del Estudiante:</label>
+                <input type="text" id="nombre_estudiante" name="nombre_estudiante" class="form-control input-lg" value="{{ nombre_estudiante|default_if_none:'' }}">
+            </div>
+            <div class="form-group mr-3">
+                <label for="codigo_estudiante" class="mr-2">Código del Estudiante:</label>
+                <input type="text" id="codigo_estudiante" name="codigo_estudiante" class="form-control" value="{{ codigo_estudiante|default_if_none:'' }}">
+            </div>
+            <div class="form-group mr-3">
+                <label for="fecha" class="mr-2">Fecha:</label>
+                <input type="date" id="fecha" name="fecha" class="form-control" value="{{ fecha|default_if_none:'' }}">
+            </div>
+            <div class="form-group mt-2">
+                <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+                <a href="{% url 'exportar_csv' %}?semestre={{ semestre|default_if_none:'' }}&tipo_sustentacion={{ tipo_sustentacion|default_if_none:'' }}&nombre_estudiante={{ nombre_estudiante|default_if_none:'' }}&codigo_estudiante={{ codigo_estudiante|default_if_none:'' }}&fecha={{ fecha|default_if_none:'' }}" class="btn btn-success">Exportar a Excel</a>
+            </div>
+        </form>
+    </div>
     
     <table class="table table-striped">
         <thead>

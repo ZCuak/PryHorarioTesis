@@ -740,11 +740,24 @@ def get_semanas(request, semestre_id):
 from django.shortcuts import render
 from django.http import HttpResponse
 import csv
+
+from django.http import HttpResponse
+from django.db import connection
+import openpyxl
+from openpyxl.utils import get_column_letter
+
 #Reporte 1: Sustentaciones
+
 def reporte_sustentaciones(request):
-    semestre = request.GET.get('semestre')
-    tipo_sustentacion = request.GET.get('tipo_sustentacion')
+    semestre = request.GET.get('semestre', '')
+    tipo_sustentacion = request.GET.get('tipo_sustentacion', '')
+    nombre_estudiante = request.GET.get('nombre_estudiante', '')
+    codigo_estudiante = request.GET.get('codigo_estudiante', '')
+    fecha = request.GET.get('fecha', '')
     
+    # Obtener la lista de semestres
+    semestres = SemestreAcademico.objects.all()
+
     sql = """
     SELECT 
     appsa.nombre as semestre,
@@ -786,6 +799,18 @@ def reporte_sustentaciones(request):
     if tipo_sustentacion:
         sql += " AND appss.tipo_sustentacion = %s"
         params.append(tipo_sustentacion)
+    
+    if nombre_estudiante:
+        sql += " AND appe.apellidos_nombres LIKE %s"
+        params.append(f'%{nombre_estudiante}%')
+    
+    if codigo_estudiante:
+        sql += " AND appe.codigo_universitario = %s"
+        params.append(codigo_estudiante)
+    
+    if fecha:
+        sql += " AND apphs.fecha = %s"
+        params.append(fecha)
     
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
@@ -800,19 +825,23 @@ def reporte_sustentaciones(request):
     context = {
         'data': data,
         'semestre': semestre,
-        'tipo_sustentacion': tipo_sustentacion
+        'tipo_sustentacion': tipo_sustentacion,
+        'nombre_estudiante': nombre_estudiante,
+        'codigo_estudiante': codigo_estudiante,
+        'fecha': fecha,
+        'semestres': semestres,  # Pasar los semestres al contexto
     }
 
     return render(request, 'admin/reporte_sustentaciones.html', context)
 
-from django.http import HttpResponse
-from django.db import connection
-import openpyxl
-from openpyxl.utils import get_column_letter
+
 
 def exportar_csv(request):
     semestre = request.GET.get('semestre')
     tipo_sustentacion = request.GET.get('tipo_sustentacion')
+    nombre_estudiante = request.GET.get('nombre_estudiante')
+    codigo_estudiante = request.GET.get('codigo_estudiante')
+    fecha = request.GET.get('fecha')
     
     sql = """
     SELECT 
@@ -855,6 +884,18 @@ def exportar_csv(request):
     if tipo_sustentacion:
         sql += " AND appss.tipo_sustentacion = %s"
         params.append(tipo_sustentacion)
+    
+    if nombre_estudiante:
+        sql += " AND appe.apellidos_nombres LIKE %s"
+        params.append(f'%{nombre_estudiante}%')
+    
+    if codigo_estudiante:
+        sql += " AND appe.codigo_universitario = %s"
+        params.append(codigo_estudiante)
+    
+    if fecha:
+        sql += " AND apphs.fecha = %s"
+        params.append(fecha)
     
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
@@ -890,6 +931,8 @@ def exportar_csv(request):
     workbook.save(response)
     
     return response
+
+
 
 #Reporte 2: list sustentaciones por docente
 from django.http import HttpResponse
