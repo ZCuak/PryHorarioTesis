@@ -466,3 +466,19 @@ def user_is_authenticated(user):
         return user.is_authenticated
     else:
         return user.is_authenticated()
+
+from twilio.rest import Client
+from .twilio_config import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_NUMBER
+
+def send_whatsapp_message(to, message):
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    from_whatsapp_number = TWILIO_WHATSAPP_NUMBER
+    to_whatsapp_number = f'whatsapp:{to}'
+    
+    message = client.messages.create(
+        from_=from_whatsapp_number,
+        body=message,
+        to=to_whatsapp_number
+    )
+    print(to_whatsapp_number)
+    return message.sid

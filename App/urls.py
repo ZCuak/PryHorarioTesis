@@ -52,6 +52,9 @@ urlpatterns = [
     path('App/get_semanas/<int:semestre_id>/', views.get_semanas, name='get_semanas'),
     # Disponibilidad profesor
     
+    
+    #NOTIFICACIÓN
+    path('send-notifications/', send_bulk_messages_view, name='send_notifications'),
 
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),

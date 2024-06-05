@@ -21,6 +21,7 @@ from django.contrib.auth.decorators import login_required
 # views.py
 from django.http import JsonResponse
 from .ga import generar_horarios, guardar_horario
+from .utils import send_whatsapp_message
 
 @staff_member_required
 def ejecutar_algoritmo(request):
@@ -1092,4 +1093,22 @@ def exportar_excel_profesor(request):
 @login_required
 def user_profile(request):
     user = request.user
+
+   
+def send_bulk_messages_view(request):
+    if request.method == 'POST':
+        number = '+51916702954'
+        sustentaciones = Sustentacion.objects.all()
+        message = "Listado de Sustentaciones:\n"
+        for sustentacion in sustentaciones:
+            message += f"Curso - Grupo: {sustentacion.cursos_grupos.curso.nombre} - {sustentacion.cursos_grupos.grupo.nombre}\n"
+        result = send_whatsapp_message(number, message)
+        print(message)
+        
+        if result:
+            return JsonResponse({'status': 'success', 'result': result})
+        else:
+            return JsonResponse({'status': 'fail', 'message': 'Error al enviar el mensaje'})
+    
+    return JsonResponse({'status': 'fail', 'message': 'Invalid request method'})
 
