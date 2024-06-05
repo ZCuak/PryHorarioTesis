@@ -27,14 +27,12 @@ def send_whatsapp_message(phone_number, message):
         # Seleccionar la ventana de WhatsApp Web existente
         gw.getWindowsWithTitle(whatsapp_window)[0].activate()
         print("activate")
-
-        # Abrir el chat con el número especificado
-        url = f"https://web.whatsapp.com/send?phone={phone_number}"
-        pywhatkit.open_web(url)
-        time.sleep(10)  # Tiempo para cargar el chat con el número especificado
+        # Simular la selección del chat
+        time.sleep(2)  # Esperar para asegurar que el chat se seleccione
         pyautogui.typewrite(message)
         pyautogui.press("enter")
 
-# Uso de la función
+        # Uso de la función
 send_whatsapp_message("+51916702954", "kbro4")
 print("funciono")
+
