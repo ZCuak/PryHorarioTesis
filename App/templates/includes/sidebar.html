@@ -1,25 +1,6 @@
 {% load i18n static admin_soft %}
 
-<!-- Añade el link a Font Awesome aquí -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-
-<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 " id="sidenav-main" style="width: 250px;">
-  <style>
-    #sidenav-collapse-main {
-      height: 100vh;
-    }
-    .icon-container i {
-      font-size: 16px;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .nav-link {
-      width: 100%;
-    }
-  </style>
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 " id="sidenav-main">
   <div class="sidenav-header">
     <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
     <a class="navbar-brand m-0" href="{% url 'admin:index' %}">
@@ -28,7 +9,7 @@
     </a>
   </div>
   <hr class="horizontal dark mt-0">
-  <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main">
+  <div class="collapse navbar-collapse  w-auto " id="sidenav-collapse-main">
     <ul class="navbar-nav">
 
       {% admin_get_menu as app_list %}
@@ -38,32 +19,8 @@
                   <li class="nav-item">
                       <span class="nav-link{% if app_label != app.label and app.url not in request.path|urlencode %} collapsed{% endif %} d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#submenu-{{ app.app_label }}">
                           <span class="d-flex justify-content-between align-items-center">
-                              <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                  {% if app.label == "Cursos" %}
-                                      <i class="fas fa-book"></i>
-                                  {% elif app.label == "Disps. de los profesores" %}
-                                      <i class="fas fa-chalkboard-teacher"></i>
-                                  {% elif app.label == "Estudiantes" %}
-                                      <i class="fas fa-user-graduate"></i>
-                                  {% elif app.label == "Grupos" %}
-                                      <i class="fas fa-users"></i>
-                                  {% elif app.label == "Profesores" %}
-                                      <i class="fas fa-user-tie"></i>
-                                  {% elif app.label == "Semanas de Sustentación" %}
-                                      <i class="fas fa-calendar-alt"></i>
-                                  {% elif app.label == "Usuarios" %}
-                                      <i class="fas fa-user"></i>
-                                  {% elif app.label == "Semestres" %}
-                                      <i class="fas fa-calendar"></i>
-                                  {% elif app.label == "Jurados" %}
-                                      <i class="fas fa-gavel"></i>
-                                  {% elif app.label == "Generar Horario" %}
-                                      <i class="fas fa-clock"></i>
-                                  {% elif app.label == "Rep. de Sustentaciones" %}
-                                      <i class="fas fa-file-alt"></i>
-                                  {% else %}
-                                      <i class="fas fa-folder"></i>
-                                  {% endif %}
+                              <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                                  <span class="sidebar-icon {{ app.icon }}"></span>
                               </div>
                               <a href="{{ app.url }}">
                                   <span class="nav-link-text ms-1">{{ app.label|slice:10 }}{% if app.label|length > 10 %}..{% endif %}</span>
@@ -78,33 +35,6 @@
                                       {% if model.url %}
                                           <li class="nav-item{% if 'bootstrap-tables' in segment or model.url in request.path|urlencode %} active {% endif %} list-unstyled">
                                               <a class="nav-link" href="{{ model.url }}">
-                                                  <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                                      {% if model.label == "Cursos" %}
-                                                          <i class="fas fa-book"></i>
-                                                      {% elif model.label == "Disps. de los profesores" %}
-                                                          <i class="fas fa-chalkboard-teacher"></i>
-                                                      {% elif model.label == "Estudiantes" %}
-                                                          <i class="fas fa-user-graduate"></i>
-                                                      {% elif model.label == "Grupos" %}
-                                                          <i class="fas fa-users"></i>
-                                                      {% elif model.label == "Profesores" %}
-                                                          <i class="fas fa-user-tie"></i>
-                                                      {% elif model.label == "Semanas de Sustentación" %}
-                                                          <i class="fas fa-calendar-alt"></i>
-                                                      {% elif model.label == "Usuarios" %}
-                                                          <i class="fas fa-user"></i>
-                                                      {% elif model.label == "Semestres" %}
-                                                          <i class="fas fa-calendar"></i>
-                                                      {% elif model.label == "Jurados" %}
-                                                          <i class="fas fa-gavel"></i>
-                                                      {% elif model.label == "Generar Horario" %}
-                                                          <i class="fas fa-clock"></i>
-                                                      {% elif model.label == "Rep. de Sustentaciones" %}
-                                                          <i class="fas fa-file-alt"></i>
-                                                      {% else %}
-                                                          <i class="fas fa-folder"></i>
-                                                      {% endif %}
-                                                  </div>
                                                   <span class="nav-link-text ms-1">{{ model.label }}</span>
                                               </a>
                                           </li>
@@ -112,12 +42,36 @@
                                           <li class="nav-item list-unstyled">{{ model.label }}</li>
                                       {% endif %}
                                   {% endfor %}
+                                  <li class="nav-item list-unstyled">
+                                    <a class="nav-link" href="{% url 'semestre_list' %}">
+                                        <span class="nav-link-text ms-1">Semestres                                                                                                                                                                                                        </span>
+                                    </a>
+                                  </li>
+                                  <!-- New item for Jurados -->
+                                  <li class="nav-item list-unstyled">
+                                      <a class="nav-link" href="{% url 'jurados' %}">
+                                          <span class="nav-link-text ms-1">Jurados</span>
+                                      </a>
+                                  </li>
+                                                                    <!-- New item for Jurados -->
+                                 <li class="nav-item list-unstyled">
+                                    <a class="nav-link" href="{% url 'ejecutar_algoritmo' %}">
+                                        <span class="nav-link-text ms-1">Generar Horario                                                                                                                                                                                                        </span>
+                                    </a>
+                                  </li> 
+                                  <li class="nav-item list-unstyled">
+                                    <a class="nav-link" href="{% url 'reporte_sustentaciones' %}">
+                                        <span class="nav-link-text ms-1">Rep. de Sustentaciones                                                                                                                                                                                                        </span>
+                                    </a>
+                                  </li>
                               </ul>
                           </div>
                       {% endif %}
                   </li>
+                  
               {% endif %}
           {% endfor %}
+          
       {% endif %}
       
       <li class="nav-item">
@@ -128,7 +82,7 @@
         <a href="{% url 'index' %}" class="nav-link {% if 'index' in segment %} active {% endif %}">
         {% endif %}
 
-          <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 45 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
               <title>shop </title>
               <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -150,8 +104,21 @@
     {% if request.user.is_authenticated and not request.user.is_superuser %}
         <li class="nav-item">
           <a class="nav-link {% if 'disponibilidad' in segment %} active {% endif %} " href="{% url 'disponibilidad_list' %}">
-            <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="fas fa-calendar"></i>
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <svg width="12px" height="12px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                
+                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                  <g transform="translate(-2020.000000, -442.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                    <g transform="translate(1716.000000, 291.000000)">
+                      <g transform="translate(304.000000, 151.000000)">
+                        <polygon class="color-background opacity-6" points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667"></polygon>
+                        <path class="color-background opacity-6" d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z"></path>
+                        <path class="color-background" d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z"></path>
+                      </g>
+                    </g>
+                  </g>
+                </g>
+              </svg>
             </div>
             <span class="nav-link-text ms-1">Disponibilidad horaria</span>
           </a>
@@ -159,27 +126,56 @@
 
         <li class="nav-item">
           <a class="nav-link {% if 'disponibilidad' in segment %} active {% endif %} " href="{% url 'listar_sustentaciones' %}">
-            <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="fas fa-file-alt"></i>
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <svg width="12px" height="12px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                
+                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                  <g transform="translate(-2020.000000, -442.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                    <g transform="translate(1716.000000, 291.000000)">
+                      <g transform="translate(304.000000, 151.000000)">
+                        <polygon class="color-background opacity-6" points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667"></polygon>
+                        <path class="color-background opacity-6" d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z"></path>
+                        <path class="color-background" d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z"></path>
+                      </g>
+                    </g>
+                  </g>
+                </g>
+              </svg>
             </div>
             <span class="nav-link-text ms-1">Rep. sustentaciones</span>
           </a>
         </li>
+
+
+
 
         <li class="nav-item mt-3">
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Cuenta</h6>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if 'profile' in segment %} active {% endif %} " href="{% url 'profile' %}">
-            <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="fas fa-user"></i>
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <title>customer-support</title>
+                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                  <g transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                    <g transform="translate(1716.000000, 291.000000)">
+                      <g transform="translate(1.000000, 0.000000)">
+                        <path class="color-background opacity-6" d="M45,0 L26,0 C25.447,0 25,0.447 25,1 L25,20 C25,20.379 25.214,20.725 25.553,20.895 C25.694,20.965 25.848,21 26,21 C26.212,21 26.424,20.933 26.6,20.8 L34.333,15 L45,15 C45.553,15 46,14.553 46,14 L46,1 C46,0.447 45.553,0 45,0 Z"></path>
+                        <path class="color-background" d="M22.883,32.86 C20.761,32.012 17.324,31 13,31 C8.676,31 5.239,32.012 3.116,32.86 C1.224,33.619 0,35.438 0,37.494 L0,41 C0,41.553 0.447,42 1,42 L25,42 C25.553,42 26,41.553 26,41 L26,37.494 C26,35.438 24.776,33.619 22.883,32.86 Z"></path>
+                        <path class="color-background" d="M13,28 C17.432,28 21,22.529 21,18 C21,13.589 17.411,10 13,10 C8.589,10 5,13.589 5,18 C5,22.529 8.568,28 13,28 Z"></path>
+                      </g>
+                    </g>
+                  </g>
+                </g>
+              </svg>
             </div>
             <span class="nav-link-text ms-1">Perfil Profesor</span>
           </a>
         </li>
         
        
-    {% endif %}
+        {% endif %}
 
     </ul>
   </div>
