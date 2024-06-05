@@ -657,50 +657,48 @@ def obtener_fechas_min_max(request):
     
 @staff_member_required
 def ver_disponibilidad(request, semana_inicio, semana_fin):
-    usuario_logueado = request.user
+    if request.user.is_superuser:
+        profesor_id = request.GET.get('profesor_id')
+        profesor = get_object_or_404(Profesor, id=profesor_id)
+    else:
+        usuario_logueado = request.user
+        profesor = get_object_or_404(Profesor, user=usuario_logueado)
+
+    semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
+
+    # Calcular las semanas del semestre
+    semanas = semestre_academico.calcular_semanas()
+    fecha_inicio_semana = semanas[semana_inicio - 1][0]
+    fecha_fin_semana = semanas[semana_fin - 1][1]
+
+    # Realizar la consulta SQL específica
     try:
-        profesor_logueado = Profesor.objects.get(user=usuario_logueado)
-        
-        # Obtener el semestre académico vigente
-        semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
-
-        # Calcular las semanas del semestre
-        semanas = semestre_academico.calcular_semanas()
-        
-        # Obtener las fechas de inicio y fin de las semanas seleccionadas
-        fecha_inicio_semana = semanas[semana_inicio - 1][0]
-        fecha_fin_semana = semanas[semana_fin - 1][1]
-        
-        # Realizar la consulta SQL específica
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT 
-                        aps.id, aps.fecha, aps.hora_inicio, aps.hora_fin, 
-                        ap.apellidos_nombres
-                    FROM 
-                        app_profesores_semestre_academico aps
-                    INNER JOIN 
-                        app_profesor ap ON aps.profesor_id = ap.id
-                    INNER JOIN 
-                        app_semestreacademico sem ON aps.semestre_id = sem.id
-                    WHERE 
-                        aps.fecha >= %s AND aps.fecha <= %s AND ap.id = %s AND sem.vigencia = true
-                """, [fecha_inicio_semana, fecha_fin_semana, profesor_logueado.id])
-                disponibilidades = cursor.fetchall()
-        except DatabaseError as e:
-            disponibilidades = []
-            print(f"Error en la base de datos: {e}")
-
-    except Profesor.DoesNotExist:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    aps.id, aps.fecha, aps.hora_inicio, aps.hora_fin, 
+                    ap.apellidos_nombres
+                FROM 
+                    app_profesores_semestre_academico aps
+                INNER JOIN 
+                    app_profesor ap ON aps.profesor_id = ap.id
+                INNER JOIN 
+                    app_semestreacademico sem ON aps.semestre_id = sem.id
+                WHERE 
+                    aps.fecha >= %s AND aps.fecha <= %s AND ap.id = %s AND sem.vigencia = true
+            """, [fecha_inicio_semana, fecha_fin_semana, profesor.id])
+            disponibilidades = cursor.fetchall()
+    except DatabaseError as e:
         disponibilidades = []
+        print(f"Error en la base de datos: {e}")
 
     return render(request, 'profesor/ver_disponibilidad.html', {
         'disponibilidades': disponibilidades,
         'semana_inicio': semana_inicio,
-        'semana_fin': semana_fin
+        'semana_fin': semana_fin,
+        'profesor': profesor
     })
-    
+
    
     
 @staff_member_required
