@@ -199,6 +199,8 @@
                                 console.log('Fecha inicio actualizada:', fechaInicio.value);
                                 datepickers[0].setDate(fechaInicio.value, true);
                                 lastValidFechaInicio = fechaInicio.value;
+                                // Hacer que el campo sea no modificable
+                                fechaInicio.setAttribute('readonly', true);
                             }
                         } else {
                             console.error('Índice de semana inicio fuera de rango');
@@ -222,6 +224,8 @@
                                 console.log('Fecha fin actualizada:', fechaFin.value);
                                 datepickers[1].setDate(fechaFin.value, true);
                                 lastValidFechaFin = fechaFin.value;
+                                // Hacer que el campo sea no modificable
+                                fechaFin.setAttribute('readonly', true);
                             }
                         } else {
                             console.error('Índice de semana fin fuera de rango');
@@ -256,8 +260,6 @@
             });
         });
     </script>
-    
-    
     
     {{ media }}
 {% endblock %}

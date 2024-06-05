@@ -92,20 +92,18 @@
                     selectable: true,
                     selectHelper: true,
                     select: function (start, end) {
-                        var title = prompt('Ingrese el nombre del evento:');
-                        if (title) {
-                            var eventData = {
-                                title: title,
-                                start: start,
-                                end: end
-                            };
-                            $('#calendar').fullCalendar('renderEvent', eventData, true);
-                        }
+                        
+                        var eventData = {
+                            start: start,
+                            end: end
+                        };
+                        $('#calendar').fullCalendar('renderEvent', eventData, true);
+                        
                         $('#calendar').fullCalendar('unselect');
                     },
                     editable: true,
                     eventRender: function(event, element) {
-                        console.log("Event Title:", event.title);
+
                         console.log("Event Start:", event.start.format());
                         console.log("Event End:", event.end ? event.end.format() : null);
                     }

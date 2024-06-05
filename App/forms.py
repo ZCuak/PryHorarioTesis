@@ -133,8 +133,8 @@ class SemanaSustentacionForm(forms.ModelForm):
         model = Semana_Sustentacion
         fields = ['semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas']
         widgets = {
-            'fecha_inicio': forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'YYYY-MM-DD'}),
-            'fecha_fin': forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'YYYY-MM-DD'}),
+            'fecha_inicio': forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'YYYY-MM-DD', 'readonly': 'readonly', 'disabled': 'disabled'}),
+            'fecha_fin': forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'YYYY-MM-DD', 'readonly': 'readonly', 'disabled': 'disabled'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -147,6 +147,12 @@ class SemanaSustentacionForm(forms.ModelForm):
             'data-initial-value': self.instance.semana_fin if self.instance.pk else 1
         })
         self.fields['duracion_sustentacion'].label = 'Duración de Sustentación (minutos)'
+
+        # Marcar los campos de fecha como no editables
+        self.fields['fecha_inicio'].widget.attrs['readonly'] = True
+        self.fields['fecha_inicio'].widget.attrs['disabled'] = True
+        self.fields['fecha_fin'].widget.attrs['readonly'] = True
+        self.fields['fecha_fin'].widget.attrs['disabled'] = True
 
     def clean(self):
         cleaned_data = super().clean()
