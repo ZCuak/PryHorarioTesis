@@ -561,12 +561,10 @@ def disponibilidad_list(request):
             SELECT 
                 assu.semana_inicio, 
                 assu.semana_fin
-            FROM 
-                app_profesores_semestre_academico aps
-            INNER JOIN 
-                app_semestreacademico asap ON asap.id = aps.semestre_id
-            INNER JOIN 
-                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id
+            FROM
+                app_semestreacademico asap 
+             JOIN 
+                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id and asap.vigencia = 1
             GROUP BY 
                 assu.semana_inicio, 
                 assu.semana_fin
