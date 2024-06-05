@@ -25,17 +25,35 @@ from .ga import generar_horarios, guardar_horario
 @staff_member_required
 def ejecutar_algoritmo(request):
     semestres = SemestreAcademico.objects.all()
+    cursos_grupos = Cursos_Grupos.objects.all()
     semestre_id = request.GET.get('semestre')
+    tipo_sustentacion = request.GET.get('tipo_sustentacion')
+    curso_grupo_id = request.GET.get('curso_grupo')
     sustentaciones = Sustentacion.objects.all()
 
     if semestre_id:
         sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
 
+    if tipo_sustentacion:
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion)
+        sustentaciones = sustentaciones.filter(cursos_grupos__curso__in=semanas_sustentacion.values('curso'))
+
+    if curso_grupo_id:
+        sustentaciones = sustentaciones.filter(cursos_grupos_id=curso_grupo_id)
+
     if request.method == 'POST':
         mejor_horario, no_disponibles = generar_horarios()
         if no_disponibles:
             messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
-            return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres, 'semestre_id': semestre_id})
+            return render(request, 'admin/ejecutar_algoritmo.html', {
+                'sustentaciones': sustentaciones,
+                'semestres': semestres,
+                'cursos_grupos': cursos_grupos,
+                'semestre_id': semestre_id,
+                'tipo_sustentacion': tipo_sustentacion,
+                'curso_grupo_id': curso_grupo_id
+            })
+        
         # Convertir objetos a diccionarios
         mejor_horario_dict = [
             {
@@ -60,7 +78,40 @@ def ejecutar_algoritmo(request):
         request.session['mejor_horario'] = mejor_horario_dict
         return redirect('mostrar_resultados')
 
-    return render(request, 'admin/ejecutar_algoritmo.html', {'sustentaciones': sustentaciones, 'semestres': semestres, 'semestre_id': semestre_id})
+    # Preparar los datos de las sustentaciones para pasarlos a la plantilla
+    sustentaciones_json = json.dumps([{
+        'estudiante': {
+            'id': sustentacion.estudiante.id,
+            'telefono': sustentacion.estudiante.telefono
+        },
+        'jurado1': {
+            'id': sustentacion.jurado1.id if sustentacion.jurado1 else None,
+            'telefono': sustentacion.jurado1.telefono if sustentacion.jurado1 else None
+        },
+        'jurado2': {
+            'id': sustentacion.jurado2.id if sustentacion.jurado2 else None,
+            'telefono': sustentacion.jurado2.telefono if sustentacion.jurado2 else None
+        },
+        'asesor': {
+            'id': sustentacion.asesor.id,
+            'telefono': sustentacion.asesor.telefono
+        },
+        'titulo': sustentacion.titulo,
+        'fecha': str(sustentacion.horario_sustentaciones_set.first().fecha) if sustentacion.horario_sustentaciones_set.exists() else None,
+        'hora_inicio': str(sustentacion.horario_sustentaciones_set.first().hora_inicio) if sustentacion.horario_sustentaciones_set.exists() else None,
+    } for sustentacion in sustentaciones])
+
+    context = {
+        'sustentaciones': sustentaciones,
+        'semestres': semestres,
+        'cursos_grupos': cursos_grupos,
+        'semestre_id': semestre_id,
+        'tipo_sustentacion': tipo_sustentacion,
+        'curso_grupo_id': curso_grupo_id,
+        'sustentaciones_json': sustentaciones_json,
+    }
+
+    return render(request, 'admin/ejecutar_algoritmo.html', context)
 
 
 @staff_member_required
@@ -207,6 +258,7 @@ def jurados_list(request):
     return render(request, 'admin/jurados_list.html', {'jurados': jurados})
 
 @staff_member_required
+@transaction.atomic
 def jurados_create(request):
     if request.method == 'POST':
         form = ProfesorForm(request.POST)
@@ -495,37 +547,69 @@ def semestre_create(request):
     return render(request, 'admin/semestre_form.html', {'form': form})
 
 
+
 @staff_member_required
 def disponibilidad_list(request):
-    # Realizar la consulta SQL específica
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT 
-                assu.semana_inicio, 
-                assu.semana_fin
-            FROM 
-                app_profesores_semestre_academico aps
-            INNER JOIN 
-                app_semestreacademico asap ON asap.id = aps.semestre_id
-            INNER JOIN 
-                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id
-            GROUP BY 
-                assu.semana_inicio, 
-                assu.semana_fin
-            ORDER BY 
-                assu.semana_inicio
-        """)
-        disponibilidades = cursor.fetchall()
+    disponibilidades = []
+    profesor = None
 
-    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
+    if request.user.is_superuser:
+        form = DisponibilidadForm(request.GET or None)
+        if form.is_valid():
+            profesor = form.cleaned_data['profesor']
+            semana_inicio = form.cleaned_data['semana_inicio']
+            semana_fin = form.cleaned_data['semana_fin']
 
+            if profesor:
+                # Obtener las fechas de inicio y fin de las semanas seleccionadas
+                semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
+                semanas = semestre_academico.calcular_semanas()
+                fecha_inicio_semana = semanas[semana_inicio - 1][0]
+                fecha_fin_semana = semanas[semana_fin - 1][1]
 
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT 
+                            aps.fecha, aps.hora_inicio, aps.hora_fin, ap.apellidos_nombres
+                        FROM 
+                            app_profesores_semestre_academico aps
+                        INNER JOIN 
+                            app_profesor ap ON aps.profesor_id = ap.id
+                        WHERE 
+                            aps.fecha >= %s AND aps.fecha <= %s AND ap.id = %s
+                    """, [fecha_inicio_semana, fecha_fin_semana, profesor.id])
+                    disponibilidades = cursor.fetchall()
+    else:
+        usuario_logueado = request.user
+        profesor = get_object_or_404(Profesor, user=usuario_logueado)
+        semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
+
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    aps.fecha, aps.hora_inicio, aps.hora_fin
+                FROM 
+                    app_profesores_semestre_academico aps
+                WHERE 
+                    aps.profesor_id = %s AND aps.semestre_id = %s
+            """, [profesor.id, semestre_academico.id])
+            disponibilidades = cursor.fetchall()
+
+    return render(request, 'profesor/disponibilidad_list.html', {
+        'disponibilidades': disponibilidades,
+        'form': form if request.user.is_superuser else None
+    })
 
 @staff_member_required
 @csrf_exempt
 def disponibilidad_create(request):
     usuario_logueado = request.user
-    profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
+    if request.user.is_superuser:
+        profesor_id = request.GET.get('profesor')
+        profesor_logueado = get_object_or_404(Profesor, id=profesor_id)
+    else:
+        profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
+
     semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
 
     if request.method == 'POST':
@@ -572,6 +656,8 @@ def disponibilidad_create(request):
     return render(request, 'profesor/disponibilidad_form.html', {
         'disponibilidades': disponibilidades
     })
+
+
 
 @staff_member_required
 def obtener_fechas_min_max(request):
