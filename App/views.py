@@ -22,7 +22,17 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .ga import generar_horarios, guardar_horario
 from .utils import send_whatsapp_message
+from django.http import JsonResponse
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+
 @staff_member_required
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
 def ejecutar_algoritmo(request):
     semestres = SemestreAcademico.objects.all()
     cursos_grupos = Cursos_Grupos.objects.all()
@@ -44,17 +54,19 @@ def ejecutar_algoritmo(request):
     if request.method == 'POST':
         mejor_horario, no_disponibles = generar_horarios()
         if no_disponibles:
-            messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
-            return render(request, 'admin/ejecutar_algoritmo.html', {
-                'sustentaciones': sustentaciones,
-                'semestres': semestres,
-                'cursos_grupos': cursos_grupos,
-                'semestre_id': semestre_id,
-                'tipo_sustentacion': tipo_sustentacion,
-                'curso_grupo_id': curso_grupo_id
-            })
-        
-        # Convertir objetos a diccionarios
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'message': f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}"})
+            else:
+                messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
+                return render(request, 'admin/ejecutar_algoritmo.html', {
+                    'sustentaciones': sustentaciones,
+                    'semestres': semestres,
+                    'cursos_grupos': cursos_grupos,
+                    'semestre_id': semestre_id,
+                    'tipo_sustentacion': tipo_sustentacion,
+                    'curso_grupo_id': curso_grupo_id
+                })
+
         mejor_horario_dict = [
             {
                 'cursos_grupos': {
@@ -74,11 +86,13 @@ def ejecutar_algoritmo(request):
             }
             for sustentacion in mejor_horario
         ]
-        # Almacenar el mejor horario en la sesión para usarlo después
         request.session['mejor_horario'] = mejor_horario_dict
-        return redirect('mostrar_resultados')
 
-    # Obtener las sustentaciones con sus horarios
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario_dict})
+        else:
+            return redirect('mostrar_resultados')
+
     sustentaciones_con_horarios = Horario_Sustentaciones.objects.filter(sustentacion__in=sustentaciones).select_related('sustentacion')
 
     context = {
@@ -91,9 +105,6 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
-
- 
-
 
 @staff_member_required
 def mostrar_resultados(request):
