@@ -550,66 +550,33 @@ def semestre_create(request):
 
 @staff_member_required
 def disponibilidad_list(request):
-    disponibilidades = []
-    profesor = None
+    # Realizar la consulta SQL específica
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                assu.semana_inicio, 
+                assu.semana_fin
+            FROM 
+                app_profesores_semestre_academico aps
+            INNER JOIN 
+                app_semestreacademico asap ON asap.id = aps.semestre_id
+            INNER JOIN 
+                app_semana_sustentacion assu ON assu.semestre_academico_id = asap.id
+            GROUP BY 
+                assu.semana_inicio, 
+                assu.semana_fin
+            ORDER BY 
+                assu.semana_inicio
+        """)
+        disponibilidades = cursor.fetchall()
 
-    if request.user.is_superuser:
-        form = DisponibilidadForm(request.GET or None)
-        if form.is_valid():
-            profesor = form.cleaned_data['profesor']
-            semana_inicio = form.cleaned_data['semana_inicio']
-            semana_fin = form.cleaned_data['semana_fin']
-
-            if profesor:
-                # Obtener las fechas de inicio y fin de las semanas seleccionadas
-                semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
-                semanas = semestre_academico.calcular_semanas()
-                fecha_inicio_semana = semanas[semana_inicio - 1][0]
-                fecha_fin_semana = semanas[semana_fin - 1][1]
-
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT 
-                            aps.fecha, aps.hora_inicio, aps.hora_fin, ap.apellidos_nombres
-                        FROM 
-                            app_profesores_semestre_academico aps
-                        INNER JOIN 
-                            app_profesor ap ON aps.profesor_id = ap.id
-                        WHERE 
-                            aps.fecha >= %s AND aps.fecha <= %s AND ap.id = %s
-                    """, [fecha_inicio_semana, fecha_fin_semana, profesor.id])
-                    disponibilidades = cursor.fetchall()
-    else:
-        usuario_logueado = request.user
-        profesor = get_object_or_404(Profesor, user=usuario_logueado)
-        semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
-
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT 
-                    aps.fecha, aps.hora_inicio, aps.hora_fin
-                FROM 
-                    app_profesores_semestre_academico aps
-                WHERE 
-                    aps.profesor_id = %s AND aps.semestre_id = %s
-            """, [profesor.id, semestre_academico.id])
-            disponibilidades = cursor.fetchall()
-
-    return render(request, 'profesor/disponibilidad_list.html', {
-        'disponibilidades': disponibilidades,
-        'form': form if request.user.is_superuser else None
-    })
+    return render(request, 'profesor/disponibilidad_list.html', {'disponibilidades': disponibilidades})
 
 @staff_member_required
 @csrf_exempt
 def disponibilidad_create(request):
     usuario_logueado = request.user
-    if request.user.is_superuser:
-        profesor_id = request.GET.get('profesor')
-        profesor_logueado = get_object_or_404(Profesor, id=profesor_id)
-    else:
-        profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
-
+    profesor_logueado = get_object_or_404(Profesor, user=usuario_logueado)
     semestre_academico = get_object_or_404(SemestreAcademico, vigencia=True)
 
     if request.method == 'POST':
@@ -726,6 +693,7 @@ def ver_disponibilidad(request, semana_inicio, semana_fin):
         'semana_fin': semana_fin
     })
     
+   
     
 @staff_member_required
 def semestre_update(request, pk):

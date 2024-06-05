@@ -1,5 +1,3 @@
-<!-- templates/profesor/disponibilidad_list.html -->
-
 {% extends "layouts/base.html" %}
 {% load i18n static %}
 
@@ -12,21 +10,11 @@
                     <h6>Disponibilidad del profesor</h6>
                 </div>
                 <div class="card-body">
-                    {% if form %}
-                        <form method="get">
-                            <div class="form-group">
-                                <label for="profesor">Profesor:</label>
-                                {{ form.profesor }}
-                            </div>
-                            <button type="submit" class="btn btn-primary">Filtrar</button>
-                        </form>
-                    {% endif %}
                     <table class="table">
                         <thead>
                             <tr class="text-center">
-                                <th>Fecha</th>
-                                <th>Hora Inicio</th>
-                                <th>Hora Fin</th>
+                                <th>Semana Inicio</th>
+                                <th>Semana Fin</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -35,7 +23,6 @@
                                 <tr class="text-center">
                                     <td>{{ disponibilidad.0 }}</td>
                                     <td>{{ disponibilidad.1 }}</td>
-                                    <td>{{ disponibilidad.2 }}</td>
                                     <td>
                                         <a href="{% url 'ver_disponibilidad' disponibilidad.0 disponibilidad.1 %}" class="btn btn-primary">Ver</a>
                                         <a href="{% url 'disponibilidad_create' %}?semana_inicio={{ disponibilidad.0 }}&semana_fin={{ disponibilidad.1 }}" class="btn btn-success">Disponibilidad</a>
