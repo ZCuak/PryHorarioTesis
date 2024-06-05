@@ -35,38 +35,6 @@
       {% if app_list %}
           {% for app in app_list %}
               {% if app.has_perms and not app.pinned %}
-<<<<<<< HEAD
-                  {% for model in app.models %}
-                      {% if model.url %}
-                          <li class="nav-item">
-                              <a class="nav-link" href="{{ model.url }}">
-                                  <div class="icon-container icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                      {% if model.label == "Cursos" %}
-                                          <i class="fas fa-book"></i>
-                                      {% elif model.label == "Estudiantes" %}
-                                          <i class="fas fa-user-graduate"></i>
-                                      {% elif model.label == "Grupos" %}
-                                          <i class="fas fa-users"></i>
-                                      {% elif model.label == "Profesores" %}
-                                          <i class="fas fa-user-tie"></i>
-                                      {% elif model.label == "Semanas de Sustentación" %}
-                                          <i class="fas fa-calendar-alt"></i>
-                                      {% elif model.label == "Usuarios" %}
-                                          <i class="fas fa-user"></i>
-                                      {% elif model.label == "Semestres" %}
-                                          <i class="fas fa-calendar"></i>
-                                      {% elif model.label == "Jurados" %}
-                                          <i class="fas fa-gavel"></i>
-                                      {% elif model.label == "Generar Horario" %}
-                                          <i class="fas fa-clock"></i>
-                                      {% elif model.label == "Rep. de Sustentaciones" %}
-                                          <i class="fas fa-file-alt"></i>
-                                      {% else %}
-                                          <i class="fas fa-folder"></i>
-                                      {% endif %}
-                                  </div>
-                                  <span class="nav-link-text ms-1">{{ model.label }}</span>
-=======
                   <li class="nav-item">
                       <span class="nav-link{% if app_label != app.label and app.url not in request.path|urlencode %} collapsed{% endif %} d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#submenu-{{ app.app_label }}">
                           <span class="d-flex justify-content-between align-items-center">
@@ -99,7 +67,6 @@
                               </div>
                               <a href="{{ app.url }}">
                                   <span class="nav-link-text ms-1">{{ app.label|slice:10 }}{% if app.label|length > 10 %}..{% endif %}</span>
->>>>>>> 72dd91e0b10601ed0855990bdeb3b31035a37535
                               </a>
                           </span>
                       </span>
