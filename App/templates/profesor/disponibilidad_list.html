@@ -10,6 +10,19 @@
                     <h6>Disponibilidad del profesor</h6>
                 </div>
                 <div class="card-body">
+                    {% if request.user.is_superuser %}
+                        <form method="get" action="{% url 'disponibilidad_list' %}">
+                            <div class="form-group">
+                                <label for="profesor_id">Seleccionar Profesor:</label>
+                                <select name="profesor_id" id="profesor_id" class="form-control">
+                                    {% for profesor in profesores %}
+                                        <option value="{{ profesor.id }}">{{ profesor.apellidos_nombres }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Filtrar</button>
+                        </form>
+                    {% endif %}
                     <table class="table">
                         <thead>
                             <tr class="text-center">
@@ -24,8 +37,8 @@
                                     <td>{{ disponibilidad.0 }}</td>
                                     <td>{{ disponibilidad.1 }}</td>
                                     <td>
-                                        <a href="{% url 'ver_disponibilidad' disponibilidad.0 disponibilidad.1 %}" class="btn btn-primary">Ver</a>
-                                        <a href="{% url 'disponibilidad_create' %}?semana_inicio={{ disponibilidad.0 }}&semana_fin={{ disponibilidad.1 }}" class="btn btn-success">Disponibilidad</a>
+                                        <a href="{% url 'ver_disponibilidad' disponibilidad.0 disponibilidad.1 %}?{% if request.user.is_superuser %}profesor_id={{ request.GET.profesor_id }}{% endif %}" class="btn btn-primary">Ver</a>
+                                        <a href="{% url 'disponibilidad_create' %}?semana_inicio={{ disponibilidad.0 }}&semana_fin={{ disponibilidad.1 }}{% if request.user.is_superuser %}&profesor_id={{ request.GET.profesor_id }}{% endif %}" class="btn btn-success">Disponibilidad</a>
                                     </td>
                                 </tr>
                             {% endfor %}

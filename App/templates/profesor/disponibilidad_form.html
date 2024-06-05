@@ -43,6 +43,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const semanaInicio = urlParams.get('semana_inicio');
         const semanaFin = urlParams.get('semana_fin');
+        const profesorId = urlParams.get('profesor_id');  // Obtener profesor_id si existe
 
         console.log("Semana Inicio:", semanaInicio);
         console.log("Semana Fin:", semanaFin);
@@ -123,7 +124,7 @@
                 end: event.end ? event.end.format() : null
             }));
 
-            fetch('{% url "disponibilidad_create" %}?semana_inicio=' + semanaInicio + '&semana_fin=' + semanaFin, {
+            fetch('{% url "disponibilidad_create" %}?semana_inicio=' + semanaInicio + '&semana_fin=' + semanaFin + (profesorId ? '&profesor_id=' + profesorId : ''), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
