@@ -474,6 +474,7 @@ def send_whatsapp_message(to, message):
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
     from_whatsapp_number = TWILIO_WHATSAPP_NUMBER
     to_whatsapp_number = f'whatsapp:{to}'
+    print(to_whatsapp_number)
     message = client.messages.create(
         from_=from_whatsapp_number,
         body=message,
