@@ -15,6 +15,7 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
+import time
 from django.db import connection
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
@@ -1110,15 +1111,137 @@ def exportar_excel_profesor(request):
 @login_required
 def user_profile(request):
     user = request.user
+    
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .utils import send_whatsapp_message
+from .models import Sustentacion, Cursos_Grupos
 
-   
+@csrf_exempt
 def send_bulk_messages_view(request):
+    if request.method == 'POST':
+        semestre_id = request.POST.get('semestre')
+        tipo_sustentacion = request.POST.get('tipo_sustentacion')
+        curso_grupo_id = request.POST.get('curso_grupo')
+
+        curso_nombre, grupo_nombre = None, None
+        if curso_grupo_id:
+            try:
+                curso_grupo_obj = Cursos_Grupos.objects.get(id=curso_grupo_id)
+                curso_nombre = curso_grupo_obj.curso.nombre
+                grupo_nombre = curso_grupo_obj.grupo.nombre
+            except Cursos_Grupos.DoesNotExist:
+                return JsonResponse({'status': 'fail', 'message': 'Curso-Grupo no encontrado'})
+
+        sustentaciones = Sustentacion.objects.all()
+
+        if semestre_id:
+            sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
+
+        if tipo_sustentacion:
+            sustentaciones = sustentaciones.filter(cursos_grupos__curso__semana_sustentacion__tipo_sustentacion=tipo_sustentacion)
+
+        if curso_nombre:
+            sustentaciones = sustentaciones.filter(cursos_grupos__curso__nombre=curso_nombre)
+
+        if grupo_nombre:
+            sustentaciones = sustentaciones.filter(cursos_grupos__grupo__nombre=grupo_nombre)
+
+        # Ordenar sustentaciones por fecha y hora de inicio
+        sustentaciones = sorted(
+            sustentaciones, 
+            key=lambda s: (s.horario_sustentaciones_set.first().fecha, s.horario_sustentaciones_set.first().hora_inicio)
+        )
+
+        def build_message(records):
+            message = "Listado de Sustentaciones:\n"
+            for record in records:
+                curso_grupo = record.cursos_grupos
+                horario = record.horario_sustentaciones_set.first()
+                message += f"Curso - Grupo: {curso_grupo.curso.nombre} - {curso_grupo.grupo.nombre}\n"
+                message += f"Fecha: {horario.fecha}\n"
+                message += f"Hora Inicio: {horario.hora_inicio}\n"
+                message += f"Hora Fin: {horario.hora_fin}\n"
+                message += f"Tipo: {record.cursos_grupos.curso.semana_sustentacion_set.first().tipo_sustentacion}\n\n"
+            return message
+
+        # Lista para almacenar los mensajes individuales
+        messages_to_send = []
+
+        # Diccionarios para agrupar los mensajes por teléfono
+        message_profesores = {}
+        message_estudiantes = {}
+
+        # Agrupar las sustentaciones por teléfono
+        for sustentacion in sustentaciones:
+            horario_sustentacion = sustentacion.horario_sustentaciones_set.first()
+            if horario_sustentacion:
+                for jurado in [sustentacion.jurado1, sustentacion.jurado2, sustentacion.asesor]:
+                    if jurado and jurado.telefono:
+                        if jurado.telefono not in message_profesores:
+                            message_profesores[jurado.telefono] = []
+                        message_profesores[jurado.telefono].append(sustentacion)
+
+                if sustentacion.estudiante.telefono:
+                    if sustentacion.estudiante.telefono not in message_estudiantes:
+                        message_estudiantes[sustentacion.estudiante.telefono] = []
+                    message_estudiantes[sustentacion.estudiante.telefono].append(sustentacion)
+
+        # Construir y almacenar mensajes para profesores
+        for phone, records in message_profesores.items():
+            nombre_profesor = records[0].jurado1.apellidos_nombres if records[0].jurado1.telefono == phone else records[0].jurado2.apellidos_nombres if records[0].jurado2.telefono == phone else records[0].asesor.apellidos_nombres
+            message = f"Nombre: {nombre_profesor}\nNo olvidar su horario de sustentación:\n"
+            message += build_message(records)
+            # Añadir a la lista de mensajes a enviar
+            messages_to_send.append((f"+51{phone}", message))
+
+        # Construir y almacenar mensajes para estudiantes
+        for phone, records in message_estudiantes.items():
+            message = f"Nombre: {records[0].estudiante.apellidos_nombres}\nNo olvidar su horario de sustentación:\n"
+            message += build_message(records)
+            # Añadir a la lista de mensajes a enviar
+            messages_to_send.append((f"+51{phone}", message))
+
+        # Enviar los mensajes almacenados
+        for phone, message in messages_to_send:
+            print(f"Enviando mensaje a {phone}:\n{message}")  # Depuración
+            result = send_whatsapp_message(phone, message)
+            time.sleep(1)  # Delay de 1 segundo entre cada solicitud
+            if not result:
+                return JsonResponse({'status': 'fail', 'message': f'Error al enviar el mensaje a {phone}'})
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'fail', 'message': 'Invalid request method'})
+
+def send_bulk_messages_view2(request):
     if request.method == 'POST':
         number = '+51916702954'
         sustentaciones = Sustentacion.objects.all()
         message = "Listado de Sustentaciones:\n"
         for sustentacion in sustentaciones:
-            message += f"Curso - Grupo: {sustentacion.cursos_grupos.curso.nombre} - {sustentacion.cursos_grupos.grupo.nombre}\n"
+            message = '''Nombre: ALARCON GARCIA ROGER ERNESTO
+No olvidar su horario de sustentación:
+Curso - Grupo: Proyecto de Investigación - A
+Fecha: 2024-05-06
+Hora Inicio: 18:30:00
+Hora Fin: 19:00:00
+Tipo: PARCIAL
+Curso - Grupo: Proyecto de Investigación - A
+Fecha: 2024-05-07
+Hora Inicio: 18:30:00
+Hora Fin: 19:00:00
+Tipo: PARCIAL
+Curso - Grupo: Proyecto de Investigación - A
+Fecha: 2024-05-07
+Hora Inicio: 19:30:00
+Hora Fin: 20:00:00
+Tipo: PARCIAL
+Curso - Grupo: Proyecto de Investigación - A
+Fecha: 2024-05-14
+Hora Inicio: 19:30:00
+Hora Fin: 20:00:00
+Tipo: PARCIAL'''
         result = send_whatsapp_message(number, message)
         print(message)
         
