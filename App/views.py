@@ -30,6 +30,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
+from django.db.models import F
 
 @staff_member_required
 @csrf_exempt
@@ -94,7 +95,16 @@ def ejecutar_algoritmo(request):
         else:
             return redirect('mostrar_resultados')
 
-    sustentaciones_con_horarios = Horario_Sustentaciones.objects.filter(sustentacion__in=sustentaciones).select_related('sustentacion')
+    sustentaciones_con_horarios = Horario_Sustentaciones.objects.filter(
+        sustentacion__in=sustentaciones
+    ).select_related(
+        'sustentacion'
+    ).order_by(
+        F('sustentacion__cursos_grupos__curso').asc(),
+        F('sustentacion__cursos_grupos__grupo').asc(),
+        'fecha',
+        'hora_inicio'
+    )
 
     context = {
         'sustentaciones_con_horarios': sustentaciones_con_horarios,
@@ -106,8 +116,6 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
-
-
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])

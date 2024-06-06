@@ -199,3 +199,19 @@ class DisponibilidadForm(forms.Form):
     profesor = forms.ModelChoiceField(queryset=Profesor.objects.all(), required=False)
     semana_inicio = forms.IntegerField(widget=forms.HiddenInput())
     semana_fin = forms.IntegerField(widget=forms.HiddenInput())
+    
+class SemestreAcademicoForm(forms.ModelForm):
+    class Meta:
+        model = SemestreAcademico
+        fields = ['nombre', 'fecha_inicio', 'fecha_fin', 'vigencia']
+        widgets = {
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'vigencia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(SemestreAcademicoForm, self).__init__(*args, **kwargs)
+        self.fields['fecha_inicio'].input_formats = ['%Y-%m-%d']
+        self.fields['fecha_fin'].input_formats = ['%Y-%m-%d']
