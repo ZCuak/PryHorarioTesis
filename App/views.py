@@ -1315,10 +1315,14 @@ def listar_compensacion_horas(request):
         appc.nombre AS curso,
         appe.codigo_universitario,
         appe.apellidos_nombres AS estudiante,
+        appss.semana_inicio,
+        appss.semana_fin,
         apphs.fecha,
         apphs.hora_inicio,
+        apphs.hora_fin,
         apps.titulo
     FROM app_semana_sustentacion appss
+    INNER JOIN app_semestreacademico appsa on appsa.id=appss.semestre_academico_id
     INNER JOIN app_curso appc ON appc.id = appss.curso_id
     INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
     INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
@@ -1327,7 +1331,7 @@ def listar_compensacion_horas(request):
     LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
     LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
     LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
-    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s)
+    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s) AND appsa.vigencia=TRUE
     """
 
     with connection.cursor() as cursor:
@@ -1366,9 +1370,13 @@ def exportar_excel_compensacion_horas(request):
         appe.codigo_universitario,
         appe.apellidos_nombres AS estudiante,
         apphs.fecha,
+        appss.semana_inicio,
+        appss.semana_fin,
         apphs.hora_inicio,
+        apphs.hora_fin,
         apps.titulo
     FROM app_semana_sustentacion appss
+    INNER JOIN app_semestreacademico appsa on appsa.id=appss.semestre_academico_id
     INNER JOIN app_curso appc ON appc.id = appss.curso_id
     INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
     INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
@@ -1377,7 +1385,7 @@ def exportar_excel_compensacion_horas(request):
     LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
     LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
     LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
-    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s)
+    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s) AND appsa.vigencia=TRUE
     """
 
     with connection.cursor() as cursor:
