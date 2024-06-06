@@ -170,7 +170,7 @@ def guardar_horarios(request):
                             )
                         else:
                             # Crear una nueva sustentación si no existe
-                            nueva_sustentacion = Sustentacion.objects.create(
+                            nueva_sustentacion = Sustentacion.objects(
                                 cursos_grupos=cursos_grupos,
                                 estudiante=estudiante,
                                 jurado1=jurado1,
@@ -516,17 +516,24 @@ def estudiantes_import(request, curso_grupo_id):
 
                     if not pd.isnull(row['Jurado 1']):
                         try:
-                            jurado1 = Profesor.objects.get(apellidos_nombres=row['Jurado 1'])
+                            jurado1 = Profesor.objects.filter(apellidos_nombres=row['Jurado 1']).first()
                         except Profesor.DoesNotExist:
                             messages.error(request, f"El jurado 1 '{row['Jurado 1']}' no existe.")
                             continue
 
                     if not pd.isnull(row['Jurado 2']):
                         try:
-                            jurado2 = Profesor.objects.get(apellidos_nombres=row['Jurado 2'])
+                            jurado2 = Profesor.objects.filter(apellidos_nombres=row['Jurado 2']).first()
                         except Profesor.DoesNotExist:
                             messages.error(request, f"El jurado 2 '{row['Jurado 2']}' no existe.")
                             continue
+
+                    try:
+                        asesor = Profesor.objects.filter(apellidos_nombres=row['Asesor (Jurado 3)']).first()
+                    except Profesor.DoesNotExist:
+                        messages.error(request, f"El asesor '{row['Asesor (Jurado 3)']}' no existe.")
+                        continue
+
 
                     try:
                         asesor = Profesor.objects.get(apellidos_nombres=row['Asesor (Jurado 3)'])
