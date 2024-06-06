@@ -119,10 +119,13 @@ class Horario_SustentacionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             horario = Horario_Sustentaciones.objects.filter(sustentacion=self.instance).first()
-            if horario:
+            if horario and horario.fecha:
                 self.fields['fecha'].initial = horario.fecha.strftime('%Y-%m-%d')
+            if horario and horario.hora_inicio:
                 self.fields['hora_inicio'].initial = horario.hora_inicio
+            if horario and horario.hora_fin:
                 self.fields['hora_fin'].initial = horario.hora_fin
+
 
     def save(self, commit=True):
         instance = super().save(commit=False)

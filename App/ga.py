@@ -377,7 +377,6 @@ def generar_horarios():
             }
             mejor_horario.append(sust_data)
 
-    guardar_horario(mejor_horario)
     return mejor_horario, no_disponibles
 
 
@@ -398,4 +397,3 @@ def guardar_horario(mejor_horario):
             hora_fin=sustentacion['hora_fin'],
             sustentacion=nueva_sustentacion
         )
-
