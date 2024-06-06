@@ -11,17 +11,18 @@
                 </div>
                 <div class="card-body">
                     {% if request.user.is_superuser %}
-                        <form method="get" action="{% url 'disponibilidad_list' %}">
-                            <div class="form-group">
-                                <label for="profesor_id">Seleccionar Profesor:</label>
-                                <select name="profesor_id" id="profesor_id" class="form-control" onchange="this.form.submit()">
-                                    {% for profesor in profesores %}
-                                        <option value="{{ profesor.id }}" {% if profesor.id|stringformat:"s" == profesor_id %}selected{% endif %}>{{ profesor.apellidos_nombres }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </form>
-                    {% endif %}
+                    <form method="get" action="{% url 'disponibilidad_list' %}">
+                        <div class="form-group">
+                            <label for="profesor_id">Seleccionar Profesor:</label>
+                            <select name="profesor_id" id="profesor_id" class="form-control" onchange="this.form.submit()">
+                                {% for profesor in profesores|dictsort:"apellidos_nombres" %}
+                                    <option value="{{ profesor.id }}" {% if profesor.id|stringformat:"s" == profesor_id %}selected{% endif %}>{{ profesor.apellidos_nombres }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                {% endif %}
+                
                     <table class="table">
                         <thead>
                             <tr class="text-center">
