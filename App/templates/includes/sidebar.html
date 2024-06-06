@@ -131,14 +131,43 @@
                                             <span class="nav-link-text">Disponibilidad Horaria</span>
                                         </a>
                                     </li>
-                                    <li class="nav-item list-unstyled">
-                                        <a class="nav-link" href="/reporte_sustentaciones/">
-                                            <span class="nav-link-text">Rep. de Sustentaciones</span>
-                                        </a>
-                                    </li>
                                 </ul>
                             </div>
                         </li>
+
+                        <li class="nav-item">
+                          <a class="nav-link collapsed" data-bs-toggle="collapse" href="#collapseReportes" aria-expanded="false">
+                              <div class="text-center me-2 d-flex align-items-center justify-content-center">
+                                  <i class="fas fa-calendar-alt"></i>
+                              </div>
+                              <span class="nav-link-text ms-1">Reportes</span>
+                          </a>
+                          <div id="collapseReportes" class="collapse">
+                              <ul class="flex-column nav ms-4">
+                                  <li class="nav-item list-unstyled">
+                                      <a class="nav-link" href="/reporte_sustentaciones/">
+                                          <span class="nav-link-text">Rep. de Sustentaciones</span>
+                                      </a>
+                                  </li>
+                                  <li class="nav-item list-unstyled">
+                                    <a class="nav-link" href="/listar_compensacion_horas/">
+                                        <span class="nav-link-text">Rep. de Horas Compensadas</span>
+                                    </a>
+                                </li>
+                              </ul>
+                          </div>
+                      </li>
+                      <li class="nav-item mt-3">
+                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Cuenta</h6>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link {% if 'profile' in segment %} active {% endif %}" href="{% url 'profile' %}">
+                            <div class="text-center me-2 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="nav-link-text ms-1">Perfil</span>
+                        </a>
+                    </li>
                     {% else %}
                     {% if request.user.is_authenticated and not request.user.is_superuser %}
 
@@ -159,6 +188,25 @@
                                 <span class="nav-link-text ms-1">Rep. Sustentaciones</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                          <a class="nav-link {% if 'listar_compensacion_horas' in segment %} active {% endif %}" href="{% url 'listar_compensacion_horas' %}">
+                              <div class="text-center me-2 d-flex align-items-center justify-content-center">
+                                  <i class="fas fa-file-alt"></i>
+                              </div>
+                              <span class="nav-link-text ms-1">Reporte Horas compensadas</span>
+                          </a>
+                      </li>
+                      <li class="nav-item mt-3">
+                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Cuenta</h6>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link {% if 'profile' in segment %} active {% endif %}" href="{% url 'profile' %}">
+                            <div class="text-center me-2 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="nav-link-text ms-1">Perfil</span>
+                        </a>
+                    </li>
                     {% endif %}
                 {% endif %}
             </ul>

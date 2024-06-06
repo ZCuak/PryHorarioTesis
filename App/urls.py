@@ -9,7 +9,6 @@ urlpatterns = [
     path('billing/', views.billing, name='billing'),
     path('tables/', views.tables, name='tables'),
     path('vr/', views.vr, name='vr'),
-    path('rtl/', views.rtl, name='rtl'),
     
     path('ejecutar_algoritmo/', views.ejecutar_algoritmo, name='ejecutar_algoritmo'),
     path('guardar_horarios/', views.guardar_horarios, name='guardar_horarios'),
