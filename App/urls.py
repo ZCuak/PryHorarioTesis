@@ -20,6 +20,9 @@ urlpatterns = [
     path('exportar_csv/', views.exportar_csv, name='exportar_csv'),
     path('listar_sustentaciones/', views.listar_sustentaciones, name='listar_sustentaciones'),
     path('exportar_excel_profesor/', views.exportar_excel_profesor, name='exportar_excel_profesor'),
+    path('listar_compensacion_horas/', listar_compensacion_horas, name='listar_compensacion_horas'),
+    path('exportar_excel_compensacion_horas/', exportar_excel_compensacion_horas, name='exportar_excel_compensacion_horas'),
+
     #Para profesor
     
     path('disponibilidad/', disponibilidad_list, name='disponibilidad_list'),
