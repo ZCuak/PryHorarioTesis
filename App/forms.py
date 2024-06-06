@@ -89,9 +89,19 @@ class SustentacionForm(forms.ModelForm):
         fields = ['cursos_grupos', 'estudiante', 'jurado1', 'jurado2', 'asesor', 'titulo']
 
 class Horario_SustentacionForm(forms.ModelForm):
-    fecha = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
-    hora_inicio = forms.TimeField(required=False, widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
-    hora_fin = forms.TimeField(required=False, widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
+    fecha = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        input_formats=['%Y-%m-%d']
+    )
+    hora_inicio = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+    hora_fin = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
 
     class Meta:
         model = Sustentacion
@@ -110,7 +120,7 @@ class Horario_SustentacionForm(forms.ModelForm):
         if self.instance.pk:
             horario = Horario_Sustentaciones.objects.filter(sustentacion=self.instance).first()
             if horario:
-                self.fields['fecha'].initial = horario.fecha
+                self.fields['fecha'].initial = horario.fecha.strftime('%Y-%m-%d')
                 self.fields['hora_inicio'].initial = horario.hora_inicio
                 self.fields['hora_fin'].initial = horario.hora_fin
 
@@ -127,21 +137,6 @@ class Horario_SustentacionForm(forms.ModelForm):
                 }
             )
         return instance
-class SemestreAcademicoForm(forms.ModelForm):
-    class Meta:
-        model = SemestreAcademico
-        fields = ['nombre', 'fecha_inicio', 'fecha_fin', 'vigencia']
-        widgets = {
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
-            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
-            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'vigencia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super(SemestreAcademicoForm, self).__init__(*args, **kwargs)
-        self.fields['fecha_inicio'].input_formats = ['%Y-%m-%d']
-        self.fields['fecha_fin'].input_formats = ['%Y-%m-%d']
 
 class CursosGruposForm(forms.ModelForm):
     class Meta:

@@ -207,14 +207,18 @@ def editar_sustentacion(request, sustentacion_id):
         else:
             print("Errores en el formulario: ", form.errors)
             # Si el formulario no es válido, mostrar los errores
-            messages.error(request,  form.errors)
+            messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
         # Si la solicitud es GET, crear una instancia del formulario con los datos de la sustentación actual
         form = Horario_SustentacionForm(instance=sustentacion)
+        horario = Horario_Sustentaciones.objects.filter(sustentacion=sustentacion).first()
+        if horario:
+            print("Fecha de la sustentación: ", horario.fecha)
+        else:
+            print("No se encontró horario para esta sustentación")
 
     # Renderizar el formulario de edición
     return render(request, 'admin/editar_sustentacion.html', {'form': form})
-
 def index(request):
     return render(request, 'pages/index.html', { 'segment': 'index' })
 
