@@ -233,12 +233,65 @@ class AlgoritmoGenetico:
         mejor_individuo = max(self.poblacion, key=lambda ind: self.calcular_fitness(ind))
         mejor_individuo, no_disponibles = self.verificar_disponibilidad(mejor_individuo)
         mejor_individuo = self.verificar_conflictos_horarios(mejor_individuo)
+        mejor_individuo = self.verificar_conflictos_mismo_curso(mejor_individuo)
+        mejor_individuo = self.verificar_conflictos_mismo_dia(mejor_individuo)
         mejor_individuo = self.eliminar_duplicados(mejor_individuo)
         mejor_individuo = self.garantizar_todas_sustentaciones(mejor_individuo)
         mejor_individuo = self.ordenar_por_curso_grupo(mejor_individuo)
         mejor_individuo = self.garantizar_7_sustentaciones(mejor_individuo)
         mejor_individuo = self.maximizar_sustentaciones_por_jurado(mejor_individuo)
         return mejor_individuo, no_disponibles
+
+    def verificar_conflictos_mismo_curso(self, mejor_horario):
+        for i, sustentacion in enumerate(mejor_horario):
+            for j, otra_sustentacion in enumerate(mejor_horario):
+                if i == j:
+                    continue
+                if sustentacion['cursos_grupos'] == otra_sustentacion['cursos_grupos']:
+                    if (sustentacion['hora_inicio'] <= otra_sustentacion['hora_inicio'] < sustentacion['hora_fin']) or (
+                        otra_sustentacion['hora_inicio'] <= sustentacion['hora_inicio'] < otra_sustentacion['hora_fin']
+                    ):
+                        # Si hay conflicto, mover la segunda sustentación 30 minutos adelante
+                        nueva_hora_inicio = (datetime.combine(datetime.today(), otra_sustentacion['hora_inicio']) + timedelta(minutes=30)).time()
+                        nueva_hora_fin = (datetime.combine(datetime.today(), otra_sustentacion['hora_fin']) + timedelta(minutes=30)).time()
+                        
+                        otra_sustentacion['hora_inicio'] = nueva_hora_inicio
+                        otra_sustentacion['hora_fin'] = nueva_hora_fin
+
+                        # Recalcular la disponibilidad para la nueva hora
+                        otra_sustentacion['hora_inicio'], otra_sustentacion['hora_fin'] = self.ajustar_hora_disponibilidad(otra_sustentacion, mejor_horario)
+
+        return mejor_horario
+
+    def verificar_conflictos_mismo_dia(self, mejor_horario):
+        for i, sustentacion in enumerate(mejor_horario):
+            for j, otra_sustentacion in enumerate(mejor_horario):
+                if i == j:
+                    continue
+                if sustentacion['fecha'] == otra_sustentacion['fecha']:
+                    if (sustentacion['jurado1'] == otra_sustentacion['jurado1'] or 
+                        sustentacion['jurado1'] == otra_sustentacion['jurado2'] or 
+                        sustentacion['jurado1'] == otra_sustentacion['asesor'] or 
+                        sustentacion['jurado2'] == otra_sustentacion['jurado1'] or 
+                        sustentacion['jurado2'] == otra_sustentacion['jurado2'] or 
+                        sustentacion['jurado2'] == otra_sustentacion['asesor'] or 
+                        sustentacion['asesor'] == otra_sustentacion['jurado1'] or 
+                        sustentacion['asesor'] == otra_sustentacion['jurado2'] or 
+                        sustentacion['asesor'] == otra_sustentacion['asesor']):
+                        if (sustentacion['hora_inicio'] <= otra_sustentacion['hora_inicio'] < sustentacion['hora_fin']) or (
+                            otra_sustentacion['hora_inicio'] <= sustentacion['hora_inicio'] < otra_sustentacion['hora_fin']
+                        ):
+                            # Si hay conflicto, mover la segunda sustentación 30 minutos adelante
+                            nueva_hora_inicio = (datetime.combine(datetime.today(), otra_sustentacion['hora_inicio']) + timedelta(minutes=30)).time()
+                            nueva_hora_fin = (datetime.combine(datetime.today(), otra_sustentacion['hora_fin']) + timedelta(minutes=30)).time()
+                            
+                            otra_sustentacion['hora_inicio'] = nueva_hora_inicio
+                            otra_sustentacion['hora_fin'] = nueva_hora_fin
+
+                            # Recalcular la disponibilidad para la nueva hora
+                            otra_sustentacion['hora_inicio'], otra_sustentacion['hora_fin'] = self.ajustar_hora_disponibilidad(otra_sustentacion, mejor_horario)
+
+        return mejor_horario
 
     def eliminar_duplicados(self, mejor_horario):
         seen = set()
@@ -344,8 +397,17 @@ def generar_horarios():
         for disp in Profesores_Semestre_Academico.objects.all()
     }
     fechas_sustentacion = Semana_Sustentacion.objects.all()
-    ag = AlgoritmoGenetico(poblacion_size=20, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
-    mejor_horario, no_disponibles = ag.ejecutar()
+    max_sustentaciones = 0
+    mejor_horario = None
+
+    for _ in range(3):
+        ag = AlgoritmoGenetico(poblacion_size=10, generaciones=20, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
+        mejor_hor, no_disponibles = ag.ejecutar()
+        num_sustentaciones = len(mejor_hor)
+        if num_sustentaciones > max_sustentaciones:
+            max_sustentaciones = num_sustentaciones
+            mejor_horario = mejor_hor
+
     return mejor_horario, no_disponibles
 
 def guardar_horario(mejor_horario):
