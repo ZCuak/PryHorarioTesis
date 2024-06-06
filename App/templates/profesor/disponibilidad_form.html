@@ -18,6 +18,18 @@
         margin: 5px;
         cursor: pointer;
     }
+    .fc-event .closeon {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        cursor: pointer;
+        color: #fff;
+        background: #d9534f;
+        border-radius: 50%;
+        padding: 1px 3px;
+        font-size: 10px;
+        z-index: 1000; /* Asegurarse de que la "X" esté siempre por encima */
+    }
 </style>
 {% endblock %}
 
@@ -95,20 +107,23 @@
                     selectable: true,
                     selectHelper: true,
                     select: function (start, end) {
-                        
                         var eventData = {
+                            title: 'Nuevo Evento',
                             start: start,
                             end: end
                         };
                         $('#calendar').fullCalendar('renderEvent', eventData, true);
-                        
                         $('#calendar').fullCalendar('unselect');
                     },
                     editable: true,
                     eventRender: function(event, element) {
-
                         console.log("Event Start:", event.start.format());
                         console.log("Event End:", event.end ? event.end.format() : null);
+
+                        element.append("<span class='closeon'>X</span>");
+                        element.find(".closeon").click(function() {
+                            $('#calendar').fullCalendar('removeEvents', event._id);
+                        });
                     }
                 });
             },
@@ -138,6 +153,7 @@
             .then(data => {
                 if (data.status === "success") {
                     alert("Horarios guardados correctamente.");
+                    window.location.href = document.referrer; // Redirigir a la página anterior
                 } else {
                     alert("Error al guardar los horarios.");
                 }
