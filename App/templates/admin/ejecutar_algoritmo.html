@@ -71,17 +71,19 @@
                             </thead> 
                             <tbody> 
                                 {% for horario in sustentaciones_con_horarios %} 
-                                    <tr> 
-                                        <td>{{ horario.sustentacion.cursos_grupos.curso.nombre }} - {{ horario.sustentacion.cursos_grupos.grupo.nombre }}</td> 
-                                        <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
-                                        <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td> 
-                                        <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td> 
-                                        <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td> 
-                                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ horario.sustentacion.titulo }}</td> 
-                                        <td>{{ horario.fecha }}</td>
-                                        <td>{{ horario.hora_inicio }}</td>
-                                        <td>{{ horario.hora_fin }}</td>
-                                    </tr> 
+                                <tr> 
+                                  <td>{{ horario.sustentacion.cursos_grupos.curso.nombre }} - {{ horario.sustentacion.cursos_grupos.grupo.nombre }}</td> 
+                                  <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
+                                  <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td> 
+                                  <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td> 
+                                  <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td> 
+                                  <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ horario.sustentacion.titulo }}</td> 
+                                  <td>{{ horario.fecha }}</td>
+                                  <td>{{ horario.hora_inicio }}</td>
+                                  <td>{{ horario.hora_fin }}</td>
+                                  <td><a href="{% url 'editar_sustentacion' horario.sustentacion.id %}" class="btn btn-primary">Editar</a></td>
+                              </tr> 
+                              
                                 {% endfor %} 
                             </tbody> 
                         </table> 

@@ -88,6 +88,45 @@ class SustentacionForm(forms.ModelForm):
         model = Sustentacion
         fields = ['cursos_grupos', 'estudiante', 'jurado1', 'jurado2', 'asesor', 'titulo']
 
+class Horario_SustentacionForm(forms.ModelForm):
+    fecha = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    hora_inicio = forms.TimeField(required=False, widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
+    hora_fin = forms.TimeField(required=False, widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
+
+    class Meta:
+        model = Sustentacion
+        fields = ['cursos_grupos', 'estudiante', 'jurado1', 'jurado2', 'asesor', 'titulo']
+        widgets = {
+            'cursos_grupos': forms.Select(attrs={'class': 'form-control'}),
+            'estudiante': forms.Select(attrs={'class': 'form-control'}),
+            'jurado1': forms.Select(attrs={'class': 'form-control'}),
+            'jurado2': forms.Select(attrs={'class': 'form-control'}),
+            'asesor': forms.Select(attrs={'class': 'form-control'}),
+            'titulo': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            horario = Horario_Sustentaciones.objects.filter(sustentacion=self.instance).first()
+            if horario:
+                self.fields['fecha'].initial = horario.fecha
+                self.fields['hora_inicio'].initial = horario.hora_inicio
+                self.fields['hora_fin'].initial = horario.hora_fin
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            Horario_Sustentaciones.objects.update_or_create(
+                sustentacion=instance,
+                defaults={
+                    'fecha': self.cleaned_data.get('fecha'),
+                    'hora_inicio': self.cleaned_data.get('hora_inicio'),
+                    'hora_fin': self.cleaned_data.get('hora_fin')
+                }
+            )
+        return instance
 class SemestreAcademicoForm(forms.ModelForm):
     class Meta:
         model = SemestreAcademico

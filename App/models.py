@@ -123,9 +123,9 @@ class Sustentacion(models.Model):
 
 
 class Horario_Sustentaciones(models.Model):
-    fecha = models.DateField()
-    hora_inicio = models.TimeField()
-    hora_fin = models.TimeField()
+    fecha = models.DateField(null=True, blank=True)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fin = models.TimeField(null=True, blank=True)
     sustentacion = models.ForeignKey(Sustentacion, on_delete=models.CASCADE)
 
     def __str__(self):

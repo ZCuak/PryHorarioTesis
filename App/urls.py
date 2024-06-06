@@ -34,6 +34,7 @@ urlpatterns = [
     path('jurados/delete/<int:pk>/', jurados_delete, name='jurados_delete'),
     path('jurados/import/', jurados_import, name='jurados_import'),
     # Sustentacion
+    path('editar_sustentacion/<int:sustentacion_id>/', views.editar_sustentacion, name='editar_sustentacion'),
     path('semestres/<semestre_nombre>/grupos/<curso_grupo_nombre>/sustentacion/<int:curso_grupo_id>/', sustentacion_list, name='sustentacion_list'),
     path('semestres/grupos/sustentaciones/crear/<int:curso_grupo_id>/', sustentacion_create, name='sustentacion_create'),
     path('semestres/grupos/sustentaciones/<int:pk>/editar/', sustentacion_update, name='sustentacion_update'),

@@ -81,9 +81,9 @@ def ejecutar_algoritmo(request):
                 'jurado2': sustentacion['jurado2'].apellidos_nombres if sustentacion['jurado2'] else '',
                 'asesor': sustentacion['asesor'].apellidos_nombres,
                 'titulo': sustentacion['titulo'],
-                'fecha': sustentacion['fecha'].isoformat() if sustentacion['fecha'] else '',
-                'hora_inicio': sustentacion['hora_inicio'].isoformat() if sustentacion['hora_inicio'] else '',
-                'hora_fin': sustentacion['hora_fin'].isoformat() if sustentacion['hora_fin'] else '',
+                'fecha': sustentacion.get('fecha').isoformat() if sustentacion.get('fecha') else '',
+                'hora_inicio': sustentacion.get('hora_inicio').isoformat() if sustentacion.get('hora_inicio') else '',
+                'hora_fin': sustentacion.get('hora_fin').isoformat() if sustentacion.get('hora_fin') else '',
             }
             for sustentacion in mejor_horario
         ]
@@ -156,9 +156,9 @@ def guardar_horarios(request):
 
                             Horario_Sustentaciones.objects.create(
                                 sustentacion=sustentacion_existente,
-                                fecha=sustentacion_data['fecha'],
-                                hora_inicio=sustentacion_data['hora_inicio'],
-                                hora_fin=sustentacion_data['hora_fin'],
+                                fecha=sustentacion_data['fecha'] if sustentacion_data['fecha'] else None,
+                                hora_inicio=sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None,
+                                hora_fin=sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None,
                             )
                         else:
                             # Crear una nueva sustentación si no existe
@@ -172,9 +172,9 @@ def guardar_horarios(request):
                             )
                             Horario_Sustentaciones.objects.create(
                                 sustentacion=nueva_sustentacion,
-                                fecha=sustentacion_data['fecha'],
-                                hora_inicio=sustentacion_data['hora_inicio'],
-                                hora_fin=sustentacion_data['hora_fin'],
+                                fecha=sustentacion_data['fecha'] if sustentacion_data['fecha'] else None,
+                                hora_inicio=sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None,
+                                hora_fin=sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None,
                             )
 
                     messages.success(request, "Horarios guardados exitosamente.")
@@ -187,6 +187,33 @@ def guardar_horarios(request):
     return redirect('home')
 
 
+
+@staff_member_required
+def editar_sustentacion(request, sustentacion_id):
+    # Obtener la instancia de la sustentación a editar
+    sustentacion = get_object_or_404(Sustentacion, pk=sustentacion_id)
+
+    if request.method == 'POST':
+        # Crear una instancia del formulario y llenarlo con los datos recibidos
+        form = Horario_SustentacionForm(request.POST, instance=sustentacion)
+        if form.is_valid():
+            # Guardar los datos en la base de datos
+            form.save()
+            print("Formulario registrado")
+            # Mostrar mensaje de éxito
+            messages.success(request, "Sustentación guardada exitosamente.")
+            # Redirigir al usuario a la página principal o a donde prefieras
+            return redirect('ejecutar_algoritmo')
+        else:
+            print("Errores en el formulario: ", form.errors)
+            # Si el formulario no es válido, mostrar los errores
+            messages.error(request,  form.errors)
+    else:
+        # Si la solicitud es GET, crear una instancia del formulario con los datos de la sustentación actual
+        form = Horario_SustentacionForm(instance=sustentacion)
+
+    # Renderizar el formulario de edición
+    return render(request, 'admin/editar_sustentacion.html', {'form': form})
 
 def index(request):
     return render(request, 'pages/index.html', { 'segment': 'index' })
