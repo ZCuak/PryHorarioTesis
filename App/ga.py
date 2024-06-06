@@ -350,7 +350,37 @@ def generar_horarios():
     fechas_sustentacion = Semana_Sustentacion.objects.all()
     ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
     mejor_horario, no_disponibles = ag.ejecutar()
+    
+    # Obtener las sustentaciones del semestre vigente
+    semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+    todas_sustentaciones = Sustentacion.objects.filter(cursos_grupos__semestre=semestre_vigente)
+
+    # Sustentaciones no presentes en el mejor horario
+    asignadas = {(s['cursos_grupos'].id, s['estudiante'].id) for s in mejor_horario}
+    no_asignadas = [s for s in todas_sustentaciones if (s.cursos_grupos.id, s.estudiante.id) not in asignadas]
+
+    # Imprimir sustentaciones no asignadas
+    if no_asignadas:
+        print("Sustentaciones no asignadas en el semestre vigente:")
+        for sust in no_asignadas:
+            print(f"{sust.titulo} - {sust.estudiante.apellidos_nombres} - {sust.cursos_grupos.curso.nombre}")
+            sust_data = {
+                'cursos_grupos': sust.cursos_grupos,
+                'estudiante': sust.estudiante,
+                'jurado1': sust.jurado1,
+                'jurado2': sust.jurado2,
+                'asesor': sust.asesor,
+                'titulo': sust.titulo,
+                'fecha': None,
+                'hora_inicio': None,
+                'hora_fin': None
+            }
+            mejor_horario.append(sust_data)
+
+    guardar_horario(mejor_horario)
     return mejor_horario, no_disponibles
+
+
 
 def guardar_horario(mejor_horario):
     for sustentacion in mejor_horario:

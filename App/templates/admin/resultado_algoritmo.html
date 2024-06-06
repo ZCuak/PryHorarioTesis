@@ -16,7 +16,7 @@
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success mt-3">Guardar Horarios</button>
                             </form>
-                            <a href="javascript:history.back()" class="btn btn-secondary mt-3">regresar</a>
+                            <a href="javascript:history.back()" class="btn btn-secondary mt-3">Regresar</a>
                             <button id="reloadAlgoritmo" class="btn btn-primary mt-3">Recargar Algoritmo</button>
                         </div>
                     </div>
@@ -55,7 +55,6 @@
                         </table>
                     </div>
                 </div>
-                
             </div>
         </div>
     </div>
@@ -131,10 +130,21 @@
                             <td>${sustentacion.hora_fin}</td>
                         </tr>
                     `;
-                    groupedRows[courseGroup].push(row);
+                    groupedRows[courseGroup].push({
+                        row: row,
+                        fecha: sustentacion.fecha,
+                        hora_inicio: sustentacion.hora_inicio
+                    });
                 });
 
                 Object.keys(groupedRows).forEach(function(courseGroup) {
+                    // Ordenar las filas por fecha y hora
+                    groupedRows[courseGroup].sort((a, b) => {
+                        let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
+                        let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
+                        return fechaA - fechaB;
+                    });
+
                     let headerRow = `
                         <tr>
                             <th colspan="9">${courseGroup}</th>
@@ -142,8 +152,8 @@
                     `;
                     tbody.insertAdjacentHTML('beforeend', headerRow);
 
-                    groupedRows[courseGroup].forEach(function(row) {
-                        tbody.insertAdjacentHTML('beforeend', row);
+                    groupedRows[courseGroup].forEach(function(item) {
+                        tbody.insertAdjacentHTML('beforeend', item.row);
                     });
                 });
             } else {
@@ -160,6 +170,7 @@
         });
     });
 </script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         var table = document.querySelector('.table');
@@ -171,12 +182,23 @@
             if (!groupedRows[courseGroup]) {
                 groupedRows[courseGroup] = [];
             }
-            groupedRows[courseGroup].push(row);
+            groupedRows[courseGroup].push({
+                row: row,
+                fecha: row.querySelectorAll('td')[6].textContent.trim(),
+                hora_inicio: row.querySelectorAll('td')[7].textContent.trim()
+            });
         });
 
         table.querySelector('tbody').innerHTML = '';
 
         Object.keys(groupedRows).forEach(function(courseGroup) {
+            // Ordenar las filas por fecha y hora
+            groupedRows[courseGroup].sort((a, b) => {
+                let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
+                let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
+                return fechaA - fechaB;
+            });
+
             var headerRow = document.createElement('tr');
             var headerCell = document.createElement('th');
             headerCell.textContent = courseGroup;
@@ -184,8 +206,8 @@
             headerRow.appendChild(headerCell);
             table.querySelector('tbody').appendChild(headerRow);
 
-            groupedRows[courseGroup].forEach(function(row) {
-                table.querySelector('tbody').appendChild(row);
+            groupedRows[courseGroup].forEach(function(item) {
+                table.querySelector('tbody').appendChild(item.row);
             });
         });
     });
