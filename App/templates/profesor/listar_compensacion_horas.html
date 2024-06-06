@@ -4,26 +4,27 @@
 
 {% block content %}
 
+
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="container-fluid py-4">
-            <div class="row">
-                <div class="col-12">
-                    <h1>Reporte de Sustentaciones</h1>
 
-        <form method="get" class="form-inline mb-4">
-            <div class="form-group mr-3">
-                <button type="submit" formaction="{% url 'exportar_excel_profesor' %}" class="btn btn-success mr-2">Exportar a Excel</button>
-            </div>
-        </form>
+                    <div class="">
+        <h1 class="mb-4">Compensación de Horas</h1>
+        <a href="{% url 'exportar_excel_compensacion_horas' %}" class="btn btn-success mb-4">Exportar a Excel</a>
 
-        <table class="table table-striped">
-            <thead>
-                <tr class="text-center">
+        <div class="bg-red">
+            <strong>Total de Duración de Sustentación: </strong> {{ total_duracion_sustentacion }} minutos
+        </div>
+
+        <table class="table table-striped text-center">
+            <thead class="">
+                <tr>
+                    <th>Compensan Horas</th>
+                    <th>Duración Sustentación</th>
                     <th>Curso</th>
-                    <th>Grupo</th>
                     <th>Código Universitario</th>
                     <th>Estudiante</th>
                     <th>Fecha</th>
@@ -34,8 +35,9 @@
             <tbody>
                 {% for row in data %}
                     <tr>
+                        <td>{{ row.compensan_horas }}</td>
+                        <td>{{ row.duracion_sustentacion }}</td>
                         <td>{{ row.curso }}</td>
-                        <td>{{ row.grupo }}</td>
                         <td>{{ row.codigo_universitario }}</td>
                         <td>{{ row.estudiante }}</td>
                         <td>{{ row.fecha }}</td>
@@ -45,23 +47,13 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
                 </div>
-            </div>
-        </div>
+
+
             </div>
         </div>
     </div>
 </div>
-
-
-    
-
-        
-        
-    
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 {% endblock %}
