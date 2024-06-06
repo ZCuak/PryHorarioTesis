@@ -119,8 +119,8 @@ class SemanaSustentacionForm(forms.ModelForm):
         model = Semana_Sustentacion
         fields = ['semestre_academico', 'curso', 'tipo_sustentacion', 'semana_inicio', 'semana_fin', 'fecha_inicio', 'fecha_fin', 'duracion_sustentacion', 'compensan_horas']
         widgets = {
-            'fecha_inicio': forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'YYYY-MM-DD', 'readonly': 'readonly', 'disabled': 'disabled'}),
-            'fecha_fin': forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'YYYY-MM-DD', 'readonly': 'readonly', 'disabled': 'disabled'}),
+            'fecha_inicio': forms.TextInput(attrs={'placeholder': 'YYYY-MM-DD', 'readonly': 'readonly'}),
+            'fecha_fin': forms.TextInput(attrs={'placeholder': 'YYYY-MM-DD', 'readonly': 'readonly'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -136,9 +136,8 @@ class SemanaSustentacionForm(forms.ModelForm):
 
         # Marcar los campos de fecha como no editables
         self.fields['fecha_inicio'].widget.attrs['readonly'] = True
-        self.fields['fecha_inicio'].widget.attrs['disabled'] = True
         self.fields['fecha_fin'].widget.attrs['readonly'] = True
-        self.fields['fecha_fin'].widget.attrs['disabled'] = True
+
 
     def clean(self):
         cleaned_data = super().clean()

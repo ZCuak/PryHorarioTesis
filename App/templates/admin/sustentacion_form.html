@@ -1,171 +1,89 @@
 {% extends "layouts/base.html" %}
 {% load i18n static %}
 
-{% block extrahead %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet">
-<style>
-    #calendar {
-        max-width: 900px;
-        margin: 20px auto;
-    }
-    .btn-container {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .btn {
-        padding: 10px 20px;
-        font-size: 16px;
-        margin: 5px;
-        cursor: pointer;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container">
-    <div class="btn-container">
-        <button class="btn" id="saveEvents">Guardar Horarios</button>
-        <button class="btn btn-secondary" id="cancelButton">Cancelar</button>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6>{% if form.instance.pk %}Editar Sustentación{% else %}Crear Sustentación{% endif %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label>Curso: {{ curso_grupo.curso.nombre }}</label>
+                        </div>
+                        <div class="mb-3">
+                            <label>Grupo: {{ curso_grupo.grupo.nombre }}</label>
+                        </div>
+                        <input type="hidden" name="cursos_grupos" value="{{ curso_grupo.id }}">
+                        {{ form.as_p }}
+                       
+                        <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
+                        <a class="btn btn-secondary" href="javascript:history.back()">Volver</a>
+                    </form>
+                    
+                </div>
+            </div>
+        </div>
     </div>
-    <div id="calendar"></div>
 </div>
-{% endblock %}
-
-{% block extrascript %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        // Obtener parámetros de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const semanaInicio = urlParams.get('semana_inicio');
-        const semanaFin = urlParams.get('semana_fin');
-
-        console.log("Semana Inicio:", semanaInicio);
-        console.log("Semana Fin:", semanaFin);
-
-        // Hacer una solicitud AJAX para obtener las fechas mínima y máxima basadas en las semanas
-        $.ajax({
-            url: "{% url 'obtener_fechas_min_max' %}",
-            data: {
-                'semana_inicio': semanaInicio,
-                'semana_fin': semanaFin
-            },
-            dataType: 'json',
-            success: function(data) {
-                var fechaInicioMin = data.fecha_inicio_min;
-                var fechaFinMax = data.fecha_fin_max;
-
-                console.log("Fecha Inicio Min:", fechaInicioMin);
-                console.log("Fecha Fin Max:", fechaFinMax);
-
-                // Crear los eventos a partir de las disponibilidades
-                var events = [
-                    {% for disponibilidad in disponibilidades %}
-                    {
-                        title: "{{ disponibilidad.3 }}",
-                        start: "{{ disponibilidad.0|date:'Y-m-d' }}T{{ disponibilidad.1|time:'H:i:s' }}",
-                        end: "{{ disponibilidad.0|date:'Y-m-d' }}T{{ disponibilidad.2|time:'H:i:s' }}"
-                    }{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ];
-
-                console.log("Events:", events);
-
-                // Inicializar el calendario
-                $('#calendar').fullCalendar({
-                    header: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: ''
-                    },
-                    defaultView: 'agendaWeek',
-                    locale: 'es',
-                    validRange: {
-                        start: fechaInicioMin,
-                        end: moment(fechaFinMax).add(1, 'days').format('YYYY-MM-DD')  // Añadir un día a la fecha de fin para incluirla
-                    },
-                    events: events,
-                    selectable: true,
-                    selectHelper: true,
-                    select: function (start, end) {
-                        
-                        var eventData = {
-                            start: start,
-                            end: end
-                        };
-                        $('#calendar').fullCalendar('renderEvent', eventData, true);
-                        
-                        $('#calendar').fullCalendar('unselect');
-                    },
-                    editable: true,
-                    eventRender: function(event, element) {
-
-                        console.log("Event Start:", event.start.format());
-                        console.log("Event End:", event.end ? event.end.format() : null);
-                    }
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error al obtener las fechas:', error);
-            }
+    $(document).ready(function() {
+        function updateJuradoOptions() {
+            var selectedJurado1 = $('#id_jurado1').val();
+            var selectedJurado2 = $('#id_jurado2').val();
+            var selectedAsesor = $('#id_asesor').val();
+    
+            $('#id_jurado2 option').each(function() {
+                $(this).show();
+                if ($(this).val() == selectedJurado1 && $(this).val() !== "") {
+                    $(this).hide();
+                }
+                if ($(this).val() == selectedAsesor && $(this).val() !== "") {
+                    $(this).hide();
+                }
+            });
+    
+            $('#id_jurado1 option').each(function() {
+                $(this).show();
+                if ($(this).val() == selectedJurado2 && $(this).val() !== "") {
+                    $(this).hide();
+                }
+                if ($(this).val() == selectedAsesor && $(this).val() !== "") {
+                    $(this).hide();
+                }
+            });
+    
+            $('#id_asesor option').each(function() {
+                $(this).show();
+                if ($(this).val() == selectedJurado1 && $(this).val() !== "") {
+                    $(this).hide();
+                }
+                if ($(this).val() == selectedJurado2 && $(this).val() !== "") {
+                    $(this).hide();
+                }
+            });
+        }
+    
+        $('#id_jurado1').change(function() {
+            updateJuradoOptions();
+        });
+    
+        $('#id_jurado2').change(function() {
+            updateJuradoOptions();
         });
 
-        // Función para guardar eventos en el servidor
-        function saveEvents() {
-            var events = $('#calendar').fullCalendar('clientEvents');
-            var eventData = events.map(event => ({
-                title: event.title,
-                start: event.start.format(),
-                end: event.end ? event.end.format() : null
-            }));
-
-            fetch('{% url "disponibilidad_create" %}?semana_inicio=' + semanaInicio + '&semana_fin=' + semanaFin, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')  // Asegúrate de enviar el token CSRF
-                },
-                body: JSON.stringify(eventData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    alert("Horarios guardados correctamente.");
-                } else {
-                    alert("Error al guardar los horarios.");
-                }
-            })
-            .catch(error => console.error('Error:', error));
-            console.log(JSON.stringify(eventData));
-        }
-
-        // Asociar funciones a los botones
-        $('#saveEvents').click(saveEvents);
-        $('#cancelButton').click(function() {
-            window.location.href = "{% url 'disponibilidad_list' %}";
+        $('#id_asesor').change(function() {
+            updateJuradoOptions();
         });
-
-        // Función para obtener el token CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                let cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    let cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
+    
+        // Trigger change on page load to apply the restrictions based on pre-selected values
+        updateJuradoOptions();
     });
 </script>
 {% endblock %}
-
-

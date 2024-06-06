@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, time
 from django.db import models
 from .models import *
 
-# Algoritmo genético
+# Algoritmo genético mejorado
 class AlgoritmoGenetico:
     def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores, fechas_sustentacion):
         self.poblacion_size = poblacion_size
@@ -61,10 +61,6 @@ class AlgoritmoGenetico:
 
     def profesor_valido(self, profesor, semestre):
         return Semestre_Academico_Profesores.objects.filter(profesor=profesor, semestre=semestre).exists() and Profesores_Semestre_Academico.objects.filter(profesor=profesor, semestre=semestre).exists()
-
-    def seleccionar_estudiante(self, curso_grupo):
-        estudiantes = Estudiante.objects.filter(sustentacion__cursos_grupos=curso_grupo)
-        return random.choice(estudiantes)
 
     def seleccionar_profesor(self, curso_grupo, exclude=[]):
         profesores = Profesor.objects.filter(
@@ -348,7 +344,7 @@ def generar_horarios():
         for disp in Profesores_Semestre_Academico.objects.all()
     }
     fechas_sustentacion = Semana_Sustentacion.objects.all()
-    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
+    ag = AlgoritmoGenetico(poblacion_size=20, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
     mejor_horario, no_disponibles = ag.ejecutar()
     return mejor_horario, no_disponibles
 

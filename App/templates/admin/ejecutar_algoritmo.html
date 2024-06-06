@@ -7,7 +7,7 @@
         <div class="col-12"> 
             <div class="card"> 
                 <div class="card-header pb-0"> 
-                    <h6>Ejecutar Algoritmo Genético</h6> 
+                    <h2>Ejecutar Algoritmo Genético</h2> 
                 </div> 
                 <div class="card-body"> 
                     {% if messages %} 
@@ -43,7 +43,7 @@
                                     <option value="{{ curso_grupo.id }}" {% if curso_grupo.id|stringformat:"s" == curso_grupo_id %}selected{% endif %}>{{ curso_grupo.curso.nombre }} - {{ curso_grupo.grupo.nombre }}</option> 
                                 {% endfor %} 
                             </select> 
-                        </div> 
+                        </div>  
                         <div class="form-group col"> 
                             <button type="submit" class="btn btn-primary mt-4">Filtrar</button> 
                             <button type="button" class="btn btn-success mt-4" id="enviar-notificaciones">Notificar</button> 
@@ -94,27 +94,31 @@
 
 <script>
   $(document).ready(function(){
-      $('#enviar-notificaciones').click(function(){
-          console.log('Botón de notificación clicado');
-          $.ajax({
-              url: "{% url 'send_notifications' %}",
-              type: "POST",
-              data: {
-                  'csrfmiddlewaretoken': '{{ csrf_token }}'
-              },
-              beforeSend: function() {
-                  console.log('Enviando solicitud AJAX para enviar notificaciones');
-              },
-              success: function(data) {
-                  console.log('Notificaciones enviadas correctamente');
-                  alert('Notificaciones enviadas correctamente');
-              },
-              error: function(xhr, status, error) {
-                  console.error('Error al enviar notificaciones:', status, error);
-                  alert('Error al enviar notificaciones: ' + error);
-              }
-          });
-      });
-  });
+    $('#enviar-notificaciones').click(function(){
+        var form_data = {
+            'csrfmiddlewaretoken': '{{ csrf_token }}',
+            'semestre': $('#semestre').val(),
+            'tipo_sustentacion': $('#tipo_sustentacion').val(),
+            'curso_grupo': $('#curso_grupo').val()
+        };
+
+        $.ajax({
+            url: "{% url 'send_notifications' %}",
+            type: "POST",
+            data: form_data,
+            beforeSend: function() {
+                console.log('Enviando solicitud AJAX para enviar notificaciones');
+            },
+            success: function(data) {
+                console.log('Notificaciones enviadas correctamente');
+                alert('Notificaciones enviadas correctamente');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error al enviar notificaciones:', status, error);
+                alert('Error al enviar notificaciones: ' + error);
+            }
+        });
+    });
+});
 </script>
 {% endblock %}
