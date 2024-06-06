@@ -142,10 +142,9 @@ def guardar_horarios(request):
                             curso=curso, grupo=grupo, semestre=semestre)[0]
 
                         estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
-                        jurado1 = Profesor.objects.filter(apellidos_nombres=sustentacion_data['jurado1']).first()
-                        jurado2 = Profesor.objects.filter(apellidos_nombres=sustentacion_data['jurado2']).first()
-                        asesor = Profesor.objects.filter(apellidos_nombres=sustentacion_data['asesor']).first()
-
+                        jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
+                        jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
+                        asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
 
                         # Verificar si la sustentación ya existe por estudiante, curso y grupo
                         sustentacion_existente = Sustentacion.objects.filter(
@@ -171,7 +170,7 @@ def guardar_horarios(request):
                             )
                         else:
                             # Crear una nueva sustentación si no existe
-                            nueva_sustentacion = Sustentacion.objects(
+                            nueva_sustentacion = Sustentacion.objects.create(
                                 cursos_grupos=cursos_grupos,
                                 estudiante=estudiante,
                                 jurado1=jurado1,
@@ -1283,7 +1282,6 @@ Hora Inicio: 19:30:00
 Hora Fin: 20:00:00
 Tipo: PARCIAL'''
         result = send_whatsapp_message(number, message)
-        print(message)
         
         if result:
             return JsonResponse({'status': 'success', 'result': result})
