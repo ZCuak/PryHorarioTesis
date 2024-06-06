@@ -142,9 +142,10 @@ def guardar_horarios(request):
                             curso=curso, grupo=grupo, semestre=semestre)[0]
 
                         estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
-                        jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
-                        jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
-                        asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
+                        jurado1 = Profesor.objects.filter(apellidos_nombres=sustentacion_data['jurado1']).first()
+                        jurado2 = Profesor.objects.filter(apellidos_nombres=sustentacion_data['jurado2']).first()
+                        asesor = Profesor.objects.filter(apellidos_nombres=sustentacion_data['asesor']).first()
+
 
                         # Verificar si la sustentación ya existe por estudiante, curso y grupo
                         sustentacion_existente = Sustentacion.objects.filter(
@@ -170,7 +171,7 @@ def guardar_horarios(request):
                             )
                         else:
                             # Crear una nueva sustentación si no existe
-                            nueva_sustentacion = Sustentacion.objects.create(
+                            nueva_sustentacion = Sustentacion.objects(
                                 cursos_grupos=cursos_grupos,
                                 estudiante=estudiante,
                                 jurado1=jurado1,
