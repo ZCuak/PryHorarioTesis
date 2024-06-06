@@ -95,9 +95,7 @@ class AlgoritmoGenetico:
                                     fechas_horas.append((fecha, hora_inicio, (datetime.combine(datetime.today(), hora_inicio) + timedelta(minutes=30)).time()))
 
         if fechas_horas:
-            # Ordenar fechas_horas para seleccionar las que están más seguidas
-            fechas_horas.sort(key=lambda x: x[1])
-            return fechas_horas[0]
+            return random.choice(fechas_horas)
         else:
             return self.buscar_nueva_disponibilidad(jurado1, jurado2, asesor, curso)
 
@@ -342,7 +340,6 @@ class AlgoritmoGenetico:
         mejor_horario.sort(key=lambda x: max(contador_sustentaciones.get(x['jurado1'].id, 0), contador_sustentaciones.get(x['jurado2'].id, 0)), reverse=True)
 
         return mejor_horario
-    
 
 def generar_horarios():
     cursos_grupos = Cursos_Grupos.objects.all()
@@ -379,7 +376,6 @@ def generar_horarios():
                 'hora_fin': None
             }
             mejor_horario.append(sust_data)
-
 
     return mejor_horario, no_disponibles
 
