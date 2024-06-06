@@ -76,13 +76,13 @@ def ejecutar_algoritmo(request):
                     'semestre': sustentacion['cursos_grupos'].semestre.nombre,
                 },
                 'estudiante': sustentacion['estudiante'].apellidos_nombres,
-                'jurado1': sustentacion['jurado1'].apellidos_nombres,
-                'jurado2': sustentacion['jurado2'].apellidos_nombres,
+                'jurado1': sustentacion['jurado1'].apellidos_nombres if sustentacion['jurado1'] else '',
+                'jurado2': sustentacion['jurado2'].apellidos_nombres if sustentacion['jurado2'] else '',
                 'asesor': sustentacion['asesor'].apellidos_nombres,
                 'titulo': sustentacion['titulo'],
-                'fecha': sustentacion['fecha'].isoformat(),
-                'hora_inicio': sustentacion['hora_inicio'].isoformat(),
-                'hora_fin': sustentacion['hora_fin'].isoformat(),
+                'fecha': sustentacion['fecha'].isoformat() if sustentacion['fecha'] else '',
+                'hora_inicio': sustentacion['hora_inicio'].isoformat() if sustentacion['hora_inicio'] else '',
+                'hora_fin': sustentacion['hora_fin'].isoformat() if sustentacion['hora_fin'] else '',
             }
             for sustentacion in mejor_horario
         ]
@@ -105,6 +105,7 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
+
 
 @staff_member_required
 def mostrar_resultados(request):
