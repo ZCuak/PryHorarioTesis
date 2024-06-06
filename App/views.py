@@ -207,14 +207,18 @@ def editar_sustentacion(request, sustentacion_id):
         else:
             print("Errores en el formulario: ", form.errors)
             # Si el formulario no es válido, mostrar los errores
-            messages.error(request,  form.errors)
+            messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
         # Si la solicitud es GET, crear una instancia del formulario con los datos de la sustentación actual
         form = Horario_SustentacionForm(instance=sustentacion)
+        horario = Horario_Sustentaciones.objects.filter(sustentacion=sustentacion).first()
+        if horario:
+            print("Fecha de la sustentación: ", horario.fecha)
+        else:
+            print("No se encontró horario para esta sustentación")
 
     # Renderizar el formulario de edición
     return render(request, 'admin/editar_sustentacion.html', {'form': form})
-
 def index(request):
     return render(request, 'pages/index.html', { 'segment': 'index' })
 
@@ -1278,4 +1282,123 @@ Tipo: PARCIAL'''
             return JsonResponse({'status': 'fail', 'message': 'Error al enviar el mensaje'})
     
     return JsonResponse({'status': 'fail', 'message': 'Invalid request method'})
+
+def listar_compensacion_horas(request):
+    usuario_id = request.user.id
+
+    sql_profesor_id = """
+        SELECT id FROM app_profesor WHERE user_id = %s
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql_profesor_id, [usuario_id])
+        profesor_id = cursor.fetchone()[0]
+
+    sql = """
+    SELECT 
+        appss.compensan_horas,
+        appss.duracion_sustentacion,
+        appc.nombre AS curso,
+        appe.codigo_universitario,
+        appe.apellidos_nombres AS estudiante,
+        apphs.fecha,
+        apphs.hora_inicio,
+        apps.titulo
+    FROM app_semana_sustentacion appss
+    INNER JOIN app_curso appc ON appc.id = appss.curso_id
+    INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
+    INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
+    INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+    INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+    LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+    LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+    LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s)
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [profesor_id, profesor_id, profesor_id])
+        rows = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+    data = [dict(zip(columns, row)) for row in rows]
+
+    # Calcular el total de duración de sustentación
+    total_duracion_sustentacion = sum(row['duracion_sustentacion'] for row in data)
+
+    return render(request, 'profesor/listar_compensacion_horas.html', {'data': data, 'total_duracion_sustentacion': total_duracion_sustentacion})
+
+
+from django.http import HttpResponse
+import openpyxl
+from openpyxl.utils import get_column_letter
+
+def exportar_excel_compensacion_horas(request):
+    usuario_id = request.user.id
+
+    sql_profesor_id = """
+        SELECT id FROM app_profesor WHERE user_id = %s
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql_profesor_id, [usuario_id])
+        profesor_id = cursor.fetchone()[0]
+
+    sql = """
+    SELECT 
+        appss.compensan_horas,
+        appss.duracion_sustentacion,
+        appc.nombre AS curso,
+        appe.codigo_universitario,
+        appe.apellidos_nombres AS estudiante,
+        apphs.fecha,
+        apphs.hora_inicio,
+        apps.titulo
+    FROM app_semana_sustentacion appss
+    INNER JOIN app_curso appc ON appc.id = appss.curso_id
+    INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
+    INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
+    INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+    INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+    LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+    LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+    LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s)
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [profesor_id, profesor_id, profesor_id])
+        rows = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+    # Crear el libro de Excel
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Compensacion Horas"
+
+    # Escribir los encabezados de columna
+    for col_num, column_title in enumerate(columns, 1):
+        cell = worksheet.cell(row=1, column=col_num)
+        cell.value = column_title
+
+    # Escribir los datos
+    for row_num, row_data in enumerate(rows, 2):
+        for col_num, cell_value in enumerate(row_data, 1):
+            cell = worksheet.cell(row=row_num, column=col_num)
+            cell.value = cell_value
+
+    # Ajustar el ancho de las columnas
+    for col_num, column_title in enumerate(columns, 1):
+        column_letter = get_column_letter(col_num)
+        worksheet.column_dimensions[column_letter].width = 15
+
+    # Preparar la respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="compensacion_horas_profesor.xlsx"'
+    
+    # Guardar el libro en la respuesta
+    workbook.save(response)
+    
+    return response
+
 
