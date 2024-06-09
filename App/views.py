@@ -116,6 +116,7 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
+
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
@@ -124,6 +125,7 @@ def mostrar_resultados(request):
     else:
         messages.error(request, "No hay resultados del algoritmo para mostrar.")
         return redirect('ejecutar_algoritmo')
+
 
 
 @staff_member_required
@@ -153,14 +155,15 @@ def guardar_horarios(request):
                         ).first()
 
                         if sustentacion_existente:
-                            # Actualizar jurados si están en null
-                            if not sustentacion_existente.jurado1:
+                            # Actualizar jurados si están en null y el nuevo valor no es None
+                            if not sustentacion_existente.jurado1 and jurado1 is not None:
                                 sustentacion_existente.jurado1 = jurado1
-                            if not sustentacion_existente.jurado2:
+                            if not sustentacion_existente.jurado2 and jurado2 is not None:
                                 sustentacion_existente.jurado2 = jurado2
-                            if not sustentacion_existente.asesor:
+                            if not sustentacion_existente.asesor and asesor is not None:
                                 sustentacion_existente.asesor = asesor
                             sustentacion_existente.save()
+
 
                             Horario_Sustentaciones.objects.create(
                                 sustentacion=sustentacion_existente,
@@ -1237,14 +1240,14 @@ def send_bulk_messages_view(request):
         for phone, records in message_profesores.items():
             nombre_profesor = records[0].jurado1.apellidos_nombres if records[0].jurado1.telefono == phone else records[0].jurado2.apellidos_nombres if records[0].jurado2.telefono == phone else records[0].asesor.apellidos_nombres
             message = f"Nombre: {nombre_profesor}\nNo olvidar su horario de sustentación:\n"
-            message += build_message(records)
+            """ message += build_message(records) """
             # Añadir a la lista de mensajes a enviar
             messages_to_send.append((f"+51{phone}", message))
 
         # Construir y almacenar mensajes para estudiantes
         for phone, records in message_estudiantes.items():
             message = f"Nombre: {records[0].estudiante.apellidos_nombres}\nNo olvidar su horario de sustentación:\n"
-            message += build_message(records)
+            # message += build_message(records)
             # Añadir a la lista de mensajes a enviar
             messages_to_send.append((f"+51{phone}", message))
 

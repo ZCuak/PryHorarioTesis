@@ -22,8 +22,11 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+                    </div>
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table" id="resultTable">
                             <thead>
                                 <tr>
                                     <th>Curso - Grupo</th>
@@ -87,6 +90,16 @@
 </style>
 
 <script>
+    function formatDate(dateString) {
+        const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString('es-ES', options);
+        } else {
+            return 'Fecha Inválida';
+        }
+    }
+
     document.getElementById('reloadAlgoritmo').addEventListener('click', function() {
         // Mostrar el modal
         $('#loadingModal').modal('show');
@@ -125,7 +138,7 @@
                             <td>${sustentacion.jurado2}</td>
                             <td>${sustentacion.asesor}</td>
                             <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${sustentacion.titulo}</td>
-                            <td>${sustentacion.fecha}</td>
+                            <td>${formatDate(sustentacion.fecha)}</td>
                             <td>${sustentacion.hora_inicio}</td>
                             <td>${sustentacion.hora_fin}</td>
                         </tr>
@@ -169,9 +182,25 @@
             $('#loadingModal').modal('hide');
         });
     });
-</script>
 
-<script>
+    // Función de búsqueda
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let filter = this.value.toUpperCase();
+        let rows = document.querySelector("#resultTable tbody").rows;
+        
+        for (let i = 0; i < rows.length; i++) {
+            let cells = rows[i].cells;
+            let match = false;
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j].innerText.toUpperCase().indexOf(filter) > -1) {
+                    match = true;
+                    break;
+                }
+            }
+            rows[i].style.display = match ? "" : "none";
+        }
+    });
+
     document.addEventListener("DOMContentLoaded", function() {
         var table = document.querySelector('.table');
         var columnIndex = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso - Grupo');
@@ -207,10 +236,13 @@
             table.querySelector('tbody').appendChild(headerRow);
 
             groupedRows[courseGroup].forEach(function(item) {
+                item.row.querySelectorAll('td')[6].textContent = formatDate(item.fecha);
                 table.querySelector('tbody').appendChild(item.row);
             });
         });
     });
 </script>
+
+
 
 {% endblock %}
