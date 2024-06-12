@@ -19,11 +19,10 @@ class AlgoritmoGenetico:
         for _ in range(self.poblacion_size):
             individuo = self.crear_individuo()
             poblacion.append(individuo)
-
+        print(f"Población inicial: {poblacion}")
         return poblacion
 
     def crear_individuo(self):
-        print("Inicializando creacion...")
         individuo = []
         estudiantes_asignados = set()
         for curso_grupo in self.cursos_grupos:
@@ -121,31 +120,8 @@ class AlgoritmoGenetico:
         return None, None, None
 
 
-    def ajustar_hora_disponibilidad(self, sustentacion, mejor_horario):
-        while True:
-            conflicto = False
-            for otra_sustentacion in mejor_horario:
-                if sustentacion == otra_sustentacion:
-                    continue
-                if sustentacion['fecha'] == otra_sustentacion['fecha'] and (
-                    sustentacion['jurado1'] in [otra_sustentacion['jurado1'], otra_sustentacion['jurado2'], otra_sustentacion['asesor']] or
-                    sustentacion['jurado2'] in [otra_sustentacion['jurado1'], otra_sustentacion['jurado2'], otra_sustentacion['asesor']] or
-                    sustentacion['asesor'] in [otra_sustentacion['jurado1'], otra_sustentacion['jurado2'], otra_sustentacion['asesor']]
-                ):
-                    if (sustentacion['hora_inicio'] <= otra_sustentacion['hora_inicio'] < sustentacion['hora_fin']) or (
-                        otra_sustentacion['hora_inicio'] <= sustentacion['hora_inicio'] < otra_sustentacion['hora_fin']
-                    ):
-                        conflicto = True
-                        sustentacion['hora_inicio'] = (datetime.combine(datetime.today(), sustentacion['hora_inicio']) + timedelta(minutes=30)).time()
-                        sustentacion['hora_fin'] = (datetime.combine(datetime.today(), sustentacion['hora_fin']) + timedelta(minutes=30)).time()
-                        break
-            if not conflicto:
-                break
-
-        return sustentacion['hora_inicio'], sustentacion['hora_fin']
 
     def calcular_fitness(self, individuo):
-        print("Calculando fitness...")
         fitness = 0
         for sustentacion in individuo:
             disponibilidad_jurado1 = self.disponibilidad_profesores.get((sustentacion['jurado1'].id, sustentacion['cursos_grupos'].semestre.id)) if sustentacion['jurado1'] else None
@@ -183,15 +159,12 @@ class AlgoritmoGenetico:
         return padres
 
     def cruzar(self, padre1, padre2):
-        print("Inicializando cruce...")
         punto_cruce = random.randint(1, len(padre1) - 1)
         hijo1 = padre1[:punto_cruce] + padre2[punto_cruce:]
         hijo2 = padre2[:punto_cruce] + padre1[punto_cruce:]
         return hijo1, hijo2
 
     def mutar(self, individuo):
-        print("Inicializando mutacion...")
-
         if random.random() < 0.1:
             sustentacion_mutada = random.choice(individuo)
             if not sustentacion_mutada['jurado1']:
@@ -203,7 +176,6 @@ class AlgoritmoGenetico:
         return individuo
 
     def evolucionar(self):
-        print("Inicializando evolucion...")
         nueva_poblacion = []
         while len(nueva_poblacion) < self.poblacion_size:
             padres = self.seleccionar_padres()
@@ -212,6 +184,35 @@ class AlgoritmoGenetico:
             nueva_poblacion.append(self.mutar(hijo2))
         self.poblacion = nueva_poblacion
 
+    def ajustar_horarios(self, mejor_horario):
+        def hay_conflicto(sust1, sust2):
+            return (
+                sust1['fecha'] == sust2['fecha'] and
+                (
+                    (sust1['hora_inicio'] >= sust2['hora_inicio'] and sust1['hora_inicio'] < sust2['hora_fin']) or
+                    (sust1['hora_fin'] > sust2['hora_inicio'] and sust1['hora_fin'] <= sust2['hora_fin'])
+                ) and (
+                    sust1['jurado1'] in [sust2['jurado1'], sust2['jurado2'], sust2['asesor']] or
+                    sust1['jurado2'] in [sust2['jurado1'], sust2['jurado2'], sust2['asesor']] or
+                    sust1['asesor'] in [sust2['jurado1'], sust2['jurado2'], sust2['asesor']]
+                )
+            )
+
+        ajustado = False
+        while not ajustado:
+            ajustado = True
+            for i in range(len(mejor_horario)):
+                for j in range(i + 1, len(mejor_horario)):
+                    if hay_conflicto(mejor_horario[i], mejor_horario[j]):
+                        ajustado = False
+                        if mejor_horario[i]['hora_inicio'] < mejor_horario[j]['hora_inicio']:
+                            mejor_horario[j]['hora_inicio'] = (datetime.combine(datetime.today(), mejor_horario[i]['hora_fin']) + timedelta(minutes=30)).time()
+                            mejor_horario[j]['hora_fin'] = (datetime.combine(datetime.today(), mejor_horario[j]['hora_inicio']) + timedelta(minutes=30)).time()
+                        else:
+                            mejor_horario[i]['hora_inicio'] = (datetime.combine(datetime.today(), mejor_horario[j]['hora_fin']) + timedelta(minutes=30)).time()
+                            mejor_horario[i]['hora_fin'] = (datetime.combine(datetime.today(), mejor_horario[i]['hora_inicio']) + timedelta(minutes=30)).time()
+        return mejor_horario
+
     def ejecutar(self):
         for _ in range(self.generaciones):
             self.poblacion = sorted(self.poblacion, key=lambda ind: self.calcular_fitness(ind), reverse=True)
@@ -219,12 +220,9 @@ class AlgoritmoGenetico:
         mejor_individuo = max(self.poblacion, key=lambda ind: self.calcular_fitness(ind))
         mejor_individuo, no_disponibles = self.verificar_disponibilidad(mejor_individuo)
         mejor_individuo = self.eliminar_duplicados(mejor_individuo)
-        mejor_individuo = self.garantizar_todas_sustentaciones(mejor_individuo)
         mejor_individuo = self.ordenar_por_curso_grupo(mejor_individuo)
-        mejor_individuo = self.maximizar_sustentaciones_por_jurado(mejor_individuo)
-        print(mejor_individuo)
+        mejor_individuo = self.ajustar_horarios(mejor_individuo)
         return mejor_individuo, no_disponibles
-
     def eliminar_duplicados(self, mejor_horario):
         seen = set()
         nuevo_horario = []
@@ -235,58 +233,9 @@ class AlgoritmoGenetico:
                 seen.add(key)
         return nuevo_horario
 
-    def garantizar_todas_sustentaciones(self, mejor_horario):
-        asignadas = {(sustentacion['cursos_grupos'].id, sustentacion['estudiante'].id) for sustentacion in mejor_horario}
-        todas_sustentaciones = {(s.cursos_grupos.id, s.estudiante.id): s for s in Sustentacion.objects.all()}
-
-        for key, sustentacion in todas_sustentaciones.items():
-            if key not in asignadas:
-                jurado1 = sustentacion.jurado1 if sustentacion.jurado1 and self.profesor_valido(sustentacion.jurado1, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[])
-                jurado2 = sustentacion.jurado2 if sustentacion.jurado2 and self.profesor_valido(sustentacion.jurado2, sustentacion.cursos_grupos.semestre) else self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
-                asesor = sustentacion.asesor
-
-                # Asegurarse de que los tres profesores sean distintos
-                if jurado1 == jurado2:
-                    jurado2 = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1])
-                if jurado1 == asesor or jurado2 == asesor:
-                    asesor = self.seleccionar_profesor(sustentacion.cursos_grupos, exclude=[jurado1, jurado2])
-
-                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(jurado1, jurado2, asesor, sustentacion.cursos_grupos.curso)
-
-                if fecha and hora_inicio and hora_fin:
-                    sust_data = {
-                        'cursos_grupos': sustentacion.cursos_grupos,
-                        'estudiante': sustentacion.estudiante,
-                        'jurado1': jurado1,
-                        'jurado2': jurado2,
-                        'asesor': asesor,
-                        'titulo': sustentacion.titulo,
-                        'fecha': fecha,
-                        'hora_inicio': hora_inicio,
-                        'hora_fin': hora_fin
-                    }
-                    mejor_horario.append(sust_data)
-
-        return mejor_horario
-
     def ordenar_por_curso_grupo(self, mejor_horario):
         return sorted(mejor_horario, key=lambda x: (x['cursos_grupos'].curso.nombre, x['cursos_grupos'].grupo.nombre))
 
-
-    def maximizar_sustentaciones_por_jurado(self, mejor_horario):
-        # Crear un diccionario para contar la cantidad de sustentaciones por profesor
-        contador_sustentaciones = {}
-
-        for sustentacion in mejor_horario:
-            if sustentacion['jurado1']:
-                contador_sustentaciones[sustentacion['jurado1'].id] = contador_sustentaciones.get(sustentacion['jurado1'].id, 0) + 1
-            if sustentacion['jurado2']:
-                contador_sustentaciones[sustentacion['jurado2'].id] = contador_sustentaciones.get(sustentacion['jurado2'].id, 0) + 1
-
-        # Ordenar el horario por la cantidad de sustentaciones por profesor
-        mejor_horario.sort(key=lambda x: max(contador_sustentaciones.get(x['jurado1'].id, 0), contador_sustentaciones.get(x['jurado2'].id, 0)), reverse=True)
-
-        return mejor_horario
 
 def generar_horarios():
     cursos_grupos = Cursos_Grupos.objects.all()
@@ -295,38 +244,9 @@ def generar_horarios():
         for disp in Profesores_Semestre_Academico.objects.all()
     }
     fechas_sustentacion = Semana_Sustentacion.objects.all()
-    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
+    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=20, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
     mejor_horario, no_disponibles = ag.ejecutar()
-    
-    # Obtener las sustentaciones del semestre vigente
-    semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
-    todas_sustentaciones = Sustentacion.objects.filter(cursos_grupos__semestre=semestre_vigente)
-
-    # Sustentaciones no presentes en el mejor horario
-    asignadas = {(s['cursos_grupos'].id, s['estudiante'].id) for s in mejor_horario}
-    no_asignadas = [s for s in todas_sustentaciones if (s.cursos_grupos.id, s.estudiante.id) not in asignadas]
-
-    # Imprimir sustentaciones no asignadas
-    if no_asignadas:
-        print("Sustentaciones no asignadas en el semestre vigente:")
-        for sust in no_asignadas:
-            print(f"{sust.titulo} - {sust.estudiante.apellidos_nombres} - {sust.cursos_grupos.curso.nombre}")
-            sust_data = {
-                'cursos_grupos': sust.cursos_grupos,
-                'estudiante': sust.estudiante,
-                'jurado1': sust.jurado1,
-                'jurado2': sust.jurado2,
-                'asesor': sust.asesor,
-                'titulo': sust.titulo,
-                'fecha': None,
-                'hora_inicio': None,
-                'hora_fin': None
-            }
-            mejor_horario.append(sust_data)
-
     return mejor_horario, no_disponibles
-
-
 
 def guardar_horario(mejor_horario):
     for sustentacion in mejor_horario:
