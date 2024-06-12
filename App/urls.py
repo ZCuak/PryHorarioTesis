@@ -15,6 +15,8 @@ urlpatterns = [
     path('mostrar_resultados/', views.mostrar_resultados, name='mostrar_resultados'),
 
     #PARA REPORTES
+    path('sustentaciones/', views.lista_sustentaciones, name='lista_sustentaciones'),
+
     path('reporte_sustentaciones/', views.reporte_sustentaciones, name='reporte_sustentaciones'),
     path('exportar_csv/', views.exportar_csv, name='exportar_csv'),
     path('listar_sustentaciones/', views.listar_sustentaciones, name='listar_sustentaciones'),

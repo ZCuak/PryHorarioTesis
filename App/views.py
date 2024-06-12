@@ -1300,6 +1300,7 @@ Tipo: PARCIAL'''
     
     return JsonResponse({'status': 'fail', 'message': 'Invalid request method'})
 
+@login_required
 def listar_compensacion_horas(request):
     usuario_id = request.user.id
 
@@ -1426,4 +1427,91 @@ def exportar_excel_compensacion_horas(request):
     
     return response
 
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.db import connection
+import csv
+from .models import Profesor
+
+def lista_sustentaciones(request):
+    query = """
+        SELECT 
+            appss.compensan_horas,
+            appss.duracion_sustentacion,
+            appc.nombre AS curso,
+            appss.semana_inicio,
+            appss.semana_fin,
+            apphs.fecha,
+            apphs.hora_inicio,
+            apphs.hora_fin,
+            apps.titulo,
+            app1.apellidos_nombres as jurado_1,
+            app2.apellidos_nombres as jurado_2,
+            app3.apellidos_nombres as asesor
+        FROM app_semana_sustentacion appss
+        INNER JOIN app_semestreacademico appsa on appsa.id=appss.semestre_academico_id
+        INNER JOIN app_curso appc ON appc.id = appss.curso_id
+        INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
+        INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
+        LEFT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+        INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+        LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+        LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+        LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+        WHERE appsa.vigencia=TRUE
+    """
+    
+    params = []
+    
+    if 'compensan_horas' in request.GET and request.GET['compensan_horas']:
+        query += " AND appss.compensan_horas=%s"
+        params.append(request.GET['compensan_horas'] == 'True')
+    
+    if 'profesor' in request.GET and request.GET['profesor']:
+        query += """
+            AND (%s IN (apps.jurado1_id, apps.jurado2_id, apps.asesor_id))
+        """
+        params.append(request.GET['profesor'])
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query, params)
+        columns = [col[0] for col in cursor.description]
+        sustentaciones = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    if 'export' in request.GET:
+        return exportar_excel(sustentaciones)
+    
+    return render(request, 'admin/lista_sustentaciones.html', {'sustentaciones': sustentaciones, 'profesores': Profesor.objects.all()})
+
+from openpyxl import Workbook
+from django.http import HttpResponse
+
+def exportar_excel(sustentaciones):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sustentaciones"
+    
+    # Escribir encabezados
+    headers = [
+        'Compensan Horas', 'Duración Sustentación', 'Curso', 'Semana Inicio', 'Semana Fin', 'Fecha',
+        'Hora Inicio', 'Hora Fin', 'Título', 'Jurado 1', 'Jurado 2', 'Asesor'
+    ]
+    ws.append(headers)
+    
+    # Escribir datos
+    for s in sustentaciones:
+        row = [
+            'Sí compensa' if s['compensan_horas'] else 'No compensa',
+            s['duracion_sustentacion'], s['curso'], s['semana_inicio'], s['semana_fin'],
+            s['fecha'], s['hora_inicio'], s['hora_fin'], s['titulo'],
+            s['jurado_1'], s['jurado_2'], s['asesor']
+        ]
+        ws.append(row)
+    
+    # Crear la respuesta HTTP con el archivo Excel
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="sustentaciones.xlsx"'
+    wb.save(response)
+    
+    return response
 
