@@ -71,8 +71,11 @@
                         <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button>
                     </form>
                     <h6>Listado de Sustentaciones</h6> 
+                    <div class="mb-3">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+                    </div>
                     <div class="table-responsive"> 
-                        <table class="table"> 
+                        <table class="table" id="resultTable"> 
                             <thead> 
                                 <tr> 
                                     <th>Apellidos y Nombres Estudiante</th> 
@@ -85,20 +88,26 @@
                                 </tr> 
                             </thead> 
                             <tbody> 
-                              {% for horario in sustentaciones_con_horarios %} 
-                              <tr {% if horario.fecha == None or horario.hora_inicio == None or horario.hora_fin == None %}class="table-danger"{% endif %}>
-                                  <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
-                                  <td>{{ horario.fecha|default:"Por asignar" }}</td> <!-- Usar default para mostrar "Por asignar" si fecha es None -->
-                                  <td>{{ horario.hora_inicio|default:"Por asignar" }}</td> <!-- Usar default para mostrar "Por asignar" si hora_inicio es None -->
-                                  <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td> 
-                                  <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td> 
-                                  <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td>
-                                  <td><a href="{% url 'editar_sustentacion' horario.sustentacion.id %}" class="btn btn-primary">Editar</a></td>
-                              </tr> 
-                              {% endfor %}
+                                {% for horario in sustentaciones_con_horarios %} 
+                                <tr class="{% if horario.fecha and horario.hora_inicio and horario.hora_fin %}table-success{% else %}table-danger{% endif %}">
+                                    <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
+                                    <td>{{ horario.fecha|date:"l, d/m/Y"|default:"Por asignar"  }}</td> <!-- Mostrar la fecha con el día de la semana -->
+                                    <td>{{ horario.hora_inicio|default:"Por asignar" }}</td> <!-- Usar default para mostrar "Por asignar" si hora_inicio es None -->
+                                    <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td> 
+                                    <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td> 
+                                    <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td>
+                                    <td><a href="{% url 'editar_sustentacion' horario.sustentacion.id %}" class="btn btn-primary">Editar</a></td>
+                                </tr> 
+                                {% endfor %}
                             </tbody> 
-                        </table> 
+                        </table>
                     </div>
+                    
+                    <style>
+                        .table-success {
+                            background-color: #d4edda !important;
+                        }
+                    </style>
                 </div> 
             </div> 
         </div> 
@@ -154,9 +163,35 @@
     #loadingModal {
         z-index: 1100 !important;
     }
+    .table-success {
+        background-color: #d4edda !important;
+    }
 </style>
 
 <script>
+    function parseCustomDateString(dateString) {
+        const dateTimeParts = dateString.split(' - ');
+        const datePart = dateTimeParts[0];
+        const timePart = dateTimeParts[1];
+        const date = new Date(datePart + ' ' + timePart);
+        if (!isNaN(date.getTime())) {
+            return date;
+        } else {
+            return null;
+        }
+    }
+
+    function formatDateWithDay(dateString) {
+        const date = parseCustomDateString(dateString);
+        if (date) {
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            return date.toLocaleDateString('es-ES', options);
+        } else {
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            return date.toLocaleDateString('es-ES', options);;
+        }
+    }
+
     $(document).ready(function(){
         {% if profesores_sin_disponibilidad %}
             $('#errorModal').modal('show');
@@ -209,6 +244,23 @@
         $('#closeErrorModal, #closeGenericErrorModal').click(function(){
             $(this).closest('.modal').modal('hide');
             $('.modal-backdrop').remove();
+        });
+    
+        // Formatear las fechas con día de la semana
+        $('tbody tr').each(function() {
+            let $td = $(this).find('td').eq(1);
+            let dateText = $td.text().trim();
+            if (dateText && dateText !== "Por asignar") {
+                $td.text(formatDateWithDay(dateText));
+            }
+        });
+    
+        // Implementar buscador
+        $('#searchInput').on('keyup', function() {
+            let value = $(this).val().toLowerCase();
+            $('#resultTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
         });
     });
     </script>

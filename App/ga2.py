@@ -21,7 +21,13 @@ class AlgoritmoGenetico:
 
     def crear_individuo(self):
         individuo = []
-        for curso_grupo in self.cursos_grupos:
+        semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+        if not semestre_vigente:
+            print("No hay semestre vigente.")
+            return individuo
+        
+        cursos_grupos_vigentes = Cursos_Grupos.objects.filter(semestre=semestre_vigente)
+        for curso_grupo in cursos_grupos_vigentes:
             sustentaciones = Sustentacion.objects.filter(cursos_grupos=curso_grupo)
             for sustentacion in sustentaciones:
                 if sustentacion.jurado1 and sustentacion.jurado2 and sustentacion.asesor:
@@ -379,6 +385,10 @@ def generar_rango_fechas(fecha_inicio, fecha_fin):
 def guardar_horario(mejor_horario):
     try:
         with transaction.atomic():
+            semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+            if not semestre_vigente:
+                raise RuntimeError("No hay semestre vigente.")
+
             for sustentacion_data in mejor_horario:
                 try:
                     curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
@@ -408,21 +418,31 @@ def guardar_horario(mejor_horario):
                         if not sustentacion_existente.asesor and asesor is not None:
                             sustentacion_existente.asesor = asesor
                         sustentacion_existente.save()
+
+                        # Verificar si el semestre es el vigente
+                        if sustentacion_existente.cursos_grupos.semestre == semestre_vigente:
+                            # Asignar fecha y horas, usando None para fechas inválidas
+                            fecha = sustentacion_data['fecha'] if sustentacion_data['fecha'] != 'Fecha Inválida' else None
+                            hora_inicio = sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None
+                            hora_fin = sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None
+
+                            # Crear o actualizar el horario de sustentación
+                            horario_existente = Horario_Sustentaciones.objects.filter(sustentacion=sustentacion_existente).first()
+                            if horario_existente:
+                                horario_existente.fecha = fecha
+                                horario_existente.hora_inicio = hora_inicio
+                                horario_existente.hora_fin = hora_fin
+                                horario_existente.save()
+                            else:
+                                Horario_Sustentaciones.objects.create(
+                                    sustentacion=sustentacion_existente,
+                                    fecha=fecha,
+                                    hora_inicio=hora_inicio,
+                                    hora_fin=hora_fin,
+                                )
                     else:
                         continue  # Si no existe la sustentación, continuar al siguiente registro
 
-                    # Asignar fecha y horas, usando None para fechas inválidas
-                    fecha = sustentacion_data['fecha'] if sustentacion_data['fecha'] != 'Fecha Inválida' else None
-                    hora_inicio = sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None
-                    hora_fin = sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None
-
-                    # Crear o actualizar el horario de sustentación
-                    Horario_Sustentaciones.objects.create(
-                        sustentacion=sustentacion_existente,
-                        fecha=fecha,
-                        hora_inicio=hora_inicio,
-                        hora_fin=hora_fin,
-                    )
                 except Profesor.DoesNotExist as e:
                     print(f"Error: {str(e)} - Profesor no encontrado. Detalles: {sustentacion_data}")
                     continue
