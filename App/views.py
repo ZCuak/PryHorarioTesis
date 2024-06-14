@@ -849,16 +849,16 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 
 #Reporte 1: Sustentaciones
-
+@login_required
 def reporte_sustentaciones(request):
     semestre = request.GET.get('semestre', '')
     tipo_sustentacion = request.GET.get('tipo_sustentacion', '')
     nombre_estudiante = request.GET.get('nombre_estudiante', '')
-    codigo_estudiante = request.GET.get('codigo_estudiante', '')
     fecha = request.GET.get('fecha', '')
-    
-    # Obtener la lista de semestres
+
+    # Obtener la lista de semestres y estudiantes
     semestres = SemestreAcademico.objects.all()
+    estudiantes = Estudiante.objects.all()
 
     sql = """
     SELECT 
@@ -893,27 +893,23 @@ def reporte_sustentaciones(request):
     """
 
     params = []
-    
+
     if semestre:
         sql += " AND appsa.nombre = %s"
         params.append(semestre)
-    
+
     if tipo_sustentacion:
         sql += " AND appss.tipo_sustentacion = %s"
         params.append(tipo_sustentacion)
-    
+
     if nombre_estudiante:
         sql += " AND appe.apellidos_nombres LIKE %s"
         params.append(f'%{nombre_estudiante}%')
-    
-    if codigo_estudiante:
-        sql += " AND appe.codigo_universitario = %s"
-        params.append(codigo_estudiante)
-    
+
     if fecha:
         sql += " AND apphs.fecha = %s"
         params.append(fecha)
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         rows = cursor.fetchall()
@@ -929,22 +925,21 @@ def reporte_sustentaciones(request):
         'semestre': semestre,
         'tipo_sustentacion': tipo_sustentacion,
         'nombre_estudiante': nombre_estudiante,
-        'codigo_estudiante': codigo_estudiante,
         'fecha': fecha,
-        'semestres': semestres,  # Pasar los semestres al contexto
+        'semestres': semestres,
+        'estudiantes': estudiantes,
     }
 
     return render(request, 'admin/reporte_sustentaciones.html', context)
 
 
-
+@login_required
 def exportar_csv(request):
     semestre = request.GET.get('semestre')
     tipo_sustentacion = request.GET.get('tipo_sustentacion')
     nombre_estudiante = request.GET.get('nombre_estudiante')
-    codigo_estudiante = request.GET.get('codigo_estudiante')
     fecha = request.GET.get('fecha')
-    
+
     sql = """
     SELECT 
     appsa.nombre as semestre,
@@ -978,27 +973,23 @@ def exportar_csv(request):
     """
 
     params = []
-    
+
     if semestre:
         sql += " AND appsa.nombre = %s"
         params.append(semestre)
-    
+
     if tipo_sustentacion:
         sql += " AND appss.tipo_sustentacion = %s"
         params.append(tipo_sustentacion)
-    
+
     if nombre_estudiante:
         sql += " AND appe.apellidos_nombres LIKE %s"
         params.append(f'%{nombre_estudiante}%')
-    
-    if codigo_estudiante:
-        sql += " AND appe.codigo_universitario = %s"
-        params.append(codigo_estudiante)
-    
+
     if fecha:
         sql += " AND apphs.fecha = %s"
         params.append(fecha)
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         rows = cursor.fetchall()
@@ -1007,7 +998,7 @@ def exportar_csv(request):
     # Crear el libro de Excel
     workbook = openpyxl.Workbook()
     worksheet = workbook.active
-    worksheet.title = "Sustentaciones"
+    worksheet.title = "Reporte_sustentaciones"
 
     # Escribir los encabezados de columna
     for col_num, column_title in enumerate(columns, 1):
@@ -1035,7 +1026,6 @@ def exportar_csv(request):
     return response
 
 
-
 #Reporte 2: list sustentaciones por docente
 from django.http import HttpResponse
 from django.db import connection
@@ -1044,7 +1034,7 @@ from openpyxl.utils import get_column_letter
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-
+@login_required
 def listar_sustentaciones(request):
     usuario_id = request.user.id
     sql_profesor_id = """
@@ -1084,7 +1074,7 @@ def listar_sustentaciones(request):
     data = [dict(zip(columns, row)) for row in rows]
 
     return render(request, 'profesor/listar_sustentaciones.html', {'data': data})
- 
+@login_required
 def exportar_excel_profesor(request):
     usuario_id = request.user.id
     sql_profesor_id = """
@@ -1348,7 +1338,7 @@ def listar_compensacion_horas(request):
 from django.http import HttpResponse
 import openpyxl
 from openpyxl.utils import get_column_letter
-
+@login_required
 def exportar_excel_compensacion_horas(request):
     usuario_id = request.user.id
 
@@ -1426,7 +1416,7 @@ from django.http import HttpResponse
 from django.db import connection
 import csv
 from .models import Profesor
-
+@login_required
 def lista_sustentaciones(request):
     query = """
         SELECT 
@@ -1447,7 +1437,7 @@ def lista_sustentaciones(request):
         INNER JOIN app_curso appc ON appc.id = appss.curso_id
         INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
         INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
-        LEFT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+        INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
         INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
         LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
         LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
@@ -1479,11 +1469,11 @@ def lista_sustentaciones(request):
 
 from openpyxl import Workbook
 from django.http import HttpResponse
-
+@login_required
 def exportar_excel(sustentaciones):
     wb = Workbook()
     ws = wb.active
-    ws.title = "Sustentaciones"
+    ws.title = "Reporte_compesaciones"
     
     # Escribir encabezados
     headers = [
