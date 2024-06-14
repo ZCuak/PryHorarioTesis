@@ -14,7 +14,7 @@
                     <form method="get" action="{% url 'disponibilidad_list' %}">
                         <div class="form-group">
                             <label for="profesor_id">Seleccionar Profesor:</label>
-                            <select name="profesor_id" id="profesor_id" class="form-control" onchange="this.form.submit()">
+                            <select name="profesor_id" id="profesor_id" class="my-select2-dis-profesor form-control" onchange="this.form.submit()">
                                 {% for profesor in profesores|dictsort:"apellidos_nombres" %}
                                     <option value="{{ profesor.id }}" {% if profesor.id|stringformat:"s" == profesor_id %}selected{% endif %}>{{ profesor.apellidos_nombres }}</option>
                                 {% endfor %}
@@ -49,4 +49,9 @@
         </div>
     </div>
 </div>
+<script>
+    $(document).ready(function() {
+        $('.my-select2-dis-profesor').select2();
+    });
+</script>
 {% endblock %}
