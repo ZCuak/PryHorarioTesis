@@ -70,7 +70,7 @@
                         <input type="hidden" name="tipo_sustentacion" id="hidden_tipo_sustentacion" value="{{ tipo_sustentacion }}">
                         <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button>
                     </form>
-                    <h6>Listado de Sustentaciones</h6> 
+                    <h6>Listado de Sustentaciones - {{ tipo_sustentacion_mostrado }}</h6> 
                     <div class="mb-3">
                         <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
                     </div>
@@ -171,29 +171,6 @@
 </style>
 
 <script>
-    function parseCustomDateString(dateString) {
-        const dateTimeParts = dateString.split(' - ');
-        const datePart = dateTimeParts[0];
-        const timePart = dateTimeParts[1];
-        const date = new Date(datePart + ' ' + timePart);
-        if (!isNaN(date.getTime())) {
-            return date;
-        } else {
-            return null;
-        }
-    }
-
-    function formatDateWithDay(dateString) {
-        const date = parseCustomDateString(dateString);
-        if (date) {
-            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-            return date.toLocaleDateString('es-ES', options);
-        } else {
-            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-            return date.toLocaleDateString('es-ES', options);;
-        }
-    }
-
     $(document).ready(function(){
         {% if profesores_sin_disponibilidad %}
             $('#errorModal').modal('show');
@@ -250,7 +227,7 @@
     
         // Formatear las fechas con día de la semana
         $('tbody tr').each(function() {
-            let $td = $(this).find('td').eq(1);
+            let $td = $(this).find('td').eq(2); // Indice 2 para la columna de fecha
             let dateText = $td.text().trim();
             if (dateText && dateText !== "Por asignar") {
                 $td.text(formatDateWithDay(dateText));
@@ -265,5 +242,15 @@
             });
         });
     });
-    </script>
+
+    function formatDateWithDay(dateString) {
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            return date.toLocaleDateString('es-ES', options);
+        } else {
+            return 'Fecha Inválida';
+        }
+    }
+</script>
 {% endblock %}

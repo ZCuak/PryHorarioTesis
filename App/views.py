@@ -142,13 +142,18 @@ def ejecutar_algoritmo(request):
         else:
             return redirect('mostrar_resultados')
 
+    # Obtener el semestre vigente actual
+    semestre_actual = SemestreAcademico.objects.filter(vigencia=True).first()
+
     sustentaciones = Sustentacion.objects.all()
 
     if semestre_id:
         sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
+    else:
+        sustentaciones = sustentaciones.filter(cursos_grupos__semestre=semestre_actual)
 
     if tipo_sustentacion:
-        semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion)
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion, semestre_academico=semestre_actual)
         sustentaciones = sustentaciones.filter(cursos_grupos__curso__in=semanas_sustentacion.values('curso'))
 
     if curso_grupo_id:
@@ -165,6 +170,16 @@ def ejecutar_algoritmo(request):
         'hora_inicio'
     )
 
+    # Determinar el tipo de sustentación basado en las fechas
+    tipo_sustentacion_mostrado = ""
+    fechas_sustentaciones = list(sustentaciones_con_horarios.values_list('fecha', flat=True).distinct())
+    if fechas_sustentaciones:
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(semestre_academico=semestre_actual)
+        for semana in semanas_sustentacion:
+            if any(fecha and semana.fecha_inicio <= fecha <= semana.fecha_fin for fecha in fechas_sustentaciones):
+                tipo_sustentacion_mostrado = semana.tipo_sustentacion
+                break
+
     context = {
         'sustentaciones_con_horarios': sustentaciones_con_horarios,
         'semestres': semestres,
@@ -172,6 +187,7 @@ def ejecutar_algoritmo(request):
         'semestre_id': semestre_id,
         'tipo_sustentacion': tipo_sustentacion,
         'curso_grupo_id': curso_grupo_id,
+        'tipo_sustentacion_mostrado': tipo_sustentacion_mostrado,
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
@@ -180,14 +196,17 @@ def ejecutar_algoritmo(request):
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
     tipo_sustentacion = request.session.get('tipo_sustentacion', '')
+    tipo_sustentacion_mostrado = request.session.get('tipo_sustentacion_mostrado', '')
     if mejor_horario:
         return render(request, 'admin/resultado_algoritmo.html', {
             'mejor_horario': mejor_horario,
             'tipo_sustentacion': tipo_sustentacion,
+            'tipo_sustentacion_mostrado': tipo_sustentacion_mostrado,
         })
     else:
         messages.error(request, "No hay resultados del algoritmo para mostrar.")
         return redirect('ejecutar_algoritmo')
+
 @staff_member_required
 def guardar_horarios(request):
     if request.method == 'POST':
@@ -862,16 +881,16 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 
 #Reporte 1: Sustentaciones
-@login_required
+
 def reporte_sustentaciones(request):
     semestre = request.GET.get('semestre', '')
     tipo_sustentacion = request.GET.get('tipo_sustentacion', '')
     nombre_estudiante = request.GET.get('nombre_estudiante', '')
+    codigo_estudiante = request.GET.get('codigo_estudiante', '')
     fecha = request.GET.get('fecha', '')
-
-    # Obtener la lista de semestres y estudiantes
+    
+    # Obtener la lista de semestres
     semestres = SemestreAcademico.objects.all()
-    estudiantes = Estudiante.objects.all()
 
     sql = """
     SELECT 
@@ -906,23 +925,27 @@ def reporte_sustentaciones(request):
     """
 
     params = []
-
+    
     if semestre:
         sql += " AND appsa.nombre = %s"
         params.append(semestre)
-
+    
     if tipo_sustentacion:
         sql += " AND appss.tipo_sustentacion = %s"
         params.append(tipo_sustentacion)
-
+    
     if nombre_estudiante:
         sql += " AND appe.apellidos_nombres LIKE %s"
         params.append(f'%{nombre_estudiante}%')
-
+    
+    if codigo_estudiante:
+        sql += " AND appe.codigo_universitario = %s"
+        params.append(codigo_estudiante)
+    
     if fecha:
         sql += " AND apphs.fecha = %s"
         params.append(fecha)
-
+    
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         rows = cursor.fetchall()
@@ -938,21 +961,22 @@ def reporte_sustentaciones(request):
         'semestre': semestre,
         'tipo_sustentacion': tipo_sustentacion,
         'nombre_estudiante': nombre_estudiante,
+        'codigo_estudiante': codigo_estudiante,
         'fecha': fecha,
-        'semestres': semestres,
-        'estudiantes': estudiantes,
+        'semestres': semestres,  # Pasar los semestres al contexto
     }
 
     return render(request, 'admin/reporte_sustentaciones.html', context)
 
 
-@login_required
+
 def exportar_csv(request):
     semestre = request.GET.get('semestre')
     tipo_sustentacion = request.GET.get('tipo_sustentacion')
     nombre_estudiante = request.GET.get('nombre_estudiante')
+    codigo_estudiante = request.GET.get('codigo_estudiante')
     fecha = request.GET.get('fecha')
-
+    
     sql = """
     SELECT 
     appsa.nombre as semestre,
@@ -986,23 +1010,27 @@ def exportar_csv(request):
     """
 
     params = []
-
+    
     if semestre:
         sql += " AND appsa.nombre = %s"
         params.append(semestre)
-
+    
     if tipo_sustentacion:
         sql += " AND appss.tipo_sustentacion = %s"
         params.append(tipo_sustentacion)
-
+    
     if nombre_estudiante:
         sql += " AND appe.apellidos_nombres LIKE %s"
         params.append(f'%{nombre_estudiante}%')
-
+    
+    if codigo_estudiante:
+        sql += " AND appe.codigo_universitario = %s"
+        params.append(codigo_estudiante)
+    
     if fecha:
         sql += " AND apphs.fecha = %s"
         params.append(fecha)
-
+    
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         rows = cursor.fetchall()
@@ -1011,7 +1039,7 @@ def exportar_csv(request):
     # Crear el libro de Excel
     workbook = openpyxl.Workbook()
     worksheet = workbook.active
-    worksheet.title = "Reporte_sustentaciones"
+    worksheet.title = "Sustentaciones"
 
     # Escribir los encabezados de columna
     for col_num, column_title in enumerate(columns, 1):
@@ -1039,6 +1067,7 @@ def exportar_csv(request):
     return response
 
 
+
 #Reporte 2: list sustentaciones por docente
 from django.http import HttpResponse
 from django.db import connection
@@ -1047,7 +1076,7 @@ from openpyxl.utils import get_column_letter
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-@login_required
+
 def listar_sustentaciones(request):
     usuario_id = request.user.id
     sql_profesor_id = """
@@ -1087,7 +1116,7 @@ def listar_sustentaciones(request):
     data = [dict(zip(columns, row)) for row in rows]
 
     return render(request, 'profesor/listar_sustentaciones.html', {'data': data})
-@login_required
+ 
 def exportar_excel_profesor(request):
     usuario_id = request.user.id
     sql_profesor_id = """
@@ -1351,7 +1380,7 @@ def listar_compensacion_horas(request):
 from django.http import HttpResponse
 import openpyxl
 from openpyxl.utils import get_column_letter
-@login_required
+
 def exportar_excel_compensacion_horas(request):
     usuario_id = request.user.id
 
@@ -1429,7 +1458,7 @@ from django.http import HttpResponse
 from django.db import connection
 import csv
 from .models import Profesor
-@login_required
+
 def lista_sustentaciones(request):
     query = """
         SELECT 
@@ -1450,7 +1479,7 @@ def lista_sustentaciones(request):
         INNER JOIN app_curso appc ON appc.id = appss.curso_id
         INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
         INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
-        INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+        LEFT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
         INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
         LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
         LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
@@ -1482,11 +1511,11 @@ def lista_sustentaciones(request):
 
 from openpyxl import Workbook
 from django.http import HttpResponse
-@login_required
+
 def exportar_excel(sustentaciones):
     wb = Workbook()
     ws = wb.active
-    ws.title = "Reporte_compesaciones"
+    ws.title = "Sustentaciones"
     
     # Escribir encabezados
     headers = [
