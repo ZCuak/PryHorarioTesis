@@ -47,8 +47,13 @@ def ejecutar_algoritmo(request):
     curso_grupo_id = request.GET.get('curso_grupo')
 
     if request.method == 'POST':
-        tipo_sustentacion = request.POST.get('tipo_sustentacion')
-        print("pa nada ps", tipo_sustentacion)
+        try:
+            body = json.loads(request.body)
+            tipo_sustentacion = body.get('tipo_sustentacion')
+        except json.JSONDecodeError:
+            tipo_sustentacion = request.POST.get('tipo_sustentacion')
+
+        print("Tipo de sustentación:", tipo_sustentacion)
 
         # Verificar que el tipo de sustentación sea válido
         if tipo_sustentacion not in ['FINAL', 'PARCIAL']:
@@ -96,7 +101,7 @@ def ejecutar_algoritmo(request):
 
             for sustentacion in sustentaciones_vigentes:
                 if not (sustentacion.jurado1 and sustentacion.jurado2 and sustentacion.asesor):
-                    messages.error(request, "Primero se deben de generar las sustentaciones parciales y que todas las sustentaciones tengan un horario y jurados asignados")
+                    messages.error(request, "Primero se deben de generar las sustentaciones parciales y que todas las sustentaciones tengan jurados asignados")
                     return redirect('ejecutar_algoritmo')
 
         mejor_horario = generar_horarios(tipo_sustentacion)
@@ -130,6 +135,7 @@ def ejecutar_algoritmo(request):
         ))
 
         request.session['mejor_horario'] = mejor_horario_dict
+        request.session['tipo_sustentacion'] = tipo_sustentacion
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario_dict})
@@ -173,13 +179,15 @@ def ejecutar_algoritmo(request):
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
+    tipo_sustentacion = request.session.get('tipo_sustentacion', '')
     if mejor_horario:
-        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario})
+        return render(request, 'admin/resultado_algoritmo.html', {
+            'mejor_horario': mejor_horario,
+            'tipo_sustentacion': tipo_sustentacion,
+        })
     else:
         messages.error(request, "No hay resultados del algoritmo para mostrar.")
         return redirect('ejecutar_algoritmo')
-
-
 @staff_member_required
 def guardar_horarios(request):
     if request.method == 'POST':

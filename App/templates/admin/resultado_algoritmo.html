@@ -8,6 +8,7 @@
             <div class="card">
                 <div class="card-header pb-0">
                     <h6>Resultado del Algoritmo Genético</h6>
+                    <label>Tipo de Sustentación: {{ tipo_sustentacion }}</label>
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-12 col-md-6">
@@ -17,7 +18,7 @@
                                 <button type="submit" class="btn btn-success mt-3">Guardar Horarios</button>
                             </form>
                             <a href="javascript:history.back()" class="btn btn-secondary mt-3">Regresar</a>
-                            <button id="reloadAlgoritmo" class="btn btn-primary mt-3">Recargar Algoritmo</button>
+                            <button id="reloadAlgoritmo" class="btn btn-primary mt-3" data-tipo-sustentacion="{{ tipo_sustentacion }}">Recargar Algoritmo</button>
                         </div>
                     </div>
                 </div>
@@ -45,7 +46,7 @@
                                 {% for sustentacion in mejor_horario %}
                                     <tr>
                                         <td>{{ forloop.counter }}</td>
-                                        <td>{{ sustentacion.cursos_grupos.curso }}</td>
+                                        <td>{{ sustentacion.cursos_grupos.curso }} - {{ sustentacion.cursos_grupos.grupo }} </td>
                                         <td>{{ sustentacion.estudiante }}</td>
                                         <td>{{ sustentacion.jurado1 }}</td>
                                         <td>{{ sustentacion.jurado2 }}</td>
@@ -171,13 +172,18 @@
     document.getElementById('reloadAlgoritmo').addEventListener('click', function() {
         $('#loadingModal').modal('show');
     
+        const tipoSustentacion = this.getAttribute('data-tipo-sustentacion');
+    
         fetch("{% url 'ejecutar_algoritmo' %}", {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
                 'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+                tipo_sustentacion: tipoSustentacion
+            })
         })
         .then(response => {
             if (!response.ok) {

@@ -78,6 +78,7 @@
                         <table class="table" id="resultTable"> 
                             <thead> 
                                 <tr> 
+                                    <th>Curso - Grupo</th> 
                                     <th>Apellidos y Nombres Estudiante</th> 
                                     <th>Día</th> 
                                     <th>Hora</th>
@@ -90,6 +91,7 @@
                             <tbody> 
                                 {% for horario in sustentaciones_con_horarios %} 
                                 <tr class="{% if horario.fecha and horario.hora_inicio and horario.hora_fin %}table-success{% else %}table-danger{% endif %}">
+                                    <td>{{ horario.sustentacion.cursos_grupos.curso }} - {{ horario.sustentacion.cursos_grupos.grupo }}</td>
                                     <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
                                     <td>{{ horario.fecha|date:"l, d/m/Y"|default:"Por asignar"  }}</td> <!-- Mostrar la fecha con el día de la semana -->
                                     <td>{{ horario.hora_inicio|default:"Por asignar" }}</td> <!-- Usar default para mostrar "Por asignar" si hora_inicio es None -->
