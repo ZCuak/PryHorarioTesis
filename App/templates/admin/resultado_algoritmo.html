@@ -101,10 +101,76 @@
             return 'Fecha Inválida';
         }
     }
-
+    
+    function groupAndSortRows() {
+        var table = document.querySelector('.table');
+        var columnIndexCurso = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso');
+        var rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+            var curso = row.querySelectorAll('td')[columnIndexCurso].textContent.trim();
+            var fecha = row.querySelectorAll('td')[7].textContent.trim();
+            var hora_inicio = row.querySelectorAll('td')[8].textContent.trim();
+            return {
+                row: row,
+                curso: curso,
+                fecha: fecha,
+                hora_inicio: hora_inicio,
+                fechaHora: new Date(fecha + ' ' + hora_inicio),
+                fecha_valida: !isNaN(new Date(fecha).getTime())
+            };
+        });
+    
+        var groupedRows = {};
+    
+        rows.forEach(item => {
+            if (!groupedRows[item.curso]) {
+                groupedRows[item.curso] = { validas: [], invalidas: [] };
+            }
+            if (item.fecha_valida) {
+                groupedRows[item.curso].validas.push(item);
+            } else {
+                groupedRows[item.curso].invalidas.push(item);
+            }
+        });
+    
+        table.querySelector('tbody').innerHTML = '';
+    
+        var globalIndex = 1;
+    
+        Object.keys(groupedRows).forEach(curso => {
+            groupedRows[curso].validas.sort((a, b) => a.fechaHora - b.fechaHora);
+    
+            var headerRow = document.createElement('tr');
+            var headerCell = document.createElement('th');
+            headerCell.textContent = curso;
+            headerCell.setAttribute('colspan', table.querySelectorAll('thead th').length);
+            headerRow.appendChild(headerCell);
+            table.querySelector('tbody').appendChild(headerRow);
+    
+            groupedRows[curso].validas.forEach(item => {
+                item.row.querySelectorAll('td')[0].textContent = globalIndex++;
+                item.row.querySelectorAll('td')[7].textContent = formatDate(item.fecha);
+                table.querySelector('tbody').appendChild(item.row);
+            });
+    
+            if (groupedRows[curso].invalidas.length > 0) {
+                var invalidHeaderRow = document.createElement('tr');
+    
+                table.querySelector('tbody').appendChild(invalidHeaderRow);
+    
+                groupedRows[curso].invalidas.forEach(item => {
+                    item.row.querySelectorAll('td')[0].textContent = globalIndex++;
+                    item.row.querySelectorAll('td')[7].textContent = formatDate(item.fecha);
+                    table.querySelector('tbody').appendChild(item.row);
+                });
+            }
+        });
+    }
+    
+    document.addEventListener("DOMContentLoaded", groupAndSortRows);
+    
     document.getElementById('reloadAlgoritmo').addEventListener('click', function() {
         $('#loadingModal').modal('show');
-
+    
         fetch("{% url 'ejecutar_algoritmo' %}", {
             method: 'POST',
             headers: {
@@ -123,59 +189,97 @@
             if (data.status === 'success') {
                 let tbody = document.getElementById('resultado-tabla');
                 tbody.innerHTML = '';
-
+    
                 let groupedRows = {};
-
+    
                 data.mejor_horario.forEach(function(sustentacion, index) {
                     let course = `${sustentacion.cursos_grupos.curso}`;
+                    let fecha = sustentacion.fecha;
+                    let hora_inicio = sustentacion.hora_inicio;
+                    let hora_valida = !isNaN(new Date(fecha).getTime());
+    
                     if (!groupedRows[course]) {
-                        groupedRows[course] = [];
+                        groupedRows[course] = { validas: [], invalidas: [] };
                     }
-                    let row = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${sustentacion.cursos_grupos.curso}</td>
-                            <td>${sustentacion.estudiante}</td>
-                            <td>${sustentacion.jurado1}</td>
-                            <td>${sustentacion.jurado2}</td>
-                            <td>${sustentacion.asesor}</td>
-                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${sustentacion.titulo}</td>
-                            <td>${formatDate(sustentacion.fecha)}</td>
-                            <td>${sustentacion.hora_inicio}</td>
-                            <td>${sustentacion.hora_fin}</td>
-                        </tr>
-                    `;
-                    groupedRows[course].push({
-                        row: row,
-                        fecha: sustentacion.fecha,
-                        hora_inicio: sustentacion.hora_inicio,
-                        hora_valida: !isNaN(new Date(sustentacion.fecha).getTime())
-                    });
+                    if (hora_valida) {
+                        groupedRows[course].validas.push({
+                            row: `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${course}</td>
+                                    <td>${sustentacion.estudiante}</td>
+                                    <td>${sustentacion.jurado1}</td>
+                                    <td>${sustentacion.jurado2}</td>
+                                    <td>${sustentacion.asesor}</td>
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${sustentacion.titulo}</td>
+                                    <td>${formatDate(fecha)}</td>
+                                    <td>${hora_inicio}</td>
+                                    <td>${sustentacion.hora_fin}</td>
+                                </tr>
+                            `,
+                            fecha: fecha,
+                            hora_inicio: hora_inicio
+                        });
+                    } else {
+                        groupedRows[course].invalidas.push({
+                            row: `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${course}</td>
+                                    <td>${sustentacion.estudiante}</td>
+                                    <td>${sustentacion.jurado1}</td>
+                                    <td>${sustentacion.jurado2}</td>
+                                    <td>${sustentacion.asesor}</td>
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${sustentacion.titulo}</td>
+                                    <td>${formatDate(fecha)}</td>
+                                    <td>${hora_inicio}</td>
+                                    <td>${sustentacion.hora_fin}</td>
+                                </tr>
+                            `,
+                            fecha: fecha,
+                            hora_inicio: hora_inicio
+                        });
+                    }
                 });
-
+    
                 let globalIndex = 1;
-
+    
                 Object.keys(groupedRows).forEach(function(course) {
-                    groupedRows[course].sort((a, b) => {
-                        if (!a.hora_valida && b.hora_valida) return 1;
-                        if (a.hora_valida && !b.hora_valida) return -1;
+                    groupedRows[course].validas.sort((a, b) => {
                         let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
                         let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
                         return fechaA - fechaB;
                     });
-
+    
                     let headerRow = `
                         <tr>
                             <th colspan="10">${course}</th>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', headerRow);
-
-                    groupedRows[course].forEach(function(item) {
+    
+                    groupedRows[course].validas.forEach(function(item) {
                         item.row = item.row.replace(/<td>\d+<\/td>/, `<td>${globalIndex++}</td>`);
+                        item.row = item.row.replace(/<td>\d+\/\d+\/\d+<\/td>/, `<td>${formatDate(item.fecha)}</td>`);
                         tbody.insertAdjacentHTML('beforeend', item.row);
                     });
+    
+                    if (groupedRows[course].invalidas.length > 0) {
+                        let invalidHeaderRow = `
+                            <tr>
+                                <th colspan="10">Fechas Inválidas</th>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', invalidHeaderRow);
+    
+                        groupedRows[course].invalidas.forEach(function(item) {
+                            item.row = item.row.replace(/<td>\d+<\/td>/, `<td>${globalIndex++}</td>`);
+                            item.row = item.row.replace(/<td>\d+\/\d+\/\d+<\/td>/, `<td>${formatDate(item.fecha)}</td>`);
+                            tbody.insertAdjacentHTML('beforeend', item.row);
+                        });
+                    }
                 });
+    
             } else {
                 alert('Error al ejecutar el algoritmo: ' + data.message);
             }
@@ -187,11 +291,11 @@
             $('#loadingModal').modal('hide');
         });
     });
-
+    
     document.getElementById('searchInput').addEventListener('keyup', function() {
         let filter = this.value.toUpperCase();
         let rows = document.querySelector("#resultTable tbody").rows;
-        
+    
         for (let i = 0; i < rows.length; i++) {
             let cells = rows[i].cells;
             let match = false;
@@ -204,51 +308,8 @@
             rows[i].style.display = match ? "" : "none";
         }
     });
-
-    document.addEventListener("DOMContentLoaded", function() {
-        var table = document.querySelector('.table');
-        var columnIndex = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso');
-        var groupedRows = {};
-        var index = 1;
-
-        Array.from(table.querySelectorAll('tbody tr')).forEach(function(row) {
-            var course = row.querySelectorAll('td')[columnIndex].textContent.trim();
-            if (!groupedRows[course]) {
-                groupedRows[course] = [];
-            }
-            groupedRows[course].push({
-                row: row,
-                fecha: row.querySelectorAll('td')[7].textContent.trim(),
-                hora_inicio: row.querySelectorAll('td')[8].textContent.trim(),
-                hora_valida: row.querySelectorAll('td')[7].textContent.trim() !== 'Fecha Inválida'
-            });
-        });
-
-        table.querySelector('tbody').innerHTML = '';
-
-        Object.keys(groupedRows).forEach(function(course) {
-            groupedRows[course].sort((a, b) => {
-                if (!a.hora_valida && b.hora_valida) return 1;
-                if (a.hora_valida && !b.hora_valida) return -1;
-                let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
-                let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
-                return fechaA - fechaB;
-            });
-
-            var headerRow = document.createElement('tr');
-            var headerCell = document.createElement('th');
-            headerCell.textContent = course;
-            headerCell.setAttribute('colspan', table.querySelectorAll('thead th').length);
-            headerRow.appendChild(headerCell);
-            table.querySelector('tbody').appendChild(headerRow);
-
-            groupedRows[course].forEach(function(item) {
-                item.row.querySelectorAll('td')[0].textContent = index++;
-                item.row.querySelectorAll('td')[7].textContent = formatDate(item.fecha);
-                table.querySelector('tbody').appendChild(item.row);
-            });
-        });
-    });
+    
+    document.addEventListener("DOMContentLoaded", groupAndSortRows);
 </script>
 
 {% endblock %}

@@ -10,23 +10,27 @@
                     <h2>Ejecutar Algoritmo Genético</h2> 
                 </div> 
                 <div class="card-body"> 
-                    {% if messages %} 
-                        <div> 
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }}">{{ message }}</div> 
-                            {% endfor %} 
-                        </div> 
-                    {% endif %} 
+                <!-- Modal de Error Genérico -->
+                <div class="modal fade" id="genericErrorModal" tabindex="-1" role="dialog" aria-labelledby="genericErrorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="genericErrorModalLabel">Mensaje</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p id="genericErrorMessage">Ocurrió un error.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" id="closeGenericErrorModal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <form method="get" class="mb-3 form-row"> 
-                        <div class="form-group col mr-3"> 
-                            <label for="semestre">Seleccionar Semestre</label> 
-                            <select name="semestre" id="semestre" class="form-control"> 
-                                <option value="">Todos</option> 
-                                {% for semestre in semestres %} 
-                                    <option value="{{ semestre.id }}" {% if semestre.id|stringformat:"s" == semestre_id %}selected{% endif %}>{{ semestre.nombre }}</option> 
-                                {% endfor %} 
-                            </select> 
-                        </div> 
+
                         <div class="form-group col mr-3"> 
                             <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label> 
                             <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg"> 
@@ -43,16 +47,29 @@
                                     <option value="{{ curso_grupo.id }}" {% if curso_grupo.id|stringformat:"s" == curso_grupo_id %}selected{% endif %}>{{ curso_grupo.curso.nombre }} - {{ curso_grupo.grupo.nombre }}</option> 
                                 {% endfor %} 
                             </select> 
-                        </div>  
+                        </div> 
+                        <div class="form-group col mr-3"> 
+                            <label for="semestre">Semestre Vigente</label> 
+                            {% if semestres %}
+                                {% for semestre in semestres %}
+                                    {% if semestre.vigencia %}
+                                        <input type="text" class="form-control" value="{{ semestre.nombre }}" readonly>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <input type="text" class="form-control" value="No hay semestre vigente" readonly>
+                            {% endif %}
+                        </div> 
                         <div class="form-group col"> 
                             <button type="submit" class="btn btn-primary mt-4">Filtrar</button> 
                             <button type="button" class="btn btn-success mt-4" id="enviar-notificaciones">Notificar</button> 
                         </div> 
                     </form> 
-                    <form method="post"> 
-                        {% csrf_token %} 
-                        <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button> 
-                    </form> 
+                    <form method="post" id="ejecutarAlgoritmoForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="tipo_sustentacion" id="hidden_tipo_sustentacion" value="{{ tipo_sustentacion }}">
+                        <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button>
+                    </form>
                     <h6>Listado de Sustentaciones</h6> 
                     <div class="table-responsive"> 
                         <table class="table"> 
@@ -78,43 +95,121 @@
                                   <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td>
                                   <td><a href="{% url 'editar_sustentacion' horario.sustentacion.id %}" class="btn btn-primary">Editar</a></td>
                               </tr> 
-                          {% endfor %}
+                              {% endfor %}
                             </tbody> 
                         </table> 
-                    </div> 
+                    </div>
                 </div> 
             </div> 
         </div> 
     </div> 
 </div>
 
-<script>
-  $(document).ready(function(){
-    $('#enviar-notificaciones').click(function(){
-        var form_data = {
-            'csrfmiddlewaretoken': '{{ csrf_token }}',
-            'semestre': $('#semestre').val(),
-            'tipo_sustentacion': $('#tipo_sustentacion').val(),
-            'curso_grupo': $('#curso_grupo').val()
-        };
+<!-- Modal de Error -->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Error de Disponibilidad</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Los siguientes profesores no tienen disponibilidad registrada para el semestre actual:</p>
+                <ul>
+                    {% for profesor in profesores_sin_disponibilidad %}
+                        <li>{{ profesor.apellidos_nombres }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeErrorModal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        $.ajax({
-            url: "{% url 'send_notifications' %}",
-            type: "POST",
-            data: form_data,
-            beforeSend: function() {
-                console.log('Enviando solicitud AJAX para enviar notificaciones');
-            },
-            success: function(data) {
-                console.log('Notificaciones enviadas correctamente');
-                alert('Notificaciones enviadas correctamente');
-            },
-            error: function(xhr, status, error) {
-                console.error('Error al enviar notificaciones:', status, error);
-                alert('Error al enviar notificaciones: ' + error);
-            }
+<!-- Modal de Carga -->
+<div class="modal fade" id="loadingModal" tabindex="9999999" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <p>Generando horario, por favor espere...</p>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
+    .modal-content {
+        z-index: 1100 !important;
+    }
+    #loadingModal {
+        z-index: 1100 !important;
+    }
+</style>
+
+<script>
+    $(document).ready(function(){
+        {% if profesores_sin_disponibilidad %}
+            $('#errorModal').modal('show');
+        {% endif %}
+    
+        {% if messages %}
+            let errorMessage = "";
+            {% for message in messages %}
+                errorMessage += "{{ message }}\n";
+            {% endfor %}
+            $('#genericErrorMessage').text(errorMessage);
+            $('#genericErrorModal').modal('show');
+        {% endif %}
+    
+        $('#enviar-notificaciones').click(function(){
+            var form_data = {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'semestre': $('#semestre').val(),
+                'tipo_sustentacion': $('#tipo_sustentacion').val(),
+                'curso_grupo': $('#curso_grupo').val()
+            };
+    
+            $.ajax({
+                url: "{% url 'send_notifications' %}",
+                type: "POST",
+                data: form_data,
+                beforeSend: function() {
+                    console.log('Enviando solicitud AJAX para enviar notificaciones');
+                },
+                success: function(data) {
+                    console.log('Notificaciones enviadas correctamente');
+                    alert('Notificaciones enviadas correctamente');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al enviar notificaciones:', status, error);
+                    $('#genericErrorMessage').text('Error al enviar notificaciones: ' + error);
+                    $('#genericErrorModal').modal('show');
+                }
+            });
+        });
+    
+        $('#ejecutarAlgoritmoForm').submit(function(e) {
+            e.preventDefault();
+            // Copiar el valor del tipo de sustentación seleccionado al campo oculto
+            $('#hidden_tipo_sustentacion').val($('#tipo_sustentacion').val());
+            $('#loadingModal').modal('show');
+            this.submit();
+        });
+    
+        $('#closeErrorModal, #closeGenericErrorModal').click(function(){
+            $(this).closest('.modal').modal('hide');
+            $('.modal-backdrop').remove();
         });
     });
-});
-</script>
+    </script>
 {% endblock %}

@@ -36,7 +36,6 @@ from django.utils.timezone import localtime
 
 from django.utils.timezone import localtime
 from datetime import timedelta
-
 @staff_member_required
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -46,21 +45,61 @@ def ejecutar_algoritmo(request):
     semestre_id = request.GET.get('semestre')
     tipo_sustentacion = request.GET.get('tipo_sustentacion')
     curso_grupo_id = request.GET.get('curso_grupo')
-    sustentaciones = Sustentacion.objects.all()
-
-    if semestre_id:
-        sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
-
-    if tipo_sustentacion:
-        semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion)
-        sustentaciones = sustentaciones.filter(cursos_grupos__curso__in=semanas_sustentacion.values('curso'))
-
-    if curso_grupo_id:
-        sustentaciones = sustentaciones.filter(cursos_grupos_id=curso_grupo_id)
 
     if request.method == 'POST':
-        mejor_horario = generar_horarios()
-    
+        tipo_sustentacion = request.POST.get('tipo_sustentacion')
+        print("pa nada ps", tipo_sustentacion)
+
+        # Verificar que el tipo de sustentación sea válido
+        if tipo_sustentacion not in ['FINAL', 'PARCIAL']:
+            messages.error(request, "Seleccione el tipo de sustentación.")
+            return redirect('ejecutar_algoritmo')
+
+        # Obtener el semestre actual
+        semestre_actual = SemestreAcademico.objects.filter(vigencia=True).first()
+
+        if not semestre_actual:
+            messages.error(request, "No hay un semestre en vigencia.")
+            return redirect('ejecutar_algoritmo')
+
+        # Verificar la disponibilidad de todos los profesores del semestre actual
+        profesores_semestre_actual = Profesor.objects.filter(
+            cursos_grupos__semestre=semestre_actual
+        ).distinct()
+
+        profesores_sin_disponibilidad = []
+
+        for profesor in profesores_semestre_actual:
+            disponibilidad = Profesores_Semestre_Academico.objects.filter(
+                profesor=profesor,
+                semestre=semestre_actual
+            )
+            if not disponibilidad.exists():
+                profesores_sin_disponibilidad.append(profesor)
+
+        if profesores_sin_disponibilidad:
+            context = {
+                'profesores_sin_disponibilidad': profesores_sin_disponibilidad,
+                'semestres': semestres,
+                'cursos_grupos': cursos_grupos,
+                'semestre_id': semestre_id,
+                'tipo_sustentacion': tipo_sustentacion,
+                'curso_grupo_id': curso_grupo_id,
+            }
+            return render(request, 'admin/ejecutar_algoritmo.html', context)
+
+        # Validar jurados asignados para sustentaciones finales
+        if tipo_sustentacion == 'FINAL':
+            sustentaciones_vigentes = Sustentacion.objects.filter(
+                cursos_grupos__semestre=semestre_actual
+            )
+
+            for sustentacion in sustentaciones_vigentes:
+                if not (sustentacion.jurado1 and sustentacion.jurado2 and sustentacion.asesor):
+                    messages.error(request, "Primero se deben de generar las sustentaciones parciales y que todas las sustentaciones tengan un horario y jurados asignados")
+                    return redirect('ejecutar_algoritmo')
+
+        mejor_horario = generar_horarios(tipo_sustentacion)
 
         mejor_horario_dict = [
             {
@@ -75,28 +114,47 @@ def ejecutar_algoritmo(request):
                 'jurado2': sustentacion['jurado2'].apellidos_nombres if sustentacion['jurado2'] else '',
                 'asesor': sustentacion['asesor'].apellidos_nombres,
                 'titulo': sustentacion['titulo'],
-                'fecha': (sustentacion.get('fecha') + timedelta(days=1)).isoformat() if sustentacion.get('fecha') else '',
+                'fecha': (sustentacion.get('fecha') + timedelta(days=1)).isoformat() if sustentacion.get('fecha') else 'Fecha Inválida',
                 'hora_inicio': sustentacion.get('hora_inicio').isoformat() if sustentacion.get('hora_inicio') else '',
                 'hora_fin': sustentacion.get('hora_fin').isoformat() if sustentacion.get('hora_fin') else '',
             }
             for sustentacion in mejor_horario
         ]
-        mejor_horario = mejor_horario_dict
 
-        request.session['mejor_horario'] = mejor_horario
+        # Ordenar mejor_horario_dict por curso, fecha y hora, colocando fechas inválidas al final
+        mejor_horario_dict.sort(key=lambda x: (
+            x['cursos_grupos']['curso'],
+            x['fecha'] == 'Fecha Inválida',
+            x['fecha'] if x['fecha'] != 'Fecha Inválida' else '',
+            x['hora_inicio']
+        ))
+
+        request.session['mejor_horario'] = mejor_horario_dict
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario})
+            return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario_dict})
         else:
             return redirect('mostrar_resultados')
+
+    sustentaciones = Sustentacion.objects.all()
+
+    if semestre_id:
+        sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
+
+    if tipo_sustentacion:
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion)
+        sustentaciones = sustentaciones.filter(cursos_grupos__curso__in=semanas_sustentacion.values('curso'))
+
+    if curso_grupo_id:
+        sustentaciones = sustentaciones.filter(cursos_grupos_id=curso_grupo_id)
 
     sustentaciones_con_horarios = Horario_Sustentaciones.objects.filter(
         sustentacion__in=sustentaciones
     ).select_related(
         'sustentacion'
     ).order_by(
-        F('sustentacion__cursos_grupos__curso').asc(),
-        F('sustentacion__cursos_grupos__grupo').asc(),
+        'sustentacion__cursos_grupos__curso__nombre',
+        'sustentacion__cursos_grupos__grupo__nombre',
         'fecha',
         'hora_inicio'
     )
@@ -111,20 +169,15 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
+
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
     if mejor_horario:
-        # Agregar índices y validar fechas
-        mejor_horario_con_indices = [
-            {**sustentacion, 'index': i + 1, 'fecha_valida': 'Fecha Inválida' not in sustentacion['fecha']}
-            for i, sustentacion in enumerate(mejor_horario)
-        ]
-        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario_con_indices})
+        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario})
     else:
         messages.error(request, "No hay resultados del algoritmo para mostrar.")
         return redirect('ejecutar_algoritmo')
-
 
 
 @staff_member_required
