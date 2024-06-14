@@ -1195,32 +1195,20 @@ from .models import Sustentacion, Cursos_Grupos
 @csrf_exempt
 def send_bulk_messages_view(request):
     if request.method == 'POST':
-        semestre_id = request.POST.get('semestre')
         tipo_sustentacion = request.POST.get('tipo_sustentacion')
-        curso_grupo_id = request.POST.get('curso_grupo')
 
-        curso_nombre, grupo_nombre = None, None
-        if curso_grupo_id:
-            try:
-                curso_grupo_obj = Cursos_Grupos.objects.get(id=curso_grupo_id)
-                curso_nombre = curso_grupo_obj.curso.nombre
-                grupo_nombre = curso_grupo_obj.grupo.nombre
-            except Cursos_Grupos.DoesNotExist:
-                return JsonResponse({'status': 'fail', 'message': 'Curso-Grupo no encontrado'})
+        # Obtener el semestre vigente
+        semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+        if not semestre_vigente:
+            return JsonResponse({'status': 'fail', 'message': 'No hay semestre vigente'})
 
-        sustentaciones = Sustentacion.objects.all()
+        # Filtrar las sustentaciones según el semestre vigente y el tipo de sustentación
+        sustentaciones = Sustentacion.objects.filter(
+            cursos_grupos__semestre_id=semestre_vigente.id,
+            cursos_grupos__curso__semana_sustentacion__tipo_sustentacion=tipo_sustentacion,
+            horario_sustentaciones__fecha__isnull=False
+        ).distinct()
 
-        if semestre_id:
-            sustentaciones = sustentaciones.filter(cursos_grupos__semestre_id=semestre_id)
-
-        if tipo_sustentacion:
-            sustentaciones = sustentaciones.filter(cursos_grupos__curso__semana_sustentacion__tipo_sustentacion=tipo_sustentacion)
-
-        if curso_nombre:
-            sustentaciones = sustentaciones.filter(cursos_grupos__curso__nombre=curso_nombre)
-
-        if grupo_nombre:
-            sustentaciones = sustentaciones.filter(cursos_grupos__grupo__nombre=grupo_nombre)
 
         # Ordenar sustentaciones por fecha y hora de inicio
         sustentaciones = sorted(
@@ -1262,28 +1250,51 @@ def send_bulk_messages_view(request):
                         message_estudiantes[sustentacion.estudiante.telefono] = []
                     message_estudiantes[sustentacion.estudiante.telefono].append(sustentacion)
 
-        # Construir y almacenar mensajes para profesores
+        """ # Construir y almacenar mensajes para profesores
         for phone, records in message_profesores.items():
             nombre_profesor = records[0].jurado1.apellidos_nombres if records[0].jurado1.telefono == phone else records[0].jurado2.apellidos_nombres if records[0].jurado2.telefono == phone else records[0].asesor.apellidos_nombres
             message = f"Nombre: {nombre_profesor}\nNo olvidar su horario de sustentación:\n"
-            """ message += build_message(records) """
+            message += build_message(records)
+            # Añadir a la lista de mensajes a enviar
+            messages_to_send.append((f"+51{phone}", message))
+
+        
+        # Construir y almacenar mensajes para estudiantes
+        for phone, records in message_estudiantes.items():
+            message = f"Nombre: {records[0].estudiante.apellidos_nombres}\nNo olvidar su horario de sustentación:\n"
+            message += build_message(records)    
+            # Añadir a la lista de mensajes a enviar
+            messages_to_send.append((f"+51{phone}", message)) """
+            
+         # Construir y almacenar mensajes para profesores
+        for phone in message_profesores.keys():
+            message = "Esta es una plantilla de prueba para Profesores:\n "
+            message += """Curso - Grupo: Proyecto de Investigación - X
+                          Fecha: 2024-05-18
+                          Hora Inicio: 20:00:00
+                          Hora Fin: 20:30:00
+                          Tipo: PARCIAL""" 
             # Añadir a la lista de mensajes a enviar
             messages_to_send.append((f"+51{phone}", message))
 
         # Construir y almacenar mensajes para estudiantes
-        for phone, records in message_estudiantes.items():
-            message = f"Nombre: {records[0].estudiante.apellidos_nombres}\nNo olvidar su horario de sustentación:\n"
-            # message += build_message(records)
+        for phone in message_estudiantes.keys():
+            message = "Esta es una plantilla de prueba para Estudiantes:\n "
+            message += """Curso - Grupo: Proyecto de Investigación - X
+                          Fecha: 2024-05-18
+                          Hora Inicio: 20:00:00
+                          Hora Fin: 20:30:00
+                          Tipo: PARCIAL""" 
             # Añadir a la lista de mensajes a enviar
             messages_to_send.append((f"+51{phone}", message))
-
+            
         # Enviar los mensajes almacenados
         for phone, message in messages_to_send:
             print(f"Enviando mensaje a {phone}:\n{message}")  # Depuración
             result = send_whatsapp_message(phone, message)
-            time.sleep(1)  # Delay de 1 segundo entre cada solicitud
             if not result:
                 return JsonResponse({'status': 'fail', 'message': f'Error al enviar el mensaje a {phone}'})
+            
 
         return JsonResponse({'status': 'success'})
 
