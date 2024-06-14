@@ -46,7 +46,7 @@
                                 {% for sustentacion in mejor_horario %}
                                     <tr>
                                         <td>{{ forloop.counter }}</td>
-                                        <td>{{ sustentacion.cursos_grupos.curso }} - {{ sustentacion.cursos_grupos.grupo }} </td>
+                                        <td>{{ sustentacion.cursos_grupos.curso }}</td>
                                         <td>{{ sustentacion.estudiante }}</td>
                                         <td>{{ sustentacion.jurado1 }}</td>
                                         <td>{{ sustentacion.jurado2 }}</td>
@@ -102,7 +102,7 @@
             return 'Fecha Inválida';
         }
     }
-    
+
     function groupAndSortRows() {
         var table = document.querySelector('.table');
         var columnIndexCurso = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso');
@@ -116,7 +116,7 @@
                 fecha: fecha,
                 hora_inicio: hora_inicio,
                 fechaHora: new Date(fecha + ' ' + hora_inicio),
-                fecha_valida: !isNaN(new Date(fecha).getTime())
+                fecha_valida: !isNaN(new Date(fecha).getTime()) && fecha !== '' && hora_inicio !== ''
             };
         });
     
@@ -154,21 +154,18 @@
             });
     
             if (groupedRows[curso].invalidas.length > 0) {
-                var invalidHeaderRow = document.createElement('tr');
-    
-                table.querySelector('tbody').appendChild(invalidHeaderRow);
-    
                 groupedRows[curso].invalidas.forEach(item => {
                     item.row.querySelectorAll('td')[0].textContent = globalIndex++;
                     item.row.querySelectorAll('td')[7].textContent = formatDate(item.fecha);
+                    item.row.classList.add('table-danger'); // Añadir clase para pintar de rojo
                     table.querySelector('tbody').appendChild(item.row);
                 });
             }
         });
     }
-    
+
     document.addEventListener("DOMContentLoaded", groupAndSortRows);
-    
+
     document.getElementById('reloadAlgoritmo').addEventListener('click', function() {
         $('#loadingModal').modal('show');
     
@@ -202,12 +199,12 @@
                     let course = `${sustentacion.cursos_grupos.curso}`;
                     let fecha = sustentacion.fecha;
                     let hora_inicio = sustentacion.hora_inicio;
-                    let hora_valida = !isNaN(new Date(fecha).getTime());
+                    let fecha_valida = !isNaN(new Date(fecha).getTime()) && fecha !== '' && hora_inicio !== '';
     
                     if (!groupedRows[course]) {
                         groupedRows[course] = { validas: [], invalidas: [] };
                     }
-                    if (hora_valida) {
+                    if (fecha_valida) {
                         groupedRows[course].validas.push({
                             row: `
                                 <tr>
@@ -229,7 +226,7 @@
                     } else {
                         groupedRows[course].invalidas.push({
                             row: `
-                                <tr>
+                                <tr class="table-danger">
                                     <td>${index + 1}</td>
                                     <td>${course}</td>
                                     <td>${sustentacion.estudiante}</td>
@@ -271,13 +268,6 @@
                     });
     
                     if (groupedRows[course].invalidas.length > 0) {
-                        let invalidHeaderRow = `
-                            <tr>
-                                <th colspan="10">Fechas Inválidas</th>
-                            </tr>
-                        `;
-                        tbody.insertAdjacentHTML('beforeend', invalidHeaderRow);
-    
                         groupedRows[course].invalidas.forEach(function(item) {
                             item.row = item.row.replace(/<td>\d+<\/td>/, `<td>${globalIndex++}</td>`);
                             item.row = item.row.replace(/<td>\d+\/\d+\/\d+<\/td>/, `<td>${formatDate(item.fecha)}</td>`);
@@ -297,24 +287,7 @@
             $('#loadingModal').modal('hide');
         });
     });
-    
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        let filter = this.value.toUpperCase();
-        let rows = document.querySelector("#resultTable tbody").rows;
-    
-        for (let i = 0; i < rows.length; i++) {
-            let cells = rows[i].cells;
-            let match = false;
-            for (let j = 0; j < cells.length; j++) {
-                if (cells[j].innerText.toUpperCase().indexOf(filter) > -1) {
-                    match = true;
-                    break;
-                }
-            }
-            rows[i].style.display = match ? "" : "none";
-        }
-    });
-    
+
     document.addEventListener("DOMContentLoaded", groupAndSortRows);
 </script>
 

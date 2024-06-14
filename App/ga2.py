@@ -271,9 +271,10 @@ class AlgoritmoGenetico:
         mejor_individuo = self.eliminar_duplicados(mejor_individuo)
         mejor_individuo = self.ordenar_por_curso_grupo(mejor_individuo)
         mejor_individuo = self.evaluar_resultados(mejor_individuo)
-        mejor_individuo = self.reasignar_sustentaciones_con_horario_en_blanco(mejor_individuo)  # Agregar esta línea
+        
         
         return mejor_individuo
+
 
 
     def eliminar_duplicados(self, mejor_horario):
@@ -340,21 +341,6 @@ class AlgoritmoGenetico:
                     'hora_fin': ""
                 }
                 mejor_horario.append(sust_data)
-        return mejor_horario
-    def reasignar_sustentaciones_con_horario_en_blanco(self, mejor_horario):
-        for sustentacion in mejor_horario:
-            if not sustentacion['fecha'] and not sustentacion['hora_inicio'] and not sustentacion['hora_fin']:
-                jurado1, jurado2 = sustentacion['jurado1'], sustentacion['jurado2']
-                if not jurado1 or not jurado2:
-                    jurado1, jurado2 = self.asignar_jurados(sustentacion, sustentacion['cursos_grupos'])
-
-                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora(mejor_horario, jurado1, jurado2, sustentacion['asesor'], sustentacion['cursos_grupos'].curso)
-                if fecha and hora_inicio and hora_fin:
-                    sustentacion['fecha'] = fecha
-                    sustentacion['hora_inicio'] = hora_inicio
-                    sustentacion['hora_fin'] = hora_fin
-                    sustentacion['jurado1'] = jurado1
-                    sustentacion['jurado2'] = jurado2
         return mejor_horario
 def generar_horarios(tipo_sustentacion):
     cursos_grupos = Cursos_Grupos.objects.all()
