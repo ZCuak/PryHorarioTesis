@@ -18,16 +18,16 @@
     </style>
 </head>
 <body>
-    <aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3" id="sidenav-main" style="border-radius: 15px; background-color: #E0E0E0; border: 2px solid #004080;">
+    <aside class="sidenav navbar-vertical navbar-expand-xs fixed-start" id="sidenav-main" style="background-color: #E33439;">
         <div class="sidenav-header">
-            <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-            <a class="navbar-brand m-0" href="{% url 'admin:index' %}">
-                <img src="{% static 'img/LogoLlamasSoft.png' %}" class="navbar-brand-img h-100" alt="main_logo">
-                <span class="ms-1 font-weight-bold">LlamasSoft</span>
+            <i class="fas fa-times p-3 cursor-pointer text-secondary position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
+            <a class="navbar-brand " href="{% url 'admin:index' %}">
+                <img src="{% static 'img/LogoLlamasSoftSF.png' %}" class="navbar-brand-img" alt="" style="width: 70px; height: 70px; max-height: 70px; margin-top: -7%; margin-left: -12%;">
+                <span class="ms-1 font-weight-bold" style="color: white; font-size: 25px; vertical-align: -2%;"><strong> LlamasSoft </strong></span>
             </a>
         </div>
         <hr class="horizontal dark mt-0">
-        <div class="collapse navbar-collapse w-auto h-100" id="sidenav-collapse-main" >
+        <div class="collapse navbar-collapse w-auto h-100" id="sidenav-collapse-main" style="background-color: white;">
             <ul class="navbar-nav">
                 
                 {% admin_get_menu as app_list %}
@@ -36,9 +36,9 @@
                     <li class="nav-item list-unstyled">
                         <a class="nav-link" href="{% url 'admin:index' %}">
                             <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                <i class="fas fa-tachometer-alt"></i>
+                                <i class="fas fa-tachometer-alt" style="color: #E33439;"></i>
                             </div>
-                            <span class="nav-link-text ms-1" style="color: black;"><strong> Dashboard </strong></span>
+                            <span class="nav-link-text ms-1" style="color: black;"> Dashboard</span>
                         </a>
                     </li>
 
@@ -46,17 +46,17 @@
                     <li class="nav-item list-unstyled">
                         <a class="nav-link" href="/admin/auth/user/">
                             <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                <i class="fas fa-users"></i>
+                                <i class="fas fa-users" style="color: #E33439;"></i>
                             </div>
-                            <span class="nav-link-text ms-1" style="color: black;"><strong>Usuarios</strong></span>
+                            <span class="nav-link-text ms-1" style="color: black;">Usuarios</span>
                         </a>
                     </li>
                     <li class="nav-item list-unstyled">
                       <a class="nav-link" href="/semestres/">
                           <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                              <i class="fas fa-graduation-cap"></i>
+                              <i class="fas fa-graduation-cap" style="color: #E33439;"></i>
                           </div>
-                          <span class="nav-link-text ms-1" style="color: black;"><strong>Semestre</strong></span>
+                          <span class="nav-link-text ms-1" style="color: black;">Semestre</span>
                       </a>
                   </li>
 
@@ -64,9 +64,9 @@
                         <li class="nav-item">
                             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#collapsePersona" aria-expanded="false">
                                 <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-user-friends"></i>
+                                    <i class="fas fa-user-friends" style="color: #E33439;"></i>
                                 </div>
-                                <span class="nav-link-text ms-1" style="color: black;"><strong> Persona </strong></span>
+                                <span class="nav-link-text ms-1" style="color: black;"> Persona </span>
                             </a>
                             <div id="collapsePersona" class="collapse">
                                 <ul class="flex-column nav ms-4">
@@ -93,9 +93,9 @@
                         <li class="nav-item">
                             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#collapseCurso" aria-expanded="false">
                                 <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-book"></i>
+                                    <i class="fas fa-book" style="color: #E33439;"></i>
                                 </div>
-                                <span class="nav-link-text ms-1"style="color: black;" ><strong> Opciones Curso </strong></span>
+                                <span class="nav-link-text ms-1"style="color: black;" > Opciones Curso </span>
                             </a>
                             <div id="collapseCurso" class="collapse">
                                 <ul class="flex-column nav ms-4">
@@ -111,7 +111,7 @@
                                     </li>
                                     <li class="nav-item list-unstyled">
                                         <a class="nav-link" href="/admin/App/semana_sustentacion/">
-                                            <span class="nav-link-text" style="color: black;">Semanas de Sustentación</span>
+                                            <span class="nav-link-text" style="color: black;">Semanas de <br>Sustentación</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -122,9 +122,9 @@
                         <li class="nav-item">
                             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#collapseHorarios" aria-expanded="false">
                                 <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-calendar-alt"></i>
+                                    <i class="fas fa-calendar-alt" style="color: #E33439;"></i>
                                 </div>
-                                <span class="nav-link-text ms-1" style="color: black;"><strong> Horarios </strong></span>
+                                <span class="nav-link-text ms-1" style="color: black;"> Horarios </span>
                             </a>
                             <div id="collapseHorarios" class="collapse">
                                 <ul class="flex-column nav ms-4">
@@ -145,9 +145,9 @@
                         <li class="nav-item">
                           <a class="nav-link collapsed" data-bs-toggle="collapse" href="#collapseReportes" aria-expanded="false">
                               <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                  <i class="fas fa-calendar-alt"></i>
+                                  <i class="fas fa-calendar-alt" style="color: #E33439;"></i>
                               </div>
-                              <span class="nav-link-text ms-1" style="color: black;"><strong> Reportes </strong></span>
+                              <span class="nav-link-text ms-1" style="color: black;"> Reportes </span>
                           </a>
                           <div id="collapseReportes" class="collapse">
                               <ul class="flex-column nav ms-4">
@@ -168,14 +168,14 @@
                       </li>
                       
                       <li class="nav-item mt-3">
-                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-8"><strong> Cuenta </strong></h6>
+                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder"> Cuenta </h6>
                       </li>
                       <li class="nav-item">
                         <a class="nav-link {% if 'profile' in segment %} active {% endif %}" href="{% url 'profile' %}">
                             <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                <i class="fas fa-user"></i>
+                                <i class="fas fa-user" style="color: #E33439;"></i>
                             </div>
-                            <span class="nav-link-text ms-1" style="color: black;"><strong> Perfil </strong></span>
+                            <span class="nav-link-text ms-1" style="color: black;"> Perfil </span>
                         </a>
                     </li>
                     {% else %}
@@ -185,7 +185,7 @@
                         <li class="nav-item">
                             <a class="nav-link {% if 'disponibilidad' in segment %} active {% endif %}" href="{% url 'disponibilidad_list' %}">
                                 <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-calendar-alt"></i>
+                                    <i class="fas fa-calendar-alt" style="color: #E33439;"></i>
                                 </div>
                                 <span class="nav-link-text ms-1">Disponibilidad Horaria</span>
                             </a>
@@ -193,7 +193,7 @@
                         <li class="nav-item">
                             <a class="nav-link {% if 'listar_sustentaciones' in segment %} active {% endif %}" href="{% url 'listar_sustentaciones' %}">
                                 <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-file-alt"></i>
+                                    <i class="fas fa-file-alt" style="color: #E33439;"></i>
                                 </div>
                                 <span class="nav-link-text ms-1">Rep. Sustentaciones</span>
                             </a>
@@ -201,18 +201,18 @@
                         <li class="nav-item">
                           <a class="nav-link {% if 'listar_compensacion_horas' in segment %} active {% endif %}" href="{% url 'listar_compensacion_horas' %}">
                               <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                  <i class="fas fa-file-alt"></i>
+                                  <i class="fas fa-file-alt" style="color: #E33439;"></i>
                               </div>
-                              <span class="nav-link-text ms-1">Reporte Horas compensadas</span>
+                              <span class="nav-link-text ms-1" >Rep. Horas compensadas</span>
                           </a>
                       </li>
                       <li class="nav-item mt-3">
-                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Cuenta</h6>
+                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder" >Cuenta</h6>
                       </li>
                       <li class="nav-item">
                         <a class="nav-link {% if 'profile' in segment %} active {% endif %}" href="{% url 'profile' %}">
                             <div class="text-center me-2 d-flex align-items-center justify-content-center">
-                                <i class="fas fa-user"></i>
+                                <i class="fas fa-user" style="color: #E33439;"></i>
                             </div>
                             <span class="nav-link-text ms-1">Perfil</span>
                         </a>
