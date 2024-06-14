@@ -21,7 +21,7 @@ from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 # views.py
 from django.http import JsonResponse
-from .ga import generar_horarios, guardar_horario
+from .ga2 import generar_horarios
 from .utils import send_whatsapp_message
 from django.http import JsonResponse
 from django.http import JsonResponse
@@ -31,6 +31,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.db.models import F
+
+from django.utils.timezone import localtime
+
+from django.utils.timezone import localtime
+from datetime import timedelta
 
 @staff_member_required
 @csrf_exempt
@@ -54,20 +59,8 @@ def ejecutar_algoritmo(request):
         sustentaciones = sustentaciones.filter(cursos_grupos_id=curso_grupo_id)
 
     if request.method == 'POST':
-        mejor_horario, no_disponibles = generar_horarios()
-        if no_disponibles:
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'status': 'error', 'message': f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}"})
-            else:
-                messages.error(request, f"Los siguientes profesores no tienen disponibilidad registrada: {', '.join(no_disponibles)}")
-                return render(request, 'admin/ejecutar_algoritmo.html', {
-                    'sustentaciones': sustentaciones,
-                    'semestres': semestres,
-                    'cursos_grupos': cursos_grupos,
-                    'semestre_id': semestre_id,
-                    'tipo_sustentacion': tipo_sustentacion,
-                    'curso_grupo_id': curso_grupo_id
-                })
+        mejor_horario = generar_horarios()
+    
 
         mejor_horario_dict = [
             {
@@ -82,16 +75,18 @@ def ejecutar_algoritmo(request):
                 'jurado2': sustentacion['jurado2'].apellidos_nombres if sustentacion['jurado2'] else '',
                 'asesor': sustentacion['asesor'].apellidos_nombres,
                 'titulo': sustentacion['titulo'],
-                'fecha': sustentacion.get('fecha').isoformat() if sustentacion.get('fecha') else '',
+                'fecha': (sustentacion.get('fecha') + timedelta(days=1)).isoformat() if sustentacion.get('fecha') else '',
                 'hora_inicio': sustentacion.get('hora_inicio').isoformat() if sustentacion.get('hora_inicio') else '',
                 'hora_fin': sustentacion.get('hora_fin').isoformat() if sustentacion.get('hora_fin') else '',
             }
             for sustentacion in mejor_horario
         ]
-        request.session['mejor_horario'] = mejor_horario_dict
+        mejor_horario = mejor_horario_dict
+
+        request.session['mejor_horario'] = mejor_horario
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario_dict})
+            return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario})
         else:
             return redirect('mostrar_resultados')
 
@@ -116,7 +111,6 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
-
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
