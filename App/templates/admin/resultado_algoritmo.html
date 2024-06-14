@@ -12,7 +12,7 @@
                 <div class="row justify-content-center">
                     <div class="col-12 col-md-6">
                         <div class="d-flex justify-content-between">
-                            <form method="post" action="{% url 'guardar_horarios' %}">
+                            <form method="post" action="{% url 'ejecutar_algoritmo' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success mt-3">Guardar Horarios</button>
                             </form>
@@ -29,7 +29,7 @@
                         <table class="table" id="resultTable">
                             <thead>
                                 <tr>
-                                    <th>Curso - Grupo</th>
+                                    <th>Curso</th>
                                     <th>Estudiante</th>
                                     <th>Jurado 1</th>
                                     <th>Jurado 2</th>
@@ -43,7 +43,7 @@
                             <tbody id="resultado-tabla">
                                 {% for sustentacion in mejor_horario %}
                                     <tr>
-                                        <td>{{ sustentacion.cursos_grupos.curso }} - {{ sustentacion.cursos_grupos.grupo }}</td>
+                                        <td>{{ sustentacion.cursos_grupos.curso }}</td>
                                         <td>{{ sustentacion.estudiante }}</td>
                                         <td>{{ sustentacion.jurado1 }}</td>
                                         <td>{{ sustentacion.jurado2 }}</td>
@@ -101,7 +101,6 @@
     }
 
     document.getElementById('reloadAlgoritmo').addEventListener('click', function() {
-        // Mostrar el modal
         $('#loadingModal').modal('show');
 
         fetch("{% url 'ejecutar_algoritmo' %}", {
@@ -126,13 +125,13 @@
                 let groupedRows = {};
 
                 data.mejor_horario.forEach(function(sustentacion) {
-                    let courseGroup = `${sustentacion.cursos_grupos.curso} - ${sustentacion.cursos_grupos.grupo}`;
-                    if (!groupedRows[courseGroup]) {
-                        groupedRows[courseGroup] = [];
+                    let course = `${sustentacion.cursos_grupos.curso}`;
+                    if (!groupedRows[course]) {
+                        groupedRows[course] = [];
                     }
                     let row = `
                         <tr>
-                            <td>${sustentacion.cursos_grupos.curso} - ${sustentacion.cursos_grupos.grupo}</td>
+                            <td>${sustentacion.cursos_grupos.curso}</td>
                             <td>${sustentacion.estudiante}</td>
                             <td>${sustentacion.jurado1}</td>
                             <td>${sustentacion.jurado2}</td>
@@ -143,16 +142,15 @@
                             <td>${sustentacion.hora_fin}</td>
                         </tr>
                     `;
-                    groupedRows[courseGroup].push({
+                    groupedRows[course].push({
                         row: row,
                         fecha: sustentacion.fecha,
                         hora_inicio: sustentacion.hora_inicio
                     });
                 });
 
-                Object.keys(groupedRows).forEach(function(courseGroup) {
-                    // Ordenar las filas por fecha y hora
-                    groupedRows[courseGroup].sort((a, b) => {
+                Object.keys(groupedRows).forEach(function(course) {
+                    groupedRows[course].sort((a, b) => {
                         let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
                         let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
                         return fechaA - fechaB;
@@ -160,30 +158,27 @@
 
                     let headerRow = `
                         <tr>
-                            <th colspan="9">${courseGroup}</th>
+                            <th colspan="9">${course}</th>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', headerRow);
 
-                    groupedRows[courseGroup].forEach(function(item) {
+                    groupedRows[course].forEach(function(item) {
                         tbody.insertAdjacentHTML('beforeend', item.row);
                     });
                 });
             } else {
                 alert('Error al ejecutar el algoritmo: ' + data.message);
             }
-            // Ocultar el modal
             $('#loadingModal').modal('hide');
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error al ejecutar el algoritmo: ' + error.message);
-            // Ocultar el modal
             $('#loadingModal').modal('hide');
         });
     });
 
-    // Función de búsqueda
     document.getElementById('searchInput').addEventListener('keyup', function() {
         let filter = this.value.toUpperCase();
         let rows = document.querySelector("#resultTable tbody").rows;
@@ -203,15 +198,15 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         var table = document.querySelector('.table');
-        var columnIndex = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso - Grupo');
+        var columnIndex = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso');
         var groupedRows = {};
 
         Array.from(table.querySelectorAll('tbody tr')).forEach(function(row) {
-            var courseGroup = row.querySelectorAll('td')[columnIndex].textContent.trim();
-            if (!groupedRows[courseGroup]) {
-                groupedRows[courseGroup] = [];
+            var course = row.querySelectorAll('td')[columnIndex].textContent.trim();
+            if (!groupedRows[course]) {
+                groupedRows[course] = [];
             }
-            groupedRows[courseGroup].push({
+            groupedRows[course].push({
                 row: row,
                 fecha: row.querySelectorAll('td')[6].textContent.trim(),
                 hora_inicio: row.querySelectorAll('td')[7].textContent.trim()
@@ -220,9 +215,8 @@
 
         table.querySelector('tbody').innerHTML = '';
 
-        Object.keys(groupedRows).forEach(function(courseGroup) {
-            // Ordenar las filas por fecha y hora
-            groupedRows[courseGroup].sort((a, b) => {
+        Object.keys(groupedRows).forEach(function(course) {
+            groupedRows[course].sort((a, b) => {
                 let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
                 let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
                 return fechaA - fechaB;
@@ -230,19 +224,17 @@
 
             var headerRow = document.createElement('tr');
             var headerCell = document.createElement('th');
-            headerCell.textContent = courseGroup;
+            headerCell.textContent = course;
             headerCell.setAttribute('colspan', table.querySelectorAll('thead th').length);
             headerRow.appendChild(headerCell);
             table.querySelector('tbody').appendChild(headerRow);
 
-            groupedRows[courseGroup].forEach(function(item) {
+            groupedRows[course].forEach(function(item) {
                 item.row.querySelectorAll('td')[6].textContent = formatDate(item.fecha);
                 table.querySelector('tbody').appendChild(item.row);
             });
         });
     });
 </script>
-
-
 
 {% endblock %}
