@@ -47,11 +47,12 @@
             </div>
             <div class="form-group mr-3">
                 <label for="nombre_estudiante" class="mr-2">Nombre del Estudiante:</label>
-                <input type="text" id="nombre_estudiante" name="nombre_estudiante" class="form-control input-lg" value="{{ nombre_estudiante|default_if_none:'' }}">
-            </div>
-            <div class="form-group mr-3">
-                <label for="codigo_estudiante" class="mr-2">Código del Estudiante:</label>
-                <input type="text" id="codigo_estudiante" name="codigo_estudiante" class="form-control" value="{{ codigo_estudiante|default_if_none:'' }}">
+                <select id="nombre_estudiante" name="nombre_estudiante" class="form-control custom-select-lg my-select2-estudiante">
+                    <option value="">Todos</option>
+                    {% for estudiante in estudiantes %}
+                        <option value="{{ estudiante.apellidos_nombres }}" {% if nombre_estudiante == estudiante.apellidos_nombres %}selected{% endif %}>{{ estudiante.apellidos_nombres }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="form-group mr-3">
                 <label for="fecha" class="mr-2">Fecha:</label>
@@ -59,7 +60,7 @@
             </div>
             <div class="form-group mt-2">
                 <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
-                <a href="{% url 'exportar_csv' %}?semestre={{ semestre|default_if_none:'' }}&tipo_sustentacion={{ tipo_sustentacion|default_if_none:'' }}&nombre_estudiante={{ nombre_estudiante|default_if_none:'' }}&codigo_estudiante={{ codigo_estudiante|default_if_none:'' }}&fecha={{ fecha|default_if_none:'' }}" class="btn btn-success">Exportar a Excel</a>
+                <a href="{% url 'exportar_csv' %}?semestre={{ semestre|default_if_none:'' }}&tipo_sustentacion={{ tipo_sustentacion|default_if_none:'' }}&nombre_estudiante={{ nombre_estudiante|default_if_none:'' }}&fecha={{ fecha|default_if_none:'' }}" class="btn btn-success">Exportar a Excel</a>
             </div>
         </form>
     </div>
@@ -108,4 +109,10 @@
     </table>
 </body>
 </html>
+
+<script>
+    $(document).ready(function() {
+        $('.my-select2-estudiante').select2();
+    });
+</script>
 {% endblock %}
