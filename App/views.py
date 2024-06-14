@@ -21,7 +21,7 @@ from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 # views.py
 from django.http import JsonResponse
-from .ga2 import generar_horarios
+from .ga2 import generar_horarios, guardar_horario
 from .utils import send_whatsapp_message
 from django.http import JsonResponse
 from django.http import JsonResponse
@@ -115,7 +115,12 @@ def ejecutar_algoritmo(request):
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
     if mejor_horario:
-        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario})
+        # Agregar índices y validar fechas
+        mejor_horario_con_indices = [
+            {**sustentacion, 'index': i + 1, 'fecha_valida': 'Fecha Inválida' not in sustentacion['fecha']}
+            for i, sustentacion in enumerate(mejor_horario)
+        ]
+        return render(request, 'admin/resultado_algoritmo.html', {'mejor_horario': mejor_horario_con_indices})
     else:
         messages.error(request, "No hay resultados del algoritmo para mostrar.")
         return redirect('ejecutar_algoritmo')
@@ -128,63 +133,10 @@ def guardar_horarios(request):
         mejor_horario = request.session.get('mejor_horario', [])
         if mejor_horario:
             try:
-                with transaction.atomic():
-                    for sustentacion_data in mejor_horario:
-                        curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
-                        grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
-                        semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
-
-                        cursos_grupos = Cursos_Grupos.objects.get_or_create(
-                            curso=curso, grupo=grupo, semestre=semestre)[0]
-
-                        estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
-                        jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1'])
-                        jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2'])
-                        asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
-
-                        # Verificar si la sustentación ya existe por estudiante, curso y grupo
-                        sustentacion_existente = Sustentacion.objects.filter(
-                            cursos_grupos=cursos_grupos,
-                            estudiante=estudiante
-                        ).first()
-
-                        if sustentacion_existente:
-                            # Actualizar jurados si están en null y el nuevo valor no es None
-                            if not sustentacion_existente.jurado1 and jurado1 is not None:
-                                sustentacion_existente.jurado1 = jurado1
-                            if not sustentacion_existente.jurado2 and jurado2 is not None:
-                                sustentacion_existente.jurado2 = jurado2
-                            if not sustentacion_existente.asesor and asesor is not None:
-                                sustentacion_existente.asesor = asesor
-                            sustentacion_existente.save()
-
-
-                            Horario_Sustentaciones.objects.create(
-                                sustentacion=sustentacion_existente,
-                                fecha=sustentacion_data['fecha'] if sustentacion_data['fecha'] else None,
-                                hora_inicio=sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None,
-                                hora_fin=sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None,
-                            )
-                        else:
-                            # Crear una nueva sustentación si no existe
-                            nueva_sustentacion = Sustentacion.objects(
-                                cursos_grupos=cursos_grupos,
-                                estudiante=estudiante,
-                                jurado1=jurado1,
-                                jurado2=jurado2,
-                                asesor=asesor,
-                                titulo=sustentacion_data['titulo']
-                            )
-                            Horario_Sustentaciones.objects.create(
-                                sustentacion=nueva_sustentacion,
-                                fecha=sustentacion_data['fecha'] if sustentacion_data['fecha'] else None,
-                                hora_inicio=sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None,
-                                hora_fin=sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None,
-                            )
-
-                    messages.success(request, "Horarios guardados exitosamente.")
+                guardar_horario(mejor_horario)
+                messages.success(request, "Horarios guardados exitosamente.")
             except Exception as e:
-                messages.error(request, f"Error al guardar horarios: {str(e)}")
+                messages.error(request, str(e))
                 return redirect('ejecutar_algoritmo')
         else:
             messages.error(request, "No hay horarios para guardar.")

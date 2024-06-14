@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta
 from django.db import models
 from .models import *
+from django.db import transaction
 
 class AlgoritmoGenetico:
     def __init__(self, poblacion_size, generaciones, cursos_grupos, disponibilidad_profesores, fechas_sustentacion):
@@ -81,9 +82,6 @@ class AlgoritmoGenetico:
         ).distinct().exclude(id__in=[prof.id for prof in exclude])
         return random.choice(profesores)
     def evaluar_resultados(self, horario):
-        todos_los_estudiantes = set(Sustentacion.objects.values_list('estudiante_id', flat=True))
-        no_asignadas = []
-
         while True:
             conflictos = {}
             depurado = []
@@ -113,7 +111,7 @@ class AlgoritmoGenetico:
                             intentos += 1
                             if not (nueva_fecha and nueva_hora_inicio and nueva_hora_fin):
                                 print(f"Intento {intentos}: No se pudo encontrar nueva fecha y hora para la sustentación de {sust['estudiante']}")
-                        
+
                         if nueva_fecha and nueva_hora_inicio and nueva_hora_fin:
                             sust['fecha'] = nueva_fecha
                             sust['hora_inicio'] = nueva_hora_inicio
@@ -121,7 +119,6 @@ class AlgoritmoGenetico:
                             depurado.append(sust)
                         else:
                             print(f"No se pudo reasignar la sustentación de {sust['estudiante']} después de {intentos} intentos")
-                            no_asignadas.append(sust)  # Añadir a la lista de no asignadas
 
                 else:
                     depurado.append(sustentaciones[0])
@@ -131,26 +128,21 @@ class AlgoritmoGenetico:
             else:
                 horario = depurado
 
-        # Añadir sustentaciones no asignadas a la lista no_asignadas
-        asignados_estudiantes = set([sust['estudiante'].id for sust in depurado])
-        no_asignados_estudiantes = todos_los_estudiantes - asignados_estudiantes
+        return depurado
+    
+    def validar_disponibilidad_total(self, fecha, hora_inicio, hora_fin, jurado1, jurado2, asesor):
+        disponibilidad_jurado1 = self.disponibilidad_profesores.get((jurado1.id, fecha), [])
+        disponibilidad_jurado2 = self.disponibilidad_profesores.get((jurado2.id, fecha), [])
+        disponibilidad_asesor = self.disponibilidad_profesores.get((asesor.id, fecha), [])
 
-        for estudiante_id in no_asignados_estudiantes:
-            sustentacion = Sustentacion.objects.get(estudiante_id=estudiante_id)
-            no_asignadas.append({
-                'cursos_grupos': sustentacion.cursos_grupos,
-                'estudiante': sustentacion.estudiante,
-                'jurado1': sustentacion.jurado1,
-                'jurado2': sustentacion.jurado2,
-                'asesor': sustentacion.asesor,
-                'titulo': sustentacion.titulo,
-                'fecha': "",
-                'hora_inicio': "",
-                'hora_fin': ""
-            })
-
-        return depurado, no_asignadas
-   
+        for disp1 in disponibilidad_jurado1:
+            for disp2 in disponibilidad_jurado2:
+                for disp3 in disponibilidad_asesor:
+                    if (disp1.hora_inicio <= hora_inicio < disp1.hora_fin) and \
+                    (disp2.hora_inicio <= hora_inicio < disp2.hora_fin) and \
+                    (disp3.hora_inicio <= hora_inicio < disp3.hora_fin):
+                        return True
+        return False
     def seleccionar_fecha_hora(self, individuo, jurado1, jurado2, asesor, curso):
         semanas_sustentacion = Semana_Sustentacion.objects.filter(curso=curso, tipo_sustentacion='PARCIAL')  # Filtrar semanas de sustentación por curso
 
@@ -168,7 +160,8 @@ class AlgoritmoGenetico:
                     horarios_comunes = self.obtener_horas_comunes(disponibilidad_jurado1, disponibilidad_jurado2, disponibilidad_asesor, fecha)
                     if horarios_comunes:
                         for hora_inicio, hora_fin in horarios_comunes:
-                            if not self.hay_conflicto_horario(individuo, fecha, hora_inicio):
+                            if not self.hay_conflicto_horario(individuo, fecha, hora_inicio) and \
+                            self.validar_disponibilidad_total(fecha, hora_inicio, hora_fin, jurado1, jurado2, asesor):
                                 return fecha, hora_inicio, hora_fin
                             # Intentar ajustar la hora en intervalos de 30 minutos adelante o atrás si hay conflicto
                             ajuste = timedelta(minutes=30)
@@ -176,16 +169,12 @@ class AlgoritmoGenetico:
                                 nueva_hora_inicio_adelante = (datetime.combine(fecha, hora_inicio) + ajuste).time()
                                 nueva_hora_fin_adelante = (datetime.combine(fecha, hora_fin) + ajuste).time()
                                 if not self.hay_conflicto_horario(individuo, fecha, nueva_hora_inicio_adelante) and \
-                                self.profesor_valido(jurado1, fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante) and \
-                                self.profesor_valido(jurado2, fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante) and \
-                                self.profesor_valido(asesor, fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante):
+                                self.validar_disponibilidad_total(fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante, jurado1, jurado2, asesor):
                                     return fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante
                                 nueva_hora_inicio_atras = (datetime.combine(fecha, hora_inicio) - ajuste).time()
                                 nueva_hora_fin_atras = (datetime.combine(fecha, hora_fin) - ajuste).time()
                                 if not self.hay_conflicto_horario(individuo, fecha, nueva_hora_inicio_atras) and \
-                                self.profesor_valido(jurado1, fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras) and \
-                                self.profesor_valido(jurado2, fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras) and \
-                                self.profesor_valido(asesor, fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras):
+                                self.validar_disponibilidad_total(fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras, jurado1, jurado2, asesor):
                                     return fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras
                                 ajuste += timedelta(minutes=30)
         return None, None, None
@@ -219,6 +208,12 @@ class AlgoritmoGenetico:
                             horarios_comunes.append((current_time.time(), fin))
                             current_time += self.duracion_sustentacion
         return horarios_comunes
+    def profesor_valido(self, profesor, fecha, hora_inicio, hora_fin):
+        disponibilidad = self.disponibilidad_profesores.get((profesor.id, fecha), [])
+        for disp in disponibilidad:
+            if disp.hora_inicio <= hora_inicio and disp.hora_fin >= hora_fin:
+                return True
+        return False
 
     def calcular_fitness(self, individuo):
         fitness = 0
@@ -232,12 +227,7 @@ class AlgoritmoGenetico:
                 fitness -= 1
         return fitness
 
-    def profesor_valido(self, profesor, fecha, hora_inicio, hora_fin):
-        disponibilidad = self.disponibilidad_profesores.get((profesor.id, fecha), [])
-        for disp in disponibilidad:
-            if disp.hora_inicio <= hora_inicio and disp.hora_fin >= hora_fin:
-                return True
-        return False
+
 
     def seleccionar_padres(self):
         return random.sample(self.poblacion, 2)
@@ -268,7 +258,7 @@ class AlgoritmoGenetico:
             hijo1, hijo2 = self.cruzar(padres[0], padres[1])
             nueva_poblacion.append(self.mutar(hijo1))
             nueva_poblacion.append(self.mutar(hijo2))
-            self.poblacion = nueva_poblacion
+        self.poblacion = nueva_poblacion
 
     def ejecutar(self):
         for _ in range(self.generaciones):
@@ -277,16 +267,11 @@ class AlgoritmoGenetico:
         mejor_individuo = max(self.poblacion, key=self.calcular_fitness)
         mejor_individuo = self.eliminar_duplicados(mejor_individuo)
         mejor_individuo = self.ordenar_por_curso_grupo(mejor_individuo)
-        mejor_individuo, no_asignadas = self.evaluar_resultados(mejor_individuo)
-        print(no_asignadas)
-        # Añadir sustentaciones no asignadas al final con fecha y hora en blanco
-        for sustentacion in no_asignadas:
-            sustentacion['fecha'] = ""
-            sustentacion['hora_inicio'] = ""
-            sustentacion['hora_fin'] = ""
-            mejor_individuo.append(sustentacion)
-
+        mejor_individuo = self.evaluar_resultados(mejor_individuo)
+        
+        
         return mejor_individuo
+
 
 
     def eliminar_duplicados(self, mejor_horario):
@@ -301,6 +286,33 @@ class AlgoritmoGenetico:
 
     def ordenar_por_curso_grupo(self, mejor_horario):
         return sorted(mejor_horario, key=lambda x: (x['cursos_grupos'].curso.nombre, x['cursos_grupos'].grupo.nombre))
+
+
+    def obtener_sustentaciones_no_incluidas(self, mejor_horario):
+        ids_incluidos = {(sust['cursos_grupos'].id, sust['estudiante'].id) for sust in mejor_horario}
+        sustentaciones_no_incluidas = Sustentacion.objects.exclude(
+            models.Q(cursos_grupos_id__in=[sust['cursos_grupos'].id for sust in mejor_horario]) &
+            models.Q(estudiante_id__in=[sust['estudiante'].id for sust in mejor_horario])
+        )
+        return sustentaciones_no_incluidas
+
+    def agregar_sustentaciones_no_incluidas(self, mejor_horario):
+        sustentaciones_no_incluidas = self.obtener_sustentaciones_no_incluidas(mejor_horario)
+        for sustentacion in sustentaciones_no_incluidas:
+            
+                sust_data = {
+                    'cursos_grupos': sustentacion.cursos_grupos,
+                    'estudiante': sustentacion.estudiante,
+                    'jurado1':"",
+                    'jurado2': "",
+                    'asesor': sustentacion.asesor,  # Mantener el asesor de la sustentación original
+                    'titulo': sustentacion.titulo,
+                    'fecha': "",
+                    'hora_inicio': "",
+                    'hora_fin': ""
+                }
+                mejor_horario.append(sust_data)
+        return mejor_horario
 
 
 def generar_horarios():
@@ -321,28 +333,70 @@ def generar_horarios():
     for fecha in fechas_sustentacion:
         print(fecha)
 
-    ag = AlgoritmoGenetico(poblacion_size=10, generaciones=100, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
-    mejor_horario = ag.ejecutar()
-    # print(mejor_horario)
-    return mejor_horario
+    # Generar 3 horarios y comparar los resultados
+    mejores_horarios = []
+    for _ in range(3):
+        ag = AlgoritmoGenetico(poblacion_size=20, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
+        mejor_horario = ag.ejecutar()
+        mejores_horarios.append(mejor_horario)
+
+    # Seleccionar el horario más extenso
+    mejor_horario = max(mejores_horarios, key=len)
+
+    # Agregar sustentaciones no incluidas
+    ag = AlgoritmoGenetico(poblacion_size=20, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion)
+    mejor_horario_completo = ag.agregar_sustentaciones_no_incluidas(mejor_horario)
+
+    return mejor_horario_completo
 
 def generar_rango_fechas(fecha_inicio, fecha_fin):
     delta = fecha_fin - fecha_inicio
     return [fecha_inicio + timedelta(days=i) for i in range(delta.days + 1)]
 
 def guardar_horario(mejor_horario):
-    for sustentacion in mejor_horario:
-        nueva_sustentacion = Sustentacion.objects.create(
-            cursos_grupos=sustentacion['cursos_grupos'],
-            estudiante=sustentacion['estudiante'],
-            jurado1=sustentacion['jurado1'],
-            jurado2=sustentacion['jurado2'],
-            asesor=sustentacion['asesor'],
-            titulo=sustentacion['titulo']
-        )
-        Horario_Sustentaciones.objects.create(
-            fecha=sustentacion['fecha'],
-            hora_inicio=sustentacion['hora_inicio'],
-            hora_fin=sustentacion['hora_fin'],
-            sustentacion=nueva_sustentacion
-        )
+    try:
+        with transaction.atomic():
+            for sustentacion_data in mejor_horario:
+                try:
+                    curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
+                    grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
+                    semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
+
+                    cursos_grupos = Cursos_Grupos.objects.get_or_create(
+                        curso=curso, grupo=grupo, semestre=semestre)[0]
+
+                    estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
+                    jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1']) if sustentacion_data['jurado1'] else None
+                    jurado2 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado2']) if sustentacion_data['jurado2'] else None
+                    asesor = Profesor.objects.get(apellidos_nombres=sustentacion_data['asesor'])
+
+                    # Verificar si la sustentación ya existe por estudiante, curso y grupo
+                    sustentacion_existente = Sustentacion.objects.filter(
+                        cursos_grupos=cursos_grupos,
+                        estudiante=estudiante
+                    ).first()
+
+                    if sustentacion_existente:
+                        # Actualizar jurados si están en null y el nuevo valor no es None
+                        if not sustentacion_existente.jurado1 and jurado1 is not None:
+                            sustentacion_existente.jurado1 = jurado1
+                        if not sustentacion_existente.jurado2 and jurado2 is not None:
+                            sustentacion_existente.jurado2 = jurado2
+                        if not sustentacion_existente.asesor and asesor is not None:
+                            sustentacion_existente.asesor = asesor
+                        sustentacion_existente.save()
+                    else:
+                        continue  # Si no existe la sustentación, continuar al siguiente registro
+
+                    # Crear o actualizar el horario de sustentación
+                    Horario_Sustentaciones.objects.create(
+                        sustentacion=sustentacion_existente,
+                        fecha=sustentacion_data['fecha'] if sustentacion_data['fecha'] else None,
+                        hora_inicio=sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None,
+                        hora_fin=sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None,
+                    )
+                except Profesor.DoesNotExist as e:
+                    print(f"Error: {str(e)} - Profesor no encontrado. Detalles: {sustentacion_data}")
+                    continue
+    except Exception as e:
+        raise RuntimeError(f"Error al guardar horarios: {str(e)}")

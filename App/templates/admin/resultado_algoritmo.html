@@ -12,7 +12,7 @@
                 <div class="row justify-content-center">
                     <div class="col-12 col-md-6">
                         <div class="d-flex justify-content-between">
-                            <form method="post" action="{% url 'ejecutar_algoritmo' %}">
+                            <form method="post" action="{% url 'guardar_horarios' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success mt-3">Guardar Horarios</button>
                             </form>
@@ -29,6 +29,7 @@
                         <table class="table" id="resultTable">
                             <thead>
                                 <tr>
+                                    <th>#</th>
                                     <th>Curso</th>
                                     <th>Estudiante</th>
                                     <th>Jurado 1</th>
@@ -43,6 +44,7 @@
                             <tbody id="resultado-tabla">
                                 {% for sustentacion in mejor_horario %}
                                     <tr>
+                                        <td>{{ forloop.counter }}</td>
                                         <td>{{ sustentacion.cursos_grupos.curso }}</td>
                                         <td>{{ sustentacion.estudiante }}</td>
                                         <td>{{ sustentacion.jurado1 }}</td>
@@ -124,13 +126,14 @@
 
                 let groupedRows = {};
 
-                data.mejor_horario.forEach(function(sustentacion) {
+                data.mejor_horario.forEach(function(sustentacion, index) {
                     let course = `${sustentacion.cursos_grupos.curso}`;
                     if (!groupedRows[course]) {
                         groupedRows[course] = [];
                     }
                     let row = `
                         <tr>
+                            <td>${index + 1}</td>
                             <td>${sustentacion.cursos_grupos.curso}</td>
                             <td>${sustentacion.estudiante}</td>
                             <td>${sustentacion.jurado1}</td>
@@ -145,12 +148,17 @@
                     groupedRows[course].push({
                         row: row,
                         fecha: sustentacion.fecha,
-                        hora_inicio: sustentacion.hora_inicio
+                        hora_inicio: sustentacion.hora_inicio,
+                        hora_valida: !isNaN(new Date(sustentacion.fecha).getTime())
                     });
                 });
 
+                let globalIndex = 1;
+
                 Object.keys(groupedRows).forEach(function(course) {
                     groupedRows[course].sort((a, b) => {
+                        if (!a.hora_valida && b.hora_valida) return 1;
+                        if (a.hora_valida && !b.hora_valida) return -1;
                         let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
                         let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
                         return fechaA - fechaB;
@@ -158,12 +166,13 @@
 
                     let headerRow = `
                         <tr>
-                            <th colspan="9">${course}</th>
+                            <th colspan="10">${course}</th>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', headerRow);
 
                     groupedRows[course].forEach(function(item) {
+                        item.row = item.row.replace(/<td>\d+<\/td>/, `<td>${globalIndex++}</td>`);
                         tbody.insertAdjacentHTML('beforeend', item.row);
                     });
                 });
@@ -200,6 +209,7 @@
         var table = document.querySelector('.table');
         var columnIndex = Array.from(table.querySelector('thead').querySelectorAll('th')).findIndex(th => th.textContent.trim() === 'Curso');
         var groupedRows = {};
+        var index = 1;
 
         Array.from(table.querySelectorAll('tbody tr')).forEach(function(row) {
             var course = row.querySelectorAll('td')[columnIndex].textContent.trim();
@@ -208,8 +218,9 @@
             }
             groupedRows[course].push({
                 row: row,
-                fecha: row.querySelectorAll('td')[6].textContent.trim(),
-                hora_inicio: row.querySelectorAll('td')[7].textContent.trim()
+                fecha: row.querySelectorAll('td')[7].textContent.trim(),
+                hora_inicio: row.querySelectorAll('td')[8].textContent.trim(),
+                hora_valida: row.querySelectorAll('td')[7].textContent.trim() !== 'Fecha Inválida'
             });
         });
 
@@ -217,6 +228,8 @@
 
         Object.keys(groupedRows).forEach(function(course) {
             groupedRows[course].sort((a, b) => {
+                if (!a.hora_valida && b.hora_valida) return 1;
+                if (a.hora_valida && !b.hora_valida) return -1;
                 let fechaA = new Date(a.fecha + ' ' + a.hora_inicio);
                 let fechaB = new Date(b.fecha + ' ' + b.hora_inicio);
                 return fechaA - fechaB;
@@ -230,7 +243,8 @@
             table.querySelector('tbody').appendChild(headerRow);
 
             groupedRows[course].forEach(function(item) {
-                item.row.querySelectorAll('td')[6].textContent = formatDate(item.fecha);
+                item.row.querySelectorAll('td')[0].textContent = index++;
+                item.row.querySelectorAll('td')[7].textContent = formatDate(item.fecha);
                 table.querySelector('tbody').appendChild(item.row);
             });
         });
