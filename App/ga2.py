@@ -367,7 +367,7 @@ def generar_horarios(tipo_sustentacion):
     mejores_horarios = []
     print(tipo_sustentacion)
     for _ in range(3):
-        ag = AlgoritmoGenetico(poblacion_size=20, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
+        ag = AlgoritmoGenetico(poblacion_size=2, generaciones=3, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
         mejor_horario = ag.ejecutar()
         mejores_horarios.append(mejor_horario)
 
@@ -375,7 +375,7 @@ def generar_horarios(tipo_sustentacion):
     mejor_horario = max(mejores_horarios, key=len)
 
     # Agregar sustentaciones no incluidas
-    ag = AlgoritmoGenetico(poblacion_size=20, generaciones=50, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
+    ag = AlgoritmoGenetico(poblacion_size=2, generaciones=3, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
     mejor_horario_completo = ag.agregar_sustentaciones_no_incluidas(mejor_horario)
 
     return mejor_horario_completo

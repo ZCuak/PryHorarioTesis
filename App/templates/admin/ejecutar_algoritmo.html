@@ -185,24 +185,32 @@
             $('#genericErrorModal').modal('show');
         {% endif %}
     
-        $.ajax({
-            url: "{% url 'send_notifications' %}",
-            type: "POST",
-            data: form_data,
-            beforeSend: function() {
-                console.log('Enviando solicitud AJAX para enviar notificaciones');
-            },
-            success: function(data) {
-                console.log('Notificaciones enviadas correctamente');
-                alert('Notificaciones enviadas correctamente');
-            },
-            error: function(xhr, status, error) {
-                console.error('Error al enviar notificaciones:', status, error);
-                $('#genericErrorMessage').text('Error al enviar notificaciones: ' + error);
-                $('#genericErrorModal').modal('show');
-            }
+        $('#enviar-notificaciones').click(function(){
+            var form_data = {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'semestre': $('#semestre').val(),
+                'tipo_sustentacion': $('#tipo_sustentacion').val(),
+                'curso_grupo': $('#curso_grupo').val()
+            };
+    
+            $.ajax({
+                url: "{% url 'send_notifications' %}",
+                type: "POST",
+                data: form_data,
+                beforeSend: function() {
+                    console.log('Enviando solicitud AJAX para enviar notificaciones');
+                },
+                success: function(data) {
+                    console.log('Notificaciones enviadas correctamente');
+                    alert('Notificaciones enviadas correctamente');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al enviar notificaciones:', status, error);
+                    $('#genericErrorMessage').text('Error al enviar notificaciones: ' + error);
+                    $('#genericErrorModal').modal('show');
+                }
+            });
         });
-
     
         $('#ejecutarAlgoritmoForm').submit(function(e) {
             e.preventDefault();

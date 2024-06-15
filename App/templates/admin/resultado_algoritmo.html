@@ -91,7 +91,6 @@
         z-index: 1100 !important;
     }
 </style>
-
 <script>
     function formatDate(dateString) {
         const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -164,7 +163,19 @@
         });
     }
 
-    document.addEventListener("DOMContentLoaded", groupAndSortRows);
+    document.addEventListener("DOMContentLoaded", function() {
+        groupAndSortRows();
+
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll("#resultTable tbody tr");
+
+            rows.forEach(function(row) {
+                let text = row.textContent.toLowerCase();
+                row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+            });
+        });
+    });
 
     document.getElementById('reloadAlgoritmo').addEventListener('click', function() {
         $('#loadingModal').modal('show');
@@ -290,5 +301,4 @@
 
     document.addEventListener("DOMContentLoaded", groupAndSortRows);
 </script>
-
 {% endblock %}

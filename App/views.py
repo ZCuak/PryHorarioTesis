@@ -1367,7 +1367,7 @@ def listar_compensacion_horas(request):
     INNER JOIN app_curso appc ON appc.id = appss.curso_id
     INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
     INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
-    INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+    RIGHT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
     INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
     LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
     LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
