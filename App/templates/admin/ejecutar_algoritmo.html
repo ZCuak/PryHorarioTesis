@@ -170,6 +170,7 @@
     }
     .table-success {
         background-color: #d4edda !important;
+        height: 20px;
     }
     .progress {
         height: 20px;
@@ -227,9 +228,12 @@
             // Simulación de barra de progreso
             var progressBar = $('#progressBar');
             var width = 0;
+            var height = 20;
             var interval = setInterval(function() {
                 width += 10;
                 progressBar.css('width', width + '%');
+                progressBar.text(width + '%');
+                progressBar.css('height', height + 'px');
                 if (width >= 100) {
                     clearInterval(interval);
                 }
