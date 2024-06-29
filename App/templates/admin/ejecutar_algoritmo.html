@@ -88,20 +88,20 @@
                                     <th>Acciones</th>
                                 </tr> 
                             </thead> 
-                            <tbody> 
-                                {% for horario in sustentaciones_con_horarios %} 
+                            <tbody>
+                                {% for horario in sustentaciones_con_horarios %}
                                 <tr class="{% if horario.fecha and horario.hora_inicio and horario.hora_fin %}table-success{% else %}table-danger{% endif %}">
                                     <td>{{ horario.sustentacion.cursos_grupos.curso }} - {{ horario.sustentacion.cursos_grupos.grupo }}</td>
-                                    <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td> 
-                                    <td>{{ horario.fecha|date:"l, d/m/Y"|default:"Por asignar"  }}</td> <!-- Mostrar la fecha con el día de la semana -->
-                                    <td>{{ horario.hora_inicio|default:"Por asignar" }}</td> <!-- Usar default para mostrar "Por asignar" si hora_inicio es None -->
-                                    <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td> 
-                                    <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td> 
+                                    <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td>
+                                    <td>{{ horario.fecha_formateada }}</td> <!-- Usar fecha_formateada -->
+                                    <td>{{ horario.hora_inicio|default:"Por asignar" }}</td>
+                                    <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td>
+                                    <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td>
                                     <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td>
                                     <td><a href="{% url 'editar_sustentacion' horario.sustentacion.id %}" class="btn btn-primary">Editar</a></td>
-                                </tr> 
+                                </tr>
                                 {% endfor %}
-                            </tbody> 
+                            </tbody>
                         </table>
                     </div>
                     
@@ -147,7 +147,10 @@
         <div class="modal-content">
             <div class="modal-body text-center">
                 <p>Generando horario, por favor espere...</p>
-                <div class="spinner-border text-primary" role="status">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" id="progressBar"></div>
+                </div>
+                <div class="spinner-border text-primary mt-3" role="status">
                     <span class="sr-only">Loading...</span>
                 </div>
             </div>
@@ -167,6 +170,9 @@
     }
     .table-success {
         background-color: #d4edda !important;
+    }
+    .progress {
+        height: 20px;
     }
 </style>
 
@@ -217,7 +223,22 @@
             // Copiar el valor del tipo de sustentación seleccionado al campo oculto
             $('#hidden_tipo_sustentacion').val($('#tipo_sustentacion').val());
             $('#loadingModal').modal('show');
-            this.submit();
+
+            // Simulación de barra de progreso
+            var progressBar = $('#progressBar');
+            var width = 0;
+            var interval = setInterval(function() {
+                width += 10;
+                progressBar.css('width', width + '%');
+                if (width >= 100) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+
+            // Enviar el formulario después de un retraso simulado
+            setTimeout(function() {
+                $('#ejecutarAlgoritmoForm')[0].submit();
+            }, 10000); // 10 segundos para simular el progreso
         });
     
         $('#closeErrorModal, #closeGenericErrorModal').click(function(){
@@ -242,7 +263,7 @@
             });
         });
     });
-
+    
     function formatDateWithDay(dateString) {
         const date = new Date(dateString);
         if (!isNaN(date.getTime())) {
@@ -252,5 +273,6 @@
             return 'Fecha Inválida';
         }
     }
+    
 </script>
 {% endblock %}

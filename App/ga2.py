@@ -341,7 +341,65 @@ class AlgoritmoGenetico:
                     'hora_fin': ""
                 }
                 mejor_horario.append(sust_data)
+        # Nueva validación para asignar horarios a las sustentaciones con "Fecha Inválida"
+        mejor_horario = self.asignar_horarios_a_sustentaciones_invalidas(mejor_horario)
         return mejor_horario
+
+    def asignar_horarios_a_sustentaciones_invalidas(self, mejor_horario):
+        sustentaciones_invalidas = [s for s in mejor_horario if not s['fecha'] or s['fecha'] == 'Fecha Inválida']
+        for sust in sustentaciones_invalidas:
+            reintentos = 0
+            while reintentos < 10:
+                fecha, hora_inicio, hora_fin = self.seleccionar_fecha_hora_sin_repetir_jurados(mejor_horario, sust['jurado1'], sust['jurado2'], sust['asesor'], sust['cursos_grupos'].curso)
+                if fecha and hora_inicio and hora_fin:
+                    sust['fecha'] = fecha
+                    sust['hora_inicio'] = hora_inicio
+                    sust['hora_fin'] = hora_fin
+                    break
+                reintentos += 1
+        return mejor_horario
+
+    def seleccionar_fecha_hora_sin_repetir_jurados(self, individuo, jurado1, jurado2, asesor, curso):
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(curso=curso, tipo_sustentacion=self.tipo_sustentacion)
+
+        for semana in semanas_sustentacion:
+            rango_fechas = self.generar_rango_fechas(semana.fecha_inicio, semana.fecha_fin)
+            for fecha in rango_fechas:
+                if fecha not in self.fechas_sustentacion:
+                    continue  # Saltar fechas no permitidas
+
+                disponibilidad_jurado1 = self.disponibilidad_profesores.get((jurado1.id, fecha), [])
+                disponibilidad_jurado2 = self.disponibilidad_profesores.get((jurado2.id, fecha), [])
+                disponibilidad_asesor = self.disponibilidad_profesores.get((asesor.id, fecha), [])
+
+                if disponibilidad_jurado1 and disponibilidad_jurado2 and disponibilidad_asesor:
+                    horarios_comunes = self.obtener_horas_comunes(disponibilidad_jurado1, disponibilidad_jurado2, disponibilidad_asesor, fecha)
+                    if horarios_comunes:
+                        for hora_inicio, hora_fin in horarios_comunes:
+                            if not self.hay_conflicto_horario_con_diferentes_jurados(individuo, fecha, hora_inicio, jurado1, jurado2, asesor) and self.validar_disponibilidad_total(fecha, hora_inicio, hora_fin, jurado1, jurado2, asesor):
+                                return fecha, hora_inicio, hora_fin
+                            ajuste = self.duracion_sustentacion
+                            for _ in range(4):
+                                nueva_hora_inicio_adelante = (datetime.combine(fecha, hora_inicio) + ajuste).time()
+                                nueva_hora_fin_adelante = (datetime.combine(fecha, hora_fin) + ajuste).time()
+                                if not self.hay_conflicto_horario_con_diferentes_jurados(individuo, fecha, nueva_hora_inicio_adelante, jurado1, jurado2, asesor) and self.validar_disponibilidad_total(fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante, jurado1, jurado2, asesor):
+                                    return fecha, nueva_hora_inicio_adelante, nueva_hora_fin_adelante
+                                nueva_hora_inicio_atras = (datetime.combine(fecha, hora_inicio) - ajuste).time()
+                                nueva_hora_fin_atras = (datetime.combine(fecha, hora_fin) - ajuste).time()
+                                if not self.hay_conflicto_horario_con_diferentes_jurados(individuo, fecha, nueva_hora_inicio_atras, jurado1, jurado2, asesor) and self.validar_disponibilidad_total(fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras, jurado1, jurado2, asesor):
+                                    return fecha, nueva_hora_inicio_atras, nueva_hora_fin_atras
+                                ajuste += self.duracion_sustentacion
+        return None, None, None
+
+    def hay_conflicto_horario_con_diferentes_jurados(self, individuo, fecha, hora_inicio, jurado1, jurado2, asesor):
+        for sustentacion in individuo:
+            if sustentacion['fecha'] == fecha and sustentacion['hora_inicio'] == hora_inicio:
+                if sustentacion['jurado1'] == jurado1 or sustentacion['jurado1'] == jurado2 or sustentacion['jurado1'] == asesor or \
+                sustentacion['jurado2'] == jurado1 or sustentacion['jurado2'] == jurado2 or sustentacion['jurado2'] == asesor or \
+                sustentacion['asesor'] == jurado1 or sustentacion['asesor'] == jurado2 or sustentacion['asesor'] == asesor:
+                    return True
+        return False
+
 def generar_horarios(tipo_sustentacion):
     cursos_grupos = Cursos_Grupos.objects.all()
     disponibilidad_profesores = {
