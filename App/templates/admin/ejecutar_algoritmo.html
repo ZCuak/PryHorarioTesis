@@ -93,7 +93,7 @@
                                 <tr class="{% if horario.fecha and horario.hora_inicio and horario.hora_fin %}table-success{% else %}table-danger{% endif %}">
                                     <td>{{ horario.sustentacion.cursos_grupos.curso }} - {{ horario.sustentacion.cursos_grupos.grupo }}</td>
                                     <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td>
-                                    <td>{{ horario.fecha_formateada }}</td> <!-- Usar fecha_formateada -->
+                                    <td>{{ horario.fecha_formateada|default:"Por asignar" }}</td> <!-- Usar fecha_formateada -->
                                     <td>{{ horario.hora_inicio|default:"Por asignar" }}</td>
                                     <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td>
                                     <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td>
@@ -250,14 +250,6 @@
             $('.modal-backdrop').remove();
         });
     
-        // Formatear las fechas con día de la semana
-        $('tbody tr').each(function() {
-            let $td = $(this).find('td').eq(2); // Indice 2 para la columna de fecha
-            let dateText = $td.text().trim();
-            if (dateText && dateText !== "Por asignar") {
-                $td.text(formatDateWithDay(dateText));
-            }
-        });
     
         // Implementar buscador
         $('#searchInput').on('keyup', function() {
@@ -268,15 +260,7 @@
         });
     });
     
-    function formatDateWithDay(dateString) {
-        const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
-            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-            return date.toLocaleDateString('es-ES', options);
-        } else {
-            return 'Fecha Inválida';
-        }
-    }
+   
     
 </script>
 {% endblock %}

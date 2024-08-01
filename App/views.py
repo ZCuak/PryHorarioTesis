@@ -7,7 +7,6 @@ from django.contrib.auth import logout
 from .models import Profesor, SemestreAcademico, Profile, Semestre_Academico_Profesores, Sustentacion, Estudiante, Cursos_Grupos, Curso, Grupo
 from django.contrib.admin.views.decorators import staff_member_required
 from .forms import ExcelUploadForm
-from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import transaction, DatabaseError
 import pandas as pd
@@ -20,14 +19,11 @@ from django.db import connection
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 # views.py
-from django.http import JsonResponse
 from .ga2 import generar_horarios, guardar_horario
 from .utils import send_whatsapp_message
-from django.http import JsonResponse
-from django.http import JsonResponse
+
 from django.views.decorators.http import require_http_methods
 
-from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.db.models import F
@@ -36,6 +32,8 @@ from django.utils.timezone import localtime
 
 from django.utils.timezone import localtime
 from datetime import timedelta
+from babel.dates import format_date
+# Establecer el locale a español
 @staff_member_required
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -55,19 +53,16 @@ def ejecutar_algoritmo(request):
 
         print("Tipo de sustentación:", tipo_sustentacion)
 
-        # Verificar que el tipo de sustentación sea válido
         if tipo_sustentacion not in ['FINAL', 'PARCIAL']:
             messages.error(request, "Seleccione el tipo de sustentación.")
             return redirect('ejecutar_algoritmo')
 
-        # Obtener el semestre actual
         semestre_actual = SemestreAcademico.objects.filter(vigencia=True).first()
 
         if not semestre_actual:
             messages.error(request, "No hay un semestre en vigencia.")
             return redirect('ejecutar_algoritmo')
 
-        # Verificar la disponibilidad de todos los profesores del semestre actual
         profesores_semestre_actual = Profesor.objects.filter(
             cursos_grupos__semestre=semestre_actual
         ).distinct()
@@ -93,7 +88,6 @@ def ejecutar_algoritmo(request):
             }
             return render(request, 'admin/ejecutar_algoritmo.html', context)
 
-        # Validar jurados asignados para sustentaciones finales
         if tipo_sustentacion == 'FINAL':
             sustentaciones_vigentes = Sustentacion.objects.filter(
                 cursos_grupos__semestre=semestre_actual
@@ -126,7 +120,6 @@ def ejecutar_algoritmo(request):
             for sustentacion in mejor_horario
         ]
 
-        # Ordenar mejor_horario_dict por curso, fecha y hora, colocando fechas inválidas al final
         mejor_horario_dict.sort(key=lambda x: (
             x['cursos_grupos']['curso'],
             x['fecha'] == 'Fecha Inválida',
@@ -142,7 +135,6 @@ def ejecutar_algoritmo(request):
         else:
             return redirect('mostrar_resultados')
 
-    # Obtener el semestre vigente actual
     semestre_actual = SemestreAcademico.objects.filter(vigencia=True).first()
 
     sustentaciones = Sustentacion.objects.all()
@@ -164,13 +156,13 @@ def ejecutar_algoritmo(request):
     ).select_related(
         'sustentacion'
     ).order_by(
-        'sustentacion__cursos_grupos__curso__nombre',
-        'sustentacion__cursos_grupos__grupo__nombre',
         'fecha',
-        'hora_inicio'
+        'sustentacion__cursos_grupos__curso__nombre'
     )
 
-    # Determinar el tipo de sustentación basado en las fechas
+    for horario in sustentaciones_con_horarios:
+        horario.fecha_formateada = formatear_fecha(horario.fecha)
+
     tipo_sustentacion_mostrado = ""
     fechas_sustentaciones = list(sustentaciones_con_horarios.values_list('fecha', flat=True).distinct())
     if fechas_sustentaciones:
@@ -191,7 +183,10 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
-
+def formatear_fecha(fecha):
+    if fecha:
+        return format_date(fecha, format='EEEE, dd/MM/yyyy', locale='es').capitalize()
+    return "Por asignar"
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])
