@@ -19,7 +19,7 @@ from django.db import connection
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 # views.py
-from .ga2 import generar_horarios, guardar_horario
+from .AlgorimoGenetico import generar_horarios, guardar_horario
 from .utils import send_whatsapp_message
 
 from django.views.decorators.http import require_http_methods
@@ -39,7 +39,12 @@ from babel.dates import format_date
 @require_http_methods(["GET", "POST"])
 def ejecutar_algoritmo(request):
     semestres = SemestreAcademico.objects.all()
-    cursos_grupos = Cursos_Grupos.objects.all()
+    semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+    if not semestre_vigente:
+        print("No hay semestre vigente.")
+        return []  # O alguna otra acción en caso de no haber semestre vigente
+
+    cursos_grupos = Cursos_Grupos.objects.filter(semestre=semestre_vigente)
     semestre_id = request.GET.get('semestre')
     tipo_sustentacion = request.GET.get('tipo_sustentacion')
     curso_grupo_id = request.GET.get('curso_grupo')
@@ -103,7 +108,7 @@ def ejecutar_algoritmo(request):
                 mejor_horario = generar_horarios(tipo_sustentacion)
                 guardar_horario(mejor_horario)  # Guardar el horario en la base de datos
         except Exception as e:
-            messages.error(request, f"Error durante la ejecución del algoritmo: {str(e)}")
+            messages.error(request, f"Error durante la ejecución del algoritmo: revisar que haya registrada semanas de sustentacion para este tipo de sustentacion en el semestre actual, tambien disponibilidad de los docentes, sustentaciones, etc")
             return redirect('ejecutar_algoritmo')
 
         mejor_horario_dict = [
@@ -139,7 +144,7 @@ def ejecutar_algoritmo(request):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'mejor_horario': mejor_horario_dict})
         else:
-            return redirect('mostrar_resultados')
+            return redirect('ejecutar_algoritmo')
 
     semestre_actual = SemestreAcademico.objects.filter(vigencia=True).first()
 
@@ -163,6 +168,7 @@ def ejecutar_algoritmo(request):
         'sustentacion'
     ).order_by(
         'fecha',
+        'hora_inicio',
         'sustentacion__cursos_grupos__curso__nombre'
     )
 
@@ -195,20 +201,6 @@ def formatear_fecha(fecha):
         return format_date(fecha, format='EEEE, dd/MM/yyyy', locale='es').capitalize()
     return "Por asignar"
 
-@staff_member_required
-def mostrar_resultados(request):
-    mejor_horario = request.session.get('mejor_horario', [])
-    tipo_sustentacion = request.session.get('tipo_sustentacion', '')
-    tipo_sustentacion_mostrado = request.session.get('tipo_sustentacion_mostrado', '')
-    if mejor_horario:
-        return render(request, 'admin/resultado_algoritmo.html', {
-            'mejor_horario': mejor_horario,
-            'tipo_sustentacion': tipo_sustentacion,
-            'tipo_sustentacion_mostrado': tipo_sustentacion_mostrado,
-        })
-    else:
-        messages.error(request, "No hay resultados del algoritmo para mostrar.")
-        return redirect('ejecutar_algoritmo')
 
 @staff_member_required
 def guardar_horarios(request):
@@ -316,11 +308,29 @@ class UserPasswordChangeView(PasswordChangeView):
 # Jurados views
 @staff_member_required
 def jurados_list(request):
-    jurados = Semestre_Academico_Profesores.objects.all()
+    semestres = SemestreAcademico.objects.all().order_by('-vigencia', 'nombre')
+    semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+
+    # Obtener el semestre seleccionado de los parámetros de la solicitud
+    selected_semestre_id = request.GET.get('semestre', semestre_vigente.id if semestre_vigente else None)
+
+    # Filtrar los jurados por el semestre seleccionado
+    jurados = Semestre_Academico_Profesores.objects.filter(semestre_id=selected_semestre_id)
+
     query = request.GET.get('q')
     if query:
         jurados = jurados.filter(profesor__apellidos_nombres__icontains=query)
-    return render(request, 'admin/jurados_list.html', {'jurados': jurados})
+
+    context = {
+        'jurados': jurados,
+        'semestres': semestres,
+        'selected_semestre_id': int(selected_semestre_id) if selected_semestre_id else None,
+        'semestre_vigente': semestre_vigente,
+    }
+
+    return render(request, 'admin/jurados_list.html', context)
+
+
 
 @staff_member_required
 @transaction.atomic
@@ -594,14 +604,14 @@ def estudiantes_import(request, curso_grupo_id):
 
 
 
-#Semestres form
 @staff_member_required
 def semestre_list(request):
-    semestres = SemestreAcademico.objects.all()
+    semestres = SemestreAcademico.objects.all().order_by('-vigencia', 'nombre')
     query = request.GET.get('q')
     if query:
         semestres = semestres.filter(nombre__icontains=query)
     return render(request, 'admin/semestre_list.html', {'semestres': semestres})
+
 
 @staff_member_required
 def semestre_create(request):

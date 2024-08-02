@@ -80,9 +80,10 @@
                             <thead> 
                                 <tr> 
                                     <th>Curso - Grupo</th> 
-                                    <th>Apellidos y Nombres Estudiante</th> 
+                                    <th>Estudiante</th> 
                                     <th>Día</th> 
-                                    <th>Hora</th>
+                                    <th>Hora Inicio</th>
+                                    <th>Hora Fin</th>
                                     <th>Asesor</th>
                                     <th>Jurado 1</th>
                                     <th>Jurado 2</th>
@@ -96,10 +97,17 @@
                                     <td>{{ horario.sustentacion.estudiante.apellidos_nombres }}</td>
                                     <td>{{ horario.fecha_formateada|default:"Por asignar" }}</td> <!-- Usar fecha_formateada -->
                                     <td>{{ horario.hora_inicio|default:"Por asignar" }}</td>
+                                    <td>{{ horario.hora_fin|default:"Por asignar" }}</td>
                                     <td>{{ horario.sustentacion.asesor.apellidos_nombres }}</td>
                                     <td>{{ horario.sustentacion.jurado1.apellidos_nombres }}</td>
                                     <td>{{ horario.sustentacion.jurado2.apellidos_nombres }}</td>
-                                    <td><a href="{% url 'editar_sustentacion' horario.sustentacion.id %}" class="btn btn-primary">Editar</a></td>
+                                    <td style="text-align: center;">
+                                        <a href="{% url 'editar_sustentacion' horario.sustentacion.id %}">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                    </td>
+                                    
+
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -109,6 +117,7 @@
                     <style>
                         .table-success {
                             background-color: #d4edda !important;
+                            height: 10px;
                         }
                     </style>
                 </div> 

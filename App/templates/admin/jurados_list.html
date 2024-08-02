@@ -6,16 +6,28 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header pb-0">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
                     <h6>Jurados</h6>
-                    <a class="btn btn-primary" href="{% url 'jurados_create' %}">Crear Jurado</a>
-                    <a class="btn btn-success" href="{% url 'jurados_import' %}">Importar Profesores</a>
+                    <div>
+                        <a class="btn btn-primary" href="{% url 'jurados_create' %}">Crear Jurado</a>
+                        <a class="btn btn-success" href="{% url 'jurados_import' %}">Importar Profesores</a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <form method="get">
-                        <input type="text" name="q" class="form-control" placeholder="Buscar por nombre...">
+                    <form method="get" class="form-inline mb-3">
+                        <div class="form-group mr-3">
+                            <label for="semestre" class="mr-2">Semestre:</label>
+                            <select name="semestre" id="semestre" class="form-control" style="width: 250px;" onchange="this.form.submit()">
+                                {% for semestre in semestres %}
+                                    <option value="{{ semestre.id }}" {% if semestre.id == selected_semestre_id %}selected{% endif %}>{{ semestre.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="input-group flex-grow-1">
+                            <input type="text" name="q" id="searchInput" class="form-control" placeholder="Buscar por nombre..." value="{{ request.GET.q }}">
+                        </div>
                     </form>
-                    <table class="table">
+                    <table class="table table-striped" id="juradosTable">
                         <thead>
                             <tr>
                                 <th>Semestre</th>
@@ -31,8 +43,8 @@
                                     <td>{{ jurado.profesor.apellidos_nombres }}</td>
                                     <td>{{ jurado.horas_asesoria_semanal }}</td>
                                     <td>
-                                        <a href="{% url 'jurados_update' jurado.pk %}" class="btn btn-warning">Editar</a>
-                                        <a href="{% url 'jurados_delete' jurado.pk %}" class="btn btn-danger">Eliminar</a>
+                                        <a href="{% url 'jurados_update' jurado.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                                        <a href="{% url 'jurados_delete' jurado.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -43,4 +55,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#juradosTable tbody tr');
+        rows.forEach(row => {
+            const semestre = row.children[0].innerText.toLowerCase();
+            const profesor = row.children[1].innerText.toLowerCase();
+            const horas = row.children[2].innerText.toLowerCase();
+            if (semestre.includes(filter) || profesor.includes(filter) || horas.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
 {% endblock %}
