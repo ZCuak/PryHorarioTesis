@@ -97,8 +97,14 @@ def ejecutar_algoritmo(request):
                 if not (sustentacion.jurado1 and sustentacion.jurado2 and sustentacion.asesor):
                     messages.error(request, "Primero se deben de generar las sustentaciones parciales y que todas las sustentaciones tengan jurados asignados")
                     return redirect('ejecutar_algoritmo')
-
-        mejor_horario = generar_horarios(tipo_sustentacion)
+        try:
+            mejor_horario = []
+            for _ in range(4):  # Ejecutar 4 veces consecutivas
+                mejor_horario = generar_horarios(tipo_sustentacion)
+                guardar_horario(mejor_horario)  # Guardar el horario en la base de datos
+        except Exception as e:
+            messages.error(request, f"Error durante la ejecución del algoritmo: {str(e)}")
+            return redirect('ejecutar_algoritmo')
 
         mejor_horario_dict = [
             {
@@ -183,10 +189,12 @@ def ejecutar_algoritmo(request):
     }
 
     return render(request, 'admin/ejecutar_algoritmo.html', context)
+
 def formatear_fecha(fecha):
     if fecha:
         return format_date(fecha, format='EEEE, dd/MM/yyyy', locale='es').capitalize()
     return "Por asignar"
+
 @staff_member_required
 def mostrar_resultados(request):
     mejor_horario = request.session.get('mejor_horario', [])

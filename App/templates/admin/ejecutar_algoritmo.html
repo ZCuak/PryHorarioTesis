@@ -29,16 +29,21 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="form-group "> 
+                    <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label> 
+                    <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg"> 
+                        <option value="PARCIAL" {% if tipo_sustentacion == 'PARCIAL' %}selected{% endif %}>Parcial</option> 
+                        <option value="FINAL" {% if tipo_sustentacion == 'FINAL' %}selected{% endif %}>Final</option> 
+                    </select> 
+                </div> 
+                <form method="post" id="ejecutarAlgoritmoForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo_sustentacion" id="hidden_tipo_sustentacion" value="{{ tipo_sustentacion }}">
+                    <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button>
+                </form>
                     <form method="get" class="mb-3 form-row"> 
 
-                        <div class="form-group col mr-3"> 
-                            <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label> 
-                            <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg"> 
-                                <option value="">Todos</option> 
-                                <option value="PARCIAL" {% if tipo_sustentacion == 'PARCIAL' %}selected{% endif %}>Parcial</option> 
-                                <option value="FINAL" {% if tipo_sustentacion == 'FINAL' %}selected{% endif %}>Final</option> 
-                            </select> 
-                        </div> 
                         <div class="form-group col mr-3"> 
                             <label for="curso_grupo">Curso - Grupo</label> 
                             <select name="curso_grupo" id="curso_grupo" class="form-control"> 
@@ -65,11 +70,7 @@
                             <button type="button" class="btn btn-success mt-4" id="enviar-notificaciones">Notificar</button> 
                         </div> 
                     </form> 
-                    <form method="post" id="ejecutarAlgoritmoForm">
-                        {% csrf_token %}
-                        <input type="hidden" name="tipo_sustentacion" id="hidden_tipo_sustentacion" value="{{ tipo_sustentacion }}">
-                        <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button>
-                    </form>
+
                     <h6>Listado de Sustentaciones - {{ tipo_sustentacion_mostrado }}</h6> 
                     <div class="mb-3">
                         <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">

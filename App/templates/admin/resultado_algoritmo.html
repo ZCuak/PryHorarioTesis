@@ -13,10 +13,6 @@
                 <div class="row justify-content-center">
                     <div class="col-12 col-md-6">
                         <div class="d-flex justify-content-between">
-                            <form method="post" action="{% url 'guardar_horarios' %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success mt-3">Guardar Horarios</button>
-                            </form>
                             <a href="javascript:history.back()" class="btn btn-secondary mt-3">Regresar</a>
                             <button id="reloadAlgoritmo" class="btn btn-primary mt-3" data-tipo-sustentacion="{{ tipo_sustentacion }}">Recargar Algoritmo</button>
                         </div>

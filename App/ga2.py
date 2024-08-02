@@ -70,6 +70,7 @@ class AlgoritmoGenetico:
                         }
                         individuo.append(sust_data)
         return individuo
+
     def asignar_jurados(self, sustentacion, curso_grupo):
         profesores = Profesor.objects.filter(
             semestre_academico_profesores__semestre=curso_grupo.semestre,
@@ -77,10 +78,16 @@ class AlgoritmoGenetico:
         ).distinct()
 
         profesores = profesores.exclude(id=sustentacion.asesor.id)  # Excluir al asesor de los posibles jurados
+        print(profesores,  sustentacion)
+        if not profesores.exists():
+            return
+        else:
+            jurado1 = sustentacion.jurado1 if sustentacion.jurado1 else random.choice(profesores)
+            jurado2 = sustentacion.jurado2 if sustentacion.jurado2 else random.choice([p for p in profesores if p != jurado1])
 
-        jurado1 = sustentacion.jurado1 if sustentacion.jurado1 else random.choice(profesores)
-        jurado2 = sustentacion.jurado2 if sustentacion.jurado2 else random.choice([p for p in profesores if p != jurado1])
         return jurado1, jurado2
+
+
 
     def asignar_profesor(self, curso_grupo, exclude=[]):
         profesores = Profesor.objects.filter(
@@ -151,7 +158,9 @@ class AlgoritmoGenetico:
                         return True
         return False
     def seleccionar_fecha_hora(self, individuo, jurado1, jurado2, asesor, curso):
-        semanas_sustentacion = Semana_Sustentacion.objects.filter(curso=curso, tipo_sustentacion=self.tipo_sustentacion)
+        semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(curso=curso, tipo_sustentacion=self.tipo_sustentacion, semestre_academico=semestre_vigente)
 
         for semana in semanas_sustentacion:
             rango_fechas = self.generar_rango_fechas(semana.fecha_inicio, semana.fecha_fin)
@@ -292,12 +301,21 @@ class AlgoritmoGenetico:
 
 
     def obtener_sustentaciones_no_incluidas(self, mejor_horario):
+        semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+        if not semestre_vigente:
+            print("No hay semestre vigente.")
+            return Sustentacion.objects.none()  # Devolver un queryset vacío si no hay semestre vigente
+
         ids_incluidos = {(sust['cursos_grupos'].id, sust['estudiante'].id) for sust in mejor_horario}
-        sustentaciones_no_incluidas = Sustentacion.objects.exclude(
+        
+        sustentaciones_no_incluidas = Sustentacion.objects.filter(
+            cursos_grupos__semestre=semestre_vigente
+        ).exclude(
             models.Q(cursos_grupos_id__in=[sust['cursos_grupos'].id for sust in mejor_horario]) &
             models.Q(estudiante_id__in=[sust['estudiante'].id for sust in mejor_horario])
         )
         return sustentaciones_no_incluidas
+
 
     def asignar_horario_y_jurados(self, mejor_horario, sustentacion):
         # Asignar jurados si no están asignados
@@ -390,7 +408,9 @@ class AlgoritmoGenetico:
 
 
     def seleccionar_fecha_hora_sin_repetir_jurados(self, individuo, jurado1, jurado2, asesor, curso):
-        semanas_sustentacion = Semana_Sustentacion.objects.filter(curso=curso, tipo_sustentacion=self.tipo_sustentacion)
+        semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(curso=curso, tipo_sustentacion=self.tipo_sustentacion, semestre_academico=semestre_vigente)
 
         for semana in semanas_sustentacion:
             rango_fechas = self.generar_rango_fechas(semana.fecha_inicio, semana.fecha_fin)
@@ -429,41 +449,45 @@ class AlgoritmoGenetico:
                 sustentacion['asesor'] == jurado1 or sustentacion['asesor'] == jurado2 or sustentacion['asesor'] == asesor:
                     return True
         return False
-
-
 def generar_horarios(tipo_sustentacion):
-    cursos_grupos = Cursos_Grupos.objects.all()
-    disponibilidad_profesores = {
-        (disp.profesor.id, disp.fecha): list(Profesores_Semestre_Academico.objects.filter(profesor=disp.profesor, fecha=disp.fecha))
-        for disp in Profesores_Semestre_Academico.objects.all()
-    }
-    semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion)  # Filtrar solo las semanas de sustentación según tipo
+    try:
+        semestre_vigente = SemestreAcademico.objects.filter(vigencia=True).first()
+        cursos_grupos = Cursos_Grupos.objects.filter(semestre=semestre_vigente)
+        disponibilidad_profesores = {
+            (disp.profesor.id, disp.fecha): list(Profesores_Semestre_Academico.objects.filter(profesor=disp.profesor, fecha=disp.fecha, semestre=semestre_vigente))
+            for disp in Profesores_Semestre_Academico.objects.filter(semestre=semestre_vigente)
+        }
 
-    # Obtener las fechas de sustentación de las semanas
-    fechas_sustentacion = []
-    duracion_sustentacion = None
-    for semana in semanas_sustentacion:
-        rango_fechas = generar_rango_fechas(semana.fecha_inicio, semana.fecha_fin)
-        fechas_sustentacion.extend(rango_fechas)
-        if not duracion_sustentacion:
-            duracion_sustentacion = timedelta(minutes=semana.duracion_sustentacion)
-            
-    # Generar 3 horarios y comparar los resultados
-    mejores_horarios = []
-    print(tipo_sustentacion)
-    for _ in range(30):
+        semanas_sustentacion = Semana_Sustentacion.objects.filter(tipo_sustentacion=tipo_sustentacion, semestre_academico=semestre_vigente)  # Filtrar solo las semanas de sustentación según tipo
+
+        # Obtener las fechas de sustentación de las semanas
+        fechas_sustentacion = []
+        duracion_sustentacion = None
+        for semana in semanas_sustentacion:
+            rango_fechas = generar_rango_fechas(semana.fecha_inicio, semana.fecha_fin)
+            fechas_sustentacion.extend(rango_fechas)
+            if not duracion_sustentacion:
+                duracion_sustentacion = timedelta(minutes=semana.duracion_sustentacion)
+                
+        # Generar 3 horarios y comparar los resultados
+        mejores_horarios = []
+        for _ in range(3):
+            ag = AlgoritmoGenetico(poblacion_size=2, generaciones=1, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
+            mejor_horario = ag.ejecutar()
+            mejores_horarios.append(mejor_horario)
+
+        # Seleccionar el horario más extenso
+        mejor_horario = max(mejores_horarios, key=len)
+
+        # Agregar sustentaciones no incluidas
         ag = AlgoritmoGenetico(poblacion_size=2, generaciones=1, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
-        mejor_horario = ag.ejecutar()
-        mejores_horarios.append(mejor_horario)
+        mejor_horario = ag.agregar_sustentaciones_no_incluidas(mejor_horario)
 
-    # Seleccionar el horario más extenso
-    mejor_horario = max(mejores_horarios, key=len)
+        return mejor_horario
+    except Exception as e:
+        print(f"Error en generar_horarios: {e}")
+        raise
 
-    # Agregar sustentaciones no incluidas
-    ag = AlgoritmoGenetico(poblacion_size=2, generaciones=1, cursos_grupos=cursos_grupos, disponibilidad_profesores=disponibilidad_profesores, fechas_sustentacion=fechas_sustentacion, tipo_sustentacion=tipo_sustentacion, duracion_sustentacion=duracion_sustentacion)
-    mejor_horario_completo = ag.agregar_sustentaciones_no_incluidas(mejor_horario)
-
-    return mejor_horario_completo
 def generar_rango_fechas(fecha_inicio, fecha_fin):
     delta = fecha_fin - fecha_inicio
     return [fecha_inicio + timedelta(days=i) for i in range(delta.days + 1)]
@@ -476,12 +500,13 @@ def guardar_horario(mejor_horario):
 
             for sustentacion_data in mejor_horario:
                 try:
-                    curso = Curso.objects.get(nombre=sustentacion_data['cursos_grupos']['curso'])
-                    grupo = Grupo.objects.get(nombre=sustentacion_data['cursos_grupos']['grupo'])
-                    semestre = SemestreAcademico.objects.get(nombre=sustentacion_data['cursos_grupos']['semestre'])
+                    cursos_grupos = sustentacion_data['cursos_grupos']
+                    curso = cursos_grupos.curso
+                    grupo = cursos_grupos.grupo
+                    semestre = cursos_grupos.semestre
 
-                    cursos_grupos = Cursos_Grupos.objects.get_or_create(
-                        curso=curso, grupo=grupo, semestre=semestre)[0]
+                    cursos_grupos, created = Cursos_Grupos.objects.get_or_create(
+                        curso=curso, grupo=grupo, semestre=semestre)
 
                     estudiante = Estudiante.objects.get(apellidos_nombres=sustentacion_data['estudiante'])
                     jurado1 = Profesor.objects.get(apellidos_nombres=sustentacion_data['jurado1']) if sustentacion_data['jurado1'] else None
@@ -507,7 +532,7 @@ def guardar_horario(mejor_horario):
                         # Verificar si el semestre es el vigente
                         if sustentacion_existente.cursos_grupos.semestre == semestre_vigente:
                             # Asignar fecha y horas, usando None para fechas inválidas
-                            fecha = sustentacion_data['fecha'] if sustentacion_data['fecha'] != 'Fecha Inválida' else None
+                            fecha = sustentacion_data['fecha'] if sustentacion_data['fecha'] and sustentacion_data['fecha'] != 'Fecha Inválida' else None
                             hora_inicio = sustentacion_data['hora_inicio'] if sustentacion_data['hora_inicio'] else None
                             hora_fin = sustentacion_data['hora_fin'] if sustentacion_data['hora_fin'] else None
 
@@ -530,6 +555,9 @@ def guardar_horario(mejor_horario):
 
                 except Profesor.DoesNotExist as e:
                     print(f"Error: {str(e)} - Profesor no encontrado. Detalles: {sustentacion_data}")
+                    continue
+                except ValueError as e:
+                    print(f"Error: {str(e)} - Fecha u hora inválida. Detalles: {sustentacion_data}")
                     continue
     except Exception as e:
         raise RuntimeError(f"Error al guardar horarios: {str(e)}")
