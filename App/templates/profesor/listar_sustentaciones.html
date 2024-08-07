@@ -23,24 +23,34 @@
             <thead>
                 <tr class="text-center">
                     <th>Curso</th>
-                    <th>Grupo</th>
-                    <th>Código Universitario</th>
-                    <th>Estudiante</th>
+                    <th>Tipo Sustentacion</th>
                     <th>Fecha</th>
+                    <th>Estudiante</th>
+                    <th>Semana Inicio</th>
+                    <th>Semana Fin</th>
                     <th>Hora Inicio</th>
-                    <th>Título</th>
+                    <th>Hora Fin</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in data %}
                     <tr>
-                        <td>{{ row.curso }}</td>
+                        <!-- <td>{{ row.curso }}</td>
                         <td>{{ row.grupo }}</td>
                         <td>{{ row.codigo_universitario }}</td>
                         <td>{{ row.estudiante }}</td>
                         <td>{{ row.fecha }}</td>
                         <td>{{ row.hora_inicio }}</td>
-                        <td>{{ row.titulo }}</td>
+                        <td>{{ row.titulo }}</td> -->
+                        <td>{{ row.id_su }}</td>
+                        <td>{{ row.curso }}</td>
+                        <td>{{ row.tipo_sustentacion }}</td>
+                        <td>{{ row.fecha }}</td>
+                        <td>{{ row.estudiante }}</td>
+                        <td>{{ row.semana_inicio }}</td>
+                        <td>{{ row.semana_fin }}</td>
+                        <td>{{ row.hora_inicio }}</td>
+                        <td>{{ row.hora_fin }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

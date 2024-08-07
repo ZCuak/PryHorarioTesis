@@ -896,10 +896,6 @@ from openpyxl.utils import get_column_letter
 #Reporte 1: Sustentaciones
 
 def reporte_sustentaciones(request):
-    semestre = request.GET.get('semestre', '')
-    tipo_sustentacion = request.GET.get('tipo_sustentacion', '')
-    nombre_estudiante = request.GET.get('nombre_estudiante', '')
-    codigo_estudiante = request.GET.get('codigo_estudiante', '')
     fecha = request.GET.get('fecha', '')
     
     # Obtener la lista de semestres
@@ -907,7 +903,6 @@ def reporte_sustentaciones(request):
 
     sql = """
     SELECT 
-    appsa.nombre as semestre,
     appc.nombre as curso,
     appg.nombre as grupo,
     appe.codigo_universitario, 
@@ -915,7 +910,6 @@ def reporte_sustentaciones(request):
     appe.email as email_estudiante,
     appe.telefono as telefono_estudiante,
     appc.nombre as curso,
-    appss.tipo_sustentacion,
     app1.apellidos_nombres as jurado1,
     app2.apellidos_nombres as jurado2,
     app3.apellidos_nombres as asesor,
@@ -928,32 +922,14 @@ def reporte_sustentaciones(request):
     INNER JOIN app_curso appc on appc.id=appcg.curso_id
     INNER JOIN app_grupo appg on appg.id=appcg.grupo_id
     INNER JOIN app_estudiante appe on appe.id=apps.estudiante_id
-    INNER JOIN app_profesor app1 on app1.id=apps.jurado1_id
-    INNER JOIN app_profesor app2 on app2.id=apps.jurado2_id
-    INNER JOIN app_profesor app3 on app3.id=apps.asesor_id
+    LEFT JOIN app_profesor app1 on app1.id=apps.jurado1_id
+    LEFT JOIN app_profesor app2 on app2.id=apps.jurado2_id
+    LEFT JOIN app_profesor app3 on app3.id=apps.asesor_id
     INNER JOIN app_horario_sustentaciones apphs on apphs.sustentacion_id=apps.id
-    INNER JOIN app_semana_sustentacion appss on appss.curso_id=appc.id
-    INNER JOIN app_semestreacademico appsa ON appsa.id=appss.semestre_academico_id
     WHERE 1=1
     """
 
     params = []
-    
-    if semestre:
-        sql += " AND appsa.nombre = %s"
-        params.append(semestre)
-    
-    if tipo_sustentacion:
-        sql += " AND appss.tipo_sustentacion = %s"
-        params.append(tipo_sustentacion)
-    
-    if nombre_estudiante:
-        sql += " AND appe.apellidos_nombres LIKE %s"
-        params.append(f'%{nombre_estudiante}%')
-    
-    if codigo_estudiante:
-        sql += " AND appe.codigo_universitario = %s"
-        params.append(codigo_estudiante)
     
     if fecha:
         sql += " AND apphs.fecha = %s"
@@ -971,12 +947,7 @@ def reporte_sustentaciones(request):
 
     context = {
         'data': data,
-        'semestre': semestre,
-        'tipo_sustentacion': tipo_sustentacion,
-        'nombre_estudiante': nombre_estudiante,
-        'codigo_estudiante': codigo_estudiante,
         'fecha': fecha,
-        'semestres': semestres,  # Pasar los semestres al contexto
     }
 
     return render(request, 'admin/reporte_sustentaciones.html', context)
@@ -984,15 +955,10 @@ def reporte_sustentaciones(request):
 
 
 def exportar_csv(request):
-    semestre = request.GET.get('semestre')
-    tipo_sustentacion = request.GET.get('tipo_sustentacion')
-    nombre_estudiante = request.GET.get('nombre_estudiante')
-    codigo_estudiante = request.GET.get('codigo_estudiante')
     fecha = request.GET.get('fecha')
     
     sql = """
     SELECT 
-    appsa.nombre as semestre,
     appc.nombre as curso,
     appg.nombre as grupo,
     appe.codigo_universitario, 
@@ -1000,7 +966,6 @@ def exportar_csv(request):
     appe.email as email_estudiante,
     appe.telefono as telefono_estudiante,
     appc.nombre as curso,
-    appss.tipo_sustentacion,
     app1.apellidos_nombres as jurado1,
     app2.apellidos_nombres as jurado2,
     app3.apellidos_nombres as asesor,
@@ -1013,32 +978,15 @@ def exportar_csv(request):
     INNER JOIN app_curso appc on appc.id=appcg.curso_id
     INNER JOIN app_grupo appg on appg.id=appcg.grupo_id
     INNER JOIN app_estudiante appe on appe.id=apps.estudiante_id
-    INNER JOIN app_profesor app1 on app1.id=apps.jurado1_id
-    INNER JOIN app_profesor app2 on app2.id=apps.jurado2_id
-    INNER JOIN app_profesor app3 on app3.id=apps.asesor_id
+    LEFT JOIN app_profesor app1 on app1.id=apps.jurado1_id
+    LEFT JOIN app_profesor app2 on app2.id=apps.jurado2_id
+    LEFT JOIN app_profesor app3 on app3.id=apps.asesor_id
     INNER JOIN app_horario_sustentaciones apphs on apphs.sustentacion_id=apps.id
-    INNER JOIN app_semana_sustentacion appss on appss.curso_id=appc.id
-    INNER JOIN app_semestreacademico appsa ON appsa.id=appss.semestre_academico_id
     WHERE 1=1
     """
 
     params = []
-    
-    if semestre:
-        sql += " AND appsa.nombre = %s"
-        params.append(semestre)
-    
-    if tipo_sustentacion:
-        sql += " AND appss.tipo_sustentacion = %s"
-        params.append(tipo_sustentacion)
-    
-    if nombre_estudiante:
-        sql += " AND appe.apellidos_nombres LIKE %s"
-        params.append(f'%{nombre_estudiante}%')
-    
-    if codigo_estudiante:
-        sql += " AND appe.codigo_universitario = %s"
-        params.append(codigo_estudiante)
+
     
     if fecha:
         sql += " AND apphs.fecha = %s"
@@ -1101,24 +1049,31 @@ def listar_sustentaciones(request):
         profesor_id = cursor.fetchone()[0]
 
     sql = """
-    SELECT 
-        appc.nombre AS curso,
-        appg.nombre AS grupo,
-        appe.codigo_universitario,
-        appe.apellidos_nombres AS estudiante,
-        apphs.fecha,
-        apphs.hora_inicio,
-        apps.titulo
-    FROM app_sustentacion apps
-    INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
-    LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
-    LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
-    LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
-    INNER JOIN app_cursos_grupos appcg ON apps.cursos_grupos_id = appcg.id
-    INNER JOIN app_curso appc ON appc.id = appcg.curso_id
-    INNER JOIN app_grupo appg ON appg.id = appcg.grupo_id
-    INNER JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
-    WHERE apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s
+        SELECT 
+    MAX(apps.id) as id_su,
+    appc.nombre AS curso,
+    appe.codigo_universitario,
+    appe.apellidos_nombres AS estudiante,
+    MAX(appss.tipo_sustentacion) as tipo_sustentacion,
+    MAX(appss.semana_inicio) as semana_inicio,
+    MAX(appss.semana_fin) as semana_fin,
+    MAX(apphs.fecha) as fecha,
+    MAX(apphs.hora_inicio) as hora_inicio,
+    MAX(apphs.hora_fin) as hora_fin,
+    MAX(apps.titulo) as titulo
+FROM app_semana_sustentacion appss
+INNER JOIN app_semestreacademico appsa on appsa.id = appss.semestre_academico_id
+INNER JOIN app_curso appc ON appc.id = appss.curso_id
+INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
+INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
+RIGHT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+WHERE appsa.vigencia = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s)
+GROUP BY appc.nombre, appe.codigo_universitario, appe.apellidos_nombres
+      
     """
 
     with connection.cursor() as cursor:
@@ -1364,28 +1319,31 @@ def listar_compensacion_horas(request):
 
     sql = """
     SELECT 
-        appss.compensan_horas,
-        appss.duracion_sustentacion,
-        appc.nombre AS curso,
-        appe.codigo_universitario,
-        appe.apellidos_nombres AS estudiante,
-        appss.semana_inicio,
-        appss.semana_fin,
-        apphs.fecha,
-        apphs.hora_inicio,
-        apphs.hora_fin,
-        apps.titulo
-    FROM app_semana_sustentacion appss
-    INNER JOIN app_semestreacademico appsa on appsa.id=appss.semestre_academico_id
-    INNER JOIN app_curso appc ON appc.id = appss.curso_id
-    INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
-    INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
-    RIGHT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
-    INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
-    LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
-    LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
-    LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
-    WHERE appss.compensan_horas = TRUE AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s) AND appsa.vigencia=TRUE
+    MAX(appss.compensan_horas) AS compensan_horas,
+    MAX(appss.duracion_sustentacion) AS duracion_sustentacion,
+    appc.nombre AS curso,
+    appe.codigo_universitario,
+    appe.apellidos_nombres AS estudiante,
+    MAX(appss.semana_inicio) AS semana_inicio,
+    MAX(appss.semana_fin) AS semana_fin,
+    MAX(apphs.fecha) AS fecha,
+    MAX(apphs.hora_inicio) AS hora_inicio,
+    MAX(apphs.hora_fin) AS hora_fin,
+    MAX(apps.titulo) AS titulo
+FROM app_semana_sustentacion appss
+INNER JOIN app_semestreacademico appsa ON appsa.id = appss.semestre_academico_id
+INNER JOIN app_curso appc ON appc.id = appss.curso_id
+INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
+INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
+RIGHT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+WHERE appss.compensan_horas = TRUE 
+    AND (apps.jurado1_id = %s OR apps.jurado2_id = %s OR apps.asesor_id = %s) 
+    AND appsa.vigencia = TRUE
+GROUP BY appc.nombre, appe.codigo_universitario, appe.apellidos_nombres
     """
 
     with connection.cursor() as cursor:
@@ -1486,42 +1444,33 @@ from .models import Profesor
 def lista_sustentaciones(request):
     query = """
         SELECT 
-            appss.compensan_horas,
-            appss.duracion_sustentacion,
-            appc.nombre AS curso,
-            appss.semana_inicio,
-            appss.semana_fin,
-            apphs.fecha,
-            apphs.hora_inicio,
-            apphs.hora_fin,
-            apps.titulo,
-            app1.apellidos_nombres as jurado_1,
-            app2.apellidos_nombres as jurado_2,
-            app3.apellidos_nombres as asesor
-        FROM app_semana_sustentacion appss
-        INNER JOIN app_semestreacademico appsa on appsa.id=appss.semestre_academico_id
-        INNER JOIN app_curso appc ON appc.id = appss.curso_id
-        INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
-        INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
-        LEFT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
-        INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
-        LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
-        LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
-        LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
-        WHERE appsa.vigencia=TRUE
+    MAX(appss.compensan_horas) as compensan_horas,
+    MAX(appss.duracion_sustentacion) as duracion_sustentacion,
+    appc.nombre AS curso,
+    MAX(appss.semana_inicio) as semana_inicio,
+    MAX(appss.semana_fin) as semana_fin,
+    MAX(apphs.fecha) as fecha,
+    MAX(apphs.hora_inicio) as hora_inicio,
+    MAX(apphs.hora_fin) as hora_fin,
+    MAX(apps.titulo) as titulo,
+    MAX(app1.apellidos_nombres) as jurado_1,
+    MAX(app2.apellidos_nombres) as jurado_2,
+    MAX(app3.apellidos_nombres) as asesor
+FROM app_semana_sustentacion appss
+INNER JOIN app_semestreacademico appsa ON appsa.id = appss.semestre_academico_id
+INNER JOIN app_curso appc ON appc.id = appss.curso_id
+INNER JOIN app_cursos_grupos appcg ON appss.curso_id = appcg.curso_id
+INNER JOIN app_sustentacion apps ON apps.cursos_grupos_id = appcg.id
+LEFT JOIN app_horario_sustentaciones apphs ON apphs.sustentacion_id = apps.id
+INNER JOIN app_estudiante appe ON appe.id = apps.estudiante_id
+LEFT JOIN app_profesor app1 ON app1.id = apps.jurado1_id
+LEFT JOIN app_profesor app2 ON app2.id = apps.jurado2_id
+LEFT JOIN app_profesor app3 ON app3.id = apps.asesor_id
+WHERE appsa.vigencia = TRUE
+GROUP BY appc.nombre, appe.codigo_universitario, appe.apellidos_nombres
     """
     
     params = []
-    
-    if 'compensan_horas' in request.GET and request.GET['compensan_horas']:
-        query += " AND appss.compensan_horas=%s"
-        params.append(request.GET['compensan_horas'] == 'True')
-    
-    if 'profesor' in request.GET and request.GET['profesor']:
-        query += """
-            AND (%s IN (apps.jurado1_id, apps.jurado2_id, apps.asesor_id))
-        """
-        params.append(request.GET['profesor'])
     
     with connection.cursor() as cursor:
         cursor.execute(query, params)

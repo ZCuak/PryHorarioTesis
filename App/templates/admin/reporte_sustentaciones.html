@@ -29,32 +29,6 @@
     <div class="filter-box">
         <form method="get" class="form-inline mb-4">
             <div class="form-group mr-3">
-                <label for="semestre" class="mr-2">Semestre:</label>
-                <select id="semestre" name="semestre" class="form-control custom-select-lg">
-                    <option value="">Todos</option>
-                    {% for semestre_obj in semestres %}
-                        <option value="{{ semestre_obj.nombre }}" {% if semestre == semestre_obj.nombre %}selected{% endif %}>{{ semestre_obj.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group mr-3">
-                <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label>
-                <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg">
-                    <option value="">Todos</option>
-                    <option value="parcial" {% if tipo_sustentacion == 'parcial' %}selected{% endif %}>Parcial</option>
-                    <option value="final" {% if tipo_sustentacion == 'final' %}selected{% endif %}>Final</option>
-                </select>
-            </div>
-            <div class="form-group mr-3">
-                <label for="nombre_estudiante" class="mr-2">Nombre del Estudiante:</label>
-                <select id="nombre_estudiante" name="nombre_estudiante" class="form-control custom-select-lg my-select2-estudiante">
-                    <option value="">Todos</option>
-                    {% for estudiante in estudiantes %}
-                        <option value="{{ estudiante.apellidos_nombres }}" {% if nombre_estudiante == estudiante.apellidos_nombres %}selected{% endif %}>{{ estudiante.apellidos_nombres }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group mr-3">
                 <label for="fecha" class="mr-2">Fecha:</label>
                 <input type="date" id="fecha" name="fecha" class="form-control" value="{{ fecha|default_if_none:'' }}">
             </div>
@@ -68,14 +42,12 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Semestre</th>
                 <th>Curso</th>
                 <th>Grupo</th>
                 <th>Código Universitario</th>
                 <th>Estudiante</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Tipo de Sustentación</th>
                 <th>Jurado 1</th>
                 <th>Jurado 2</th>
                 <th>Asesor</th>
@@ -88,14 +60,12 @@
         <tbody>
             {% for row in data %}
                 <tr>
-                    <td>{{ row.semestre }}</td>
                     <td>{{ row.curso }}</td>
                     <td>{{ row.grupo }}</td>
                     <td>{{ row.codigo_universitario }}</td>
                     <td>{{ row.estudiante }}</td>
                     <td>{{ row.email_estudiante }}</td>
                     <td>{{ row.telefono_estudiante }}</td>
-                    <td>{{ row.tipo_sustentacion }}</td>
                     <td>{{ row.jurado1 }}</td>
                     <td>{{ row.jurado2 }}</td>
                     <td>{{ row.asesor }}</td>
