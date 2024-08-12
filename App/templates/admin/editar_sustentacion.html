@@ -11,11 +11,16 @@
                 </div>
                 <div class="card-body">
                     {% if messages %}
-                        <div>
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    <div>
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                        <ul>
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
                             {% endfor %}
-                        </div>
+                        </ul>
+                    </div>
                     {% endif %}
                     <form method="post">
                         {% csrf_token %}
@@ -27,6 +32,21 @@
                             <label for="id_estudiante">Estudiante:</label>
                             {{ form.estudiante }}
                         </div>
+
+                        <div class="form-group">
+                            <label for="id_fecha">Fecha:</label>
+                            {{ form.fecha }}
+                            <strong>Ten encuenta!</strong> Los jurados se filtraran por la fecha que selecciones. 
+                        </div>
+                        <div class="form-group">
+                            <label for="id_hora_inicio">Hora inicio:</label>
+                            {{ form.hora_inicio }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_hora_fin">Hora fin:</label>
+                            {{ form.hora_fin }}
+                        </div>
+                        <strong>Ten encuenta!</strong> Puede que los jurados ya no esten libres, se recomienda hablar con los profesores y colocar mas disponibilidad horaria y ejecutar el algoritmo otra vez. 
                         <div class="form-group">
                             <label for="id_jurado1">Jurado1:</label>
                             {{ form.jurado1 }}
@@ -43,18 +63,6 @@
                             <label for="id_titulo">Título:</label>
                             {{ form.titulo }}
                         </div>
-                        <div class="form-group">
-                            <label for="id_fecha">Fecha:</label>
-                            {{ form.fecha }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_hora_inicio">Hora inicio:</label>
-                            {{ form.hora_inicio }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_hora_fin">Hora fin:</label>
-                            {{ form.hora_fin }}
-                        </div>
                         <button type="submit" class="btn btn-primary">Guardar</button>
                         <a href="{% url 'ejecutar_algoritmo' %}" class="btn btn-secondary">Cancelar</a>
                     </form>
@@ -63,4 +71,30 @@
         </div>
     </div>
 </div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#id_fecha').change(function () {
+            var fecha = $(this).val();
+            if (fecha) {
+                $.ajax({
+                    url: '',
+                    data: {
+                        'fecha': fecha,
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#id_jurado1, #id_jurado2, #id_asesor').empty();
+                        $('#id_jurado1, #id_jurado2, #id_asesor').append('<option value="">Seleccionar...</option>');
+                        $.each(data, function (key, value) {
+                            $('#id_jurado1, #id_jurado2, #id_asesor').append('<option value="' + value.id + '">' + value.apellidos_nombres + '</option>');
+                        });
+                    }
+                });
+            } else {
+                $('#id_jurado1, #id_jurado2, #id_asesor').empty();
+            }
+        });
+    });
+</script>
+
 {% endblock %}

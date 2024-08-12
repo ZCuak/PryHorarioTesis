@@ -218,39 +218,42 @@ def guardar_horarios(request):
         return redirect('ejecutar_algoritmo')
     return redirect('home')
 
-
-
 @staff_member_required
 def editar_sustentacion(request, sustentacion_id):
-    # Obtener la instancia de la sustentación a editar
     sustentacion = get_object_or_404(Sustentacion, pk=sustentacion_id)
 
     if request.method == 'POST':
-        # Crear una instancia del formulario y llenarlo con los datos recibidos
         form = Horario_SustentacionForm(request.POST, instance=sustentacion)
         if form.is_valid():
-            # Guardar los datos en la base de datos
             form.save()
-            print("Formulario registrado")
-            # Mostrar mensaje de éxito
             messages.success(request, "Sustentación guardada exitosamente.")
-            # Redirigir al usuario a la página principal o a donde prefieras
             return redirect('ejecutar_algoritmo')
         else:
-            print("Errores en el formulario: ", form.errors)
-            # Si el formulario no es válido, mostrar los errores
             messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
-        # Si la solicitud es GET, crear una instancia del formulario con los datos de la sustentación actual
         form = Horario_SustentacionForm(instance=sustentacion)
         horario = Horario_Sustentaciones.objects.filter(sustentacion=sustentacion).first()
+        print("Datos del formulario: ", request.POST)
         if horario:
             print("Fecha de la sustentación: ", horario.fecha)
         else:
             print("No se encontró horario para esta sustentación")
 
-    # Renderizar el formulario de edición
+    # Si es una petición AJAX, retornar los profesores disponibles en JSON
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        fecha = request.GET.get('fecha')
+        profesores_disponibles = Profesor.objects.filter(
+            id__in=Profesores_Semestre_Academico.objects.filter(fecha=fecha).values_list('profesor_id', flat=True)
+        )
+        data = list(profesores_disponibles.values('id', 'apellidos_nombres'))
+        
+        return JsonResponse(data, safe=False)
+
     return render(request, 'admin/editar_sustentacion.html', {'form': form})
+
+
+
+
 def index(request):
     return render(request, 'pages/index.html', { 'segment': 'index' })
 

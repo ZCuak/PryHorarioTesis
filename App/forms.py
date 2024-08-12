@@ -115,16 +115,41 @@ class Horario_SustentacionForm(forms.ModelForm):
             'titulo': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        jurado1 = cleaned_data.get("jurado1")
+        jurado2 = cleaned_data.get("jurado2")
+        asesor = cleaned_data.get("asesor")
+
+        if jurado1 and jurado2 and jurado1 == jurado2:
+            raise forms.ValidationError("Jurado 1 y Jurado 2 no pueden ser la misma persona.")
+
+        if jurado1 and asesor and jurado1 == asesor:
+            raise forms.ValidationError("Jurado 1 y el Asesor no pueden ser la misma persona.")
+
+        if jurado2 and asesor and jurado2 == asesor:
+            raise forms.ValidationError("Jurado 2 y el Asesor no pueden ser la misma persona.")
+
+        return cleaned_data
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.pk:
-            horario = Horario_Sustentaciones.objects.filter(sustentacion=self.instance).first()
-            if horario and horario.fecha:
-                self.fields['fecha'].initial = horario.fecha.strftime('%Y-%m-%d')
-            if horario and horario.hora_inicio:
-                self.fields['hora_inicio'].initial = horario.hora_inicio
-            if horario and horario.hora_fin:
-                self.fields['hora_fin'].initial = horario.hora_fin
+        self.fields['jurado1'].queryset = Profesor.objects.none()
+        self.fields['jurado2'].queryset = Profesor.objects.none()
+        self.fields['asesor'].queryset = Profesor.objects.none()
+        if 'fecha' in self.data:
+            
+            fecha = self.data.get('fecha')
+            self.fields['jurado1'].queryset = Profesor.objects.filter(
+                id__in=Profesores_Semestre_Academico.objects.filter(fecha=fecha).values_list('profesor_id', flat=True)
+            )
+            self.fields['jurado2'].queryset = self.fields['jurado1'].queryset
+            self.fields['asesor'].queryset = self.fields['jurado1'].queryset
+        elif self.instance.pk:
+            # Pre-popular los selects si la instancia ya existe
+            self.fields['jurado1'].queryset = Profesor.objects.all()
+            self.fields['jurado2'].queryset = Profesor.objects.all()
+            self.fields['asesor'].queryset = Profesor.objects.all()
 
 
     def save(self, commit=True):
