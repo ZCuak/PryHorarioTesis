@@ -11,13 +11,14 @@
         <div class="row gx-4">
           <div class="col-auto">
             <div class="avatar avatar-xl position-relative">
-              <img src="{% static 'img/LogoLlamasSoft2.png' %}" alt="profile_image" class="w-100 border-radius-lg shadow-sm">
+              <img src="{% static 'img/user-icon.png' %}" alt="profile_image" class="w-100 border-radius-lg shadow-sm">
+              
             </div>
           </div>
           <div class="col-auto my-auto">
             <div class="h-100">
               <h5 class="mb-1">
-                {{ user.first_name }} {{ user.last_name }}
+                {{ user.username }} {{ user.last_name }}
               </h5>
               <p class="mb-0 font-weight-bold text-sm">
                 {{ user.profile.position }}  <!-- Asegúrate de tener este campo en tu modelo de perfil si usas uno -->
@@ -60,7 +61,7 @@
                     style="width: 45px; height: 45px" />
                   <div class="ms-3">
                     <p class="fw-bold mb-1">Ocrospoma Ugaz Frank</p>
-                    <p class="text-muted mb-0">ocrospomafranak@gmail.com</p>
+                    <p class="text-muted mb-0">frankocrospomaugaz@gmail.com</p>
                   </div>
                 </div>
               </li>
@@ -83,7 +84,7 @@
             </div>
             <div class="card-body p-3">
               <div class="d-flex justify-content-center mb-4">
-              <img src="{% static 'img/LogoLlamasSoft2.png' %}" class="rounded-circle border shadow-lg p-1" alt="Foto de perfil" style="width: 150px; height: 150px;">
+              <img src="{% static 'img/LlamaSoft_Logoo.png' %}" class="rounded-circle border shadow-lg p-1" alt="Foto de perfil" style="width: 150px; height: 150px;">
           </div>
               <p class="text-md text-justify">
                 Bienvenido, {{ user.first_name }} {{ user.last_name }}! Nos alegra tenerte aquí. Esperamos que disfrutes tu experiencia y encuentres todo lo que necesitas. Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
@@ -102,9 +103,9 @@
           </div>
         </div>
         <div class="col-12 col-xl-4">
-          <div class="card h-100">
+          <div class="card">
             
-            <img src="{% static 'img/LogoLlamasSoft2.png' %}" alt="profile_image" class="w-auto border-radius-lg shadow-sm">
+            <img src="{% static 'img/USAT.png' %}" alt="profile_image" class="w-auto border-radius-lg shadow-sm">
           </div>
         </div>
       </div>
