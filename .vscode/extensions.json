@@ -1,5 +1,7 @@
 {
     "recommendations": [
-        "rangav.vscode-thunder-client"
+        "myml.vscode-markdown-plantuml-preview",
+        "esbenp.prettier-vscode",
+        "jebbs.plantuml"
     ]
 }

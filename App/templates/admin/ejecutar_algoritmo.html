@@ -7,7 +7,7 @@
         <div class="col-12"> 
             <div class="card"> 
                 <div class="card-header pb-0"> 
-                    <h2>Ejecutar Algoritmo Genético</h2> 
+                    <h2>Generacion de horarios mediante Algoritmo Genético</h2> 
                 </div> 
                 <div class="card-body"> 
                 <!-- Modal de Error Genérico -->
@@ -30,46 +30,53 @@
                     </div>
                 </div>
                 
-                <div class="form-group "> 
-                    <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label> 
-                    <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg"> 
-                        <option value="PARCIAL" {% if tipo_sustentacion == 'PARCIAL' %}selected{% endif %}>Parcial</option> 
-                        <option value="FINAL" {% if tipo_sustentacion == 'FINAL' %}selected{% endif %}>Final</option> 
-                    </select> 
-                </div> 
-                <form method="post" id="ejecutarAlgoritmoForm">
-                    {% csrf_token %}
-                    <input type="hidden" name="tipo_sustentacion" id="hidden_tipo_sustentacion" value="{{ tipo_sustentacion }}">
-                    <button type="submit" class="btn btn-success">Ejecutar Algoritmo</button>
-                </form>
-                    <form method="get" class="mb-3 form-row"> 
-
-                        <div class="form-group col mr-3"> 
+                <div class="form-group">
+                    <label for="tipo_sustentacion" class="mr-2">Tipo de Sustentación:</label>
+                    <div class="d-flex">
+                        <select id="tipo_sustentacion" name="tipo_sustentacion" class="form-control custom-select-lg mr-3" style="height: calc(2.25rem + 2px);">
+                            <option value="PARCIAL" {% if tipo_sustentacion == 'PARCIAL' %}selected{% endif %}>Parcial</option>
+                            <option value="FINAL" {% if tipo_sustentacion == 'FINAL' %}selected{% endif %}>Final</option>
+                        </select>
+                        <form method="post" id="ejecutarAlgoritmoForm" class="d-flex align-items-center">
+                            {% csrf_token %}
+                            <input type="hidden" name="tipo_sustentacion" id="hidden_tipo_sustentacion" value="{{ tipo_sustentacion }}">
+                            <button type="submit" class="btn btn-primary" style="background: #206FC0; height: calc(2.25rem + 2px);">Ejecutar Algoritmo</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <form method="get" class="mb-3"> 
+                    <div class="row"> 
+                        <div class="form-group col-md-5"> 
                             <label for="curso_grupo">Curso - Grupo</label> 
-                            <select name="curso_grupo" id="curso_grupo" class="form-control"> 
+                            <select name="curso_grupo" id="curso_grupo" class="form-control" style="height: calc(2.25rem + 2px);"> 
                                 <option value="">Todos</option> 
                                 {% for curso_grupo in cursos_grupos %} 
                                     <option value="{{ curso_grupo.id }}" {% if curso_grupo.id|stringformat:"s" == curso_grupo_id %}selected{% endif %}>{{ curso_grupo.curso.nombre }} - {{ curso_grupo.grupo.nombre }}</option> 
                                 {% endfor %} 
                             </select> 
                         </div> 
-                        <div class="form-group col mr-3"> 
+                        <div class="form-group col-md-4"> 
                             <label for="semestre">Semestre Vigente</label> 
                             {% if semestres %}
                                 {% for semestre in semestres %}
                                     {% if semestre.vigencia %}
-                                        <input type="text" class="form-control" value="{{ semestre.nombre }}" readonly>
+                                        <input type="text" class="form-control" value="{{ semestre.nombre }}" readonly style="height: calc(2.25rem + 2px);">
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
-                                <input type="text" class="form-control" value="No hay semestre vigente" readonly>
+                                <input type="text" class="form-control" value="No hay semestre vigente" readonly style="height: calc(2.25rem + 2px);">
                             {% endif %}
                         </div> 
-                        <div class="form-group col"> 
-                            <button type="submit" class="btn btn-primary mt-4">Filtrar</button> 
-                            <button type="button" class="btn btn-success mt-4" id="enviar-notificaciones">Notificar</button> 
+                        <div class="form-group col-md-3 d-flex align-items-center"> 
+                            <div class="d-flex w-100 align-items-center justify-content-start" style="margin-top: 30px;">
+                                <button type="submit" class="btn btn-info w-50 mr-2" style="height: calc(2.25rem + 2px);">Filtrar</button> 
+                                <button type="button" class="btn btn-success w-50" id="enviar-notificaciones" style="height: calc(2.25rem + 2px);">Notificar</button> 
+                            </div>
                         </div> 
-                    </form> 
+                    </div> 
+                </form>
+                
 
                     <h6>Listado de Sustentaciones - {{ tipo_sustentacion_mostrado }}</h6> 
                     <div class="mb-3">
@@ -233,9 +240,11 @@
             e.preventDefault();
             // Copiar el valor del tipo de sustentación seleccionado al campo oculto
             $('#hidden_tipo_sustentacion').val($('#tipo_sustentacion').val());
+            
+            // Mostrar el modal de carga inmediatamente
             $('#loadingModal').modal('show');
-
-            // Simulación de barra de progreso
+        
+            // Iniciar la simulación de barra de progreso
             var progressBar = $('#progressBar');
             var width = 0;
             var height = 20;
@@ -244,16 +253,33 @@
                 progressBar.css('width', width + '%');
                 progressBar.text(width + '%');
                 progressBar.css('height', height + 'px');
+
                 if (width >= 100) {
                     clearInterval(interval);
                 }
-            }, 1000);
-
-            // Enviar el formulario después de un retraso simulado
-            setTimeout(function() {
-                $('#ejecutarAlgoritmoForm')[0].submit();
-            }, 10000); // 10 segundos para simular el progreso
+            }, 1700); // Incrementa cada segundo
+        
+            // Enviar el formulario al backend inmediatamente
+            $.ajax({
+                url: $('#ejecutarAlgoritmoForm').attr('action'),
+                type: "POST",
+                data: $('#ejecutarAlgoritmoForm').serialize(),
+                success: function(data) {
+                    // Aquí puedes manejar lo que suceda después de que el backend haya procesado la solicitud
+                    $('#loadingModal').modal('hide');
+                    // Redirigir o actualizar la página, dependiendo de la respuesta del servidor
+                    window.location.reload();
+                },
+                error: function(xhr, status, error) {
+                    clearInterval(interval); // Detener la barra de progreso
+                    console.error('Error al ejecutar el algoritmo:', status, error);
+                    $('#genericErrorMessage').text('Error al ejecutar el algoritmo: ' + error);
+                    $('#genericErrorModal').modal('show');
+                    $('#loadingModal').modal('hide');
+                }
+            });
         });
+        
     
         $('#closeErrorModal, #closeGenericErrorModal').click(function(){
             $(this).closest('.modal').modal('hide');
